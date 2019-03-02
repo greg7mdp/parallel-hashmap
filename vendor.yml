@@ -1,0 +1,3 @@
+special-vendored-path/* linguist-vendored
+js/ linguist-vendored=true
+charts-template.html linguist-vendored=true
