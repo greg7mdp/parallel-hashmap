@@ -1,2 +1,4 @@
 js/* linguist-vendored
+*.py linguist-vendored
+*.css linguist-vendored
 charts-template.html linguist-vendored
