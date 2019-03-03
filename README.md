@@ -141,21 +141,23 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
             if (idx / modulo == thread_idx)                 // if the subtable is suitable for this thread
             {
                 hash.insert(typename HT::value_type(key, 0)); // insert the value
-                ++(num_keys[thread_idx]);                  // increment count of inserted values
+                ++(num_keys[thread_idx]);                     // increment count of inserted values
             }
         }
     };
 
+    // create and start 8 threads - each will insert in their own submaps
+    // thread 0 will insert the keys whose hash direct them to submap0 or submap1
+    // thread 1 will insert the keys whose hash direct them to submap2 or submap3
+    // --------------------------------------------------------------------------
     for (int64_t i=0; i<num_threads; ++i)
-    {
-        TD<HT> td {i, num_threads, cnt, hash, rsu};
         threads[i].reset(new std::thread(thread_fn, i, rsu));
-    }
 
     // rsu passed by value to threads... we need to increment the reference object
     for (int64_t i=0; i<cnt; ++i)
         rsu.next();
     
+    // wait for the threads to finish their work and exit
     for (int64_t i=0; i<num_threads; ++i)
         threads[i]->join();
 }
