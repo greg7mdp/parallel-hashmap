@@ -4,7 +4,7 @@
 (c) Gregory Popovitch - 2/28/2019
 
 [tl;dr] built on top of Abseil's flat_hash_map, the parallel flat_hash_map is 
-       more memory friendly, and can be used from multiple with high levels of 
+       more memory friendly, and can be used from multiple threads with high levels of 
        concurrency
 
 ### A quick look at the current state of the art
