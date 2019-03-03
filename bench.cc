@@ -165,14 +165,14 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
 #ifdef MT_SUPPORT
         typename HT::hasher hasher;                         // get hasher object from the hash table
-        size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of subtables
+        size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
             unsigned int key = rsu.next();                  // get next key to insert
             size_t hashval = hasher(key);                   // compute its hash
-            size_t idx  = hash.subidx(hashval);             // compute the subtable index for this hash
-            if (idx / modulo == thread_idx)                 // if the subtable is suitable for this thread
+            size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
+            if (idx / modulo == thread_idx)                 // if the submap is suitable for this thread
             {
                 hash.insert(typename HT::value_type(key, 0)); // insert the value
                 ++(num_keys[thread_idx]);                     // increment count of inserted values

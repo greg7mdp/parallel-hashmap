@@ -39,10 +39,9 @@ If only there was a way to eliminate those peaks, the flat_hash_map would be clo
 
 ### Peak memory usage: the solution
 
-Suddenly, it hit me. I had a solution. I would create a hash table that internally is made of an array of 16 hash tables.
-When inserting or looking up an item, the index of the internal hash table would be decided by the hash of the value to insert. For example, if for a given `size_t hashval`, the index for the internal table could be: 
+Suddenly, it hit me. I had a solution. I would create a hash table that internally is made of an array of 16 hash tables (the submaps). When inserting or looking up an item, the index of the target submap would be decided by the hash of the value to insert. For example, if for a given `size_t hashval`, the index for the inner submap would be computed with: 
 
-`subtable_index = (hashval ^ (hashval >> 4)) & 0xF;`
+`submap_index = (hashval ^ (hashval >> 4)) & 0xF;`
 
 providing an index between 0 and 15.
 
@@ -98,15 +97,15 @@ This is already looking pretty good. For large hash_maps, the parallel_flat_hash
 
 But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hash maps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
 
-Because the parallel_hash_map is built of sixteen separate subtables, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different subtables, you would be able to insert into the same parallel_hash_map at the same time from the different threads without any locking. 
+Because the parallel_hash_map is built of sixteen separate submaps, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different submaps, you would be able to insert into the same parallel_hash_map at the same time from the different threads without any locking. 
 
 ### Using the intrinsic parallelism of the parallel_hash_map to insert values from multiple threads, lock free.
 
 So, if you can iterate over the values you want to insert into the hash table, the idea is that each thread will iterate over all values, and then for each value:
 
 1. compute the hash for that value
-2. compute the subtable index for that hash
-3. if the subtable index is the assigned to this thread, do nothing and continue to the next value, otherwise insert the value
+2. compute the submap index for that hash
+3. if the submap index is one assigned to this thread, then insert the value, otherwise do nothing and continue to the next value  
 
 Here is the code for the single-threaded insert:
 
@@ -133,14 +132,14 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
         typename HT::hasher hasher;                         // get hasher object from the hash table
-        size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of subtables
+        size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
             unsigned int key = rsu.next();                  // get next key to insert
             size_t hashval = hasher(key);                   // compute its hash
-            size_t idx  = hash.subidx(hashval);             // compute the subtable index for this hash
-            if (idx / modulo == thread_idx)                 // if the subtable is suitable for this thread
+            size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
+            if (idx / modulo == thread_idx)                 // if the submap is suitable for this thread
             {
                 hash.insert(typename HT::value_type(key, 0)); // insert the value
                 ++(num_keys[thread_idx]);                     // increment count of inserted values
@@ -171,9 +170,9 @@ And the graphical visualization of the results:
 
 ![mt_stl_flat_par comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true)
 
-We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we saw when populating the parallel_hash_map using a single thread. The obvious reason is that, when using a single thread, only one of the subtables would resize at a time, ensuring that the peak would only be 1/16th of the one for the flat_hash_map (provided of course that the hash function distributes the values somewhat evenly between the subtables).
+We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we saw when populating the parallel_hash_map using a single thread. The obvious reason is that, when using a single thread, only one of the submaps would resize at a time, ensuring that the peak would only be 1/16th of the one for the flat_hash_map (provided of course that the hash function distributes the values somewhat evenly between the submaps).
 
-When running in multi-threaded mode (in this case eight threads), potentially as many as eight subtables can resize simultaneaously, so for a parallel_hash_map with sixteen subtables the memory peak size can be half as large as the one for the flat_hash_map.
+When running in multi-threaded mode (in this case eight threads), potentially as many as eight submaps can resize simultaneaously, so for a parallel_hash_map with sixteen submaps the memory peak size can be half as large as the one for the flat_hash_map.
 
 Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the flat_hash_map, while using a lower memory ceiling.
 
