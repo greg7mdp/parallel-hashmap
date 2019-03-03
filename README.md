@@ -127,11 +127,11 @@ and here is the code for the multi-threaded insert:
 template <class HT>
 struct TD
 {
-    int64_t thread_idx;
-    int64_t num_threads;
-    int64_t cnt;
-    HT     &hash;
-    RSU     rsu;   // generates a random sequence of unique integers
+    int64_t thread_idx;   // index of this thread (0 to num_threads)
+    int64_t num_threads;  // number of threads inserting values into the hash_map
+    int64_t cnt;          // number of values to insert (10 million in this benchmark)
+    HT     &hash;         // the absl::parallel_flat_hash_map
+    RSU     rsu;          // generates a random sequence of unique integers
 };
 
 // --------------------------------------------------------------------------
@@ -158,7 +158,7 @@ void _fill_random_inner_thr(TD<HT> td)
 template <class HT>
 void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 {
-    constexpr int64_t num_threads = 8;   // has to be a power of two
+    constexpr int64_t num_threads = 8;                   // has to be a power of two
     std::unique_ptr<std::thread> threads[num_threads];
 
     for (int64_t i=0; i<num_threads; ++i)
