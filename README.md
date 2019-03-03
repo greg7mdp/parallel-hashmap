@@ -182,3 +182,10 @@ Still, this is a pretty good result, we are now inserting values into our parall
 ### Thanks
 
 I would like to thank Google's Matt Kulukundis for his excellent presentation of the flat_hash_map design at CPPCON 2017 - my frustration with not being able to use it most likely triggered my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are Alkis Evlogimenos and Roman Perepelitsa - who created an excellent codebase into which the graft of this new hash map took easily, and finally to Google for open-sourcing Abseil.
+
+
+### Links
+
+[github repository for the benchmark code use in this paper](https://github.com/greg7mdp/parallel-hashmap)
+[Google Abseil repository](https://github.com/abseil/abseil-cpp)
+
