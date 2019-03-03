@@ -9,7 +9,9 @@
 
 ### A quick look at the current state of the art
 
-If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The flat hash table stores the values directly in a memory array, which avoids memory indirections. Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.
+If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The absl::flat_hash_map stores the values directly in a memory array, which avoids memory indirections. Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.
+
+![closed_hashing](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/closed_hashing.png?raw=true)
 
 The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hash map of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hast_map:
 
