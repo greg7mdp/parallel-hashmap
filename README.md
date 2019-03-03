@@ -55,6 +55,7 @@ The rest of this article describes my implementation of this concept that I have
 
 I was delighted to find out that not only the parallel_flat_hash_map has significant memory usage benefits compared to the flat_hash_map, but it also has significant advantages for concurrent programming as I will show later.
 
+> I will use the names parallel_hash_map and parallel_flat_hash_map interchangably. They refer to the same data structure. The name used in my Abseil fork is absl::parallel_flat_hash_map, as it may be desirable to also provide a absl::parallel_node_hash_map.
 
 
 ### The parallel_hash_map: memory usage
