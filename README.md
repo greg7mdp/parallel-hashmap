@@ -9,11 +9,13 @@
 
 ### A quick look at the current state of the art
 
-If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The absl::flat_hash_map stores the values directly in a memory array, which avoids memory indirections. Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.
+If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The absl::flat_hash_map stores the values directly in a memory array, which avoids memory indirections (this is referred to as closed hashing). 
 
 ![closed_hashing](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/closed_hashing.png?raw=true)
 
-The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hash map of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hast_map:
+Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.
+
+The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hashmap of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hast_map:
 
 ![stl_flat comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_both.PNG?raw=true)
                        
@@ -68,12 +70,12 @@ So, without further ado, let's see the same graphs graphs as above, with the add
 
 ![stl_flat_par_zoomed comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem_zoomed.PNG?raw=true)
 
-We see that the parallel_hash_map behaves as expected. The memory usage matches exactly the memory usage of its base flat_hash_map, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual sub-tables resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual hash maps.
+We see that the parallel_hash_map behaves as expected. The memory usage matches exactly the memory usage of its base flat_hash_map, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual sub-tables resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual submaps.
 
 
 ### The parallel_hash_map: speed
 
-But what about the speed? After all, for each value inserted into the parallel hash map, we have to do some extra work (steps 1 and 2 below):
+But what about the speed? After all, for each value inserted into the parallel hashmap, we have to do some extra work (steps 1 and 2 below):
 1. compute the hash for the value to insert
 2. compute the index of the target sub-table from the hash)
 3. insert the value into the sub-table
@@ -98,7 +100,7 @@ This last graph that the parallel_hash_map is slightly slower especially for sma
 
 This is already looking pretty good. For large hash_maps, the parallel_flat_hash_map is a very appealing solution, as it provides essentially the excellent performance of the flat_hash_map, while virtually eliminating the peaks of memory usage which occur when the hash table resizes. 
 
-But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hash maps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
+But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hashmaps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
 
 Because the parallel_hash_map is built of sixteen separate submaps, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different submaps, you would be able to insert into the same parallel_hash_map at the same time from the different threads without any locking. 
 
@@ -186,7 +188,7 @@ We have seen that the novel parallel hashmap approach, used withing a single thr
 
 ### Thanks
 
-I would like to thank Google's Matt Kulukundis for his excellent presentation of the flat_hash_map design at CPPCON 2017 - my frustration with not being able to use it most likely triggered my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are Alkis Evlogimenos and Roman Perepelitsa - who created an excellent codebase into which the graft of this new hash map took easily, and finally to Google for open-sourcing Abseil.
+I would like to thank Google's Matt Kulukundis for his excellent presentation of the flat_hash_map design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are Alkis Evlogimenos and Roman Perepelitsa - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son Andre for reviewing this paper, and for his patience when I was rambling to him about the parallel_hash_map and all its benefits. 
 
 
 ### Links
