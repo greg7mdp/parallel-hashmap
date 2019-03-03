@@ -1,4 +1,5 @@
-## Abseiling on the shoulders of giants - the parallel hashmap
+## the parallel hashmap
+   (or Abseiling from the shoulders of giants) 
 
 (c) Gregory Popovitch - 2/28/2019
 
@@ -45,13 +46,17 @@ When inserting or looking up an item, the index of the internal hash table would
 
 providing an index between 0 and 15.
 
+> In the actual implementation, the size of the array of hash tables is configurable to a power of two, so it can be 2, 4, 8, 16, 32, ... The following illustration shows a parallel_hash_map with 8 submaps.
+
+![index_computation](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/index_computation.PNG?raw=true)
+
 The benefit of this approach would be that the internal tables would each resize on its own when they reach 87.5% capacity, and since each table contains approximately one sixteenth of the values, the memory usage peak would be only one sixteenth of the size we saw for the single flat_hash_map.
 
 The rest of this article describes my implementation of this concept that I have done inside the Abseil library (I have submitted a pull request in the hope it will be merged into the main Abseil codebase). THe current name for it is `parallel_flat_hash_map` or `parallel_flat_hash_set`. It does provide the same external API as Abseils other hash tables, and internally it uses a std::array of N flat_hash_maps.
 
 I was delighted to find out that not only the parallel_flat_hash_map has significant memory usage benefits compared to the flat_hash_map, but it also has significant advantages for concurrent programming as I will show later.
 
-> In the actual implementation, the size of the array of hash tables is configurable to a power of two, so it can be 2, 4, 8, 16, 32, ...
+
 
 
 ### The parallel_hash_map: memory usage
@@ -92,6 +97,8 @@ This last graph that the parallel_hash_map is slightly slower especially for sma
 This is already looking pretty good. For large hash_maps, the parallel_flat_hash_map is a very appealing solution, as it provides essentially the excellent performance of the flat_hash_map, while virtually eliminating the peaks of memory usage which occur when the hash table resizes. 
 
 But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hash maps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
+
+Because the parallel_hash_map is built of sixteen separate subtables, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different subtables, you would be able to insert
 
 
 
