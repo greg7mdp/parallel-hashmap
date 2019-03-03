@@ -179,8 +179,9 @@ When running in multi-threaded mode (in this case eight threads), potentially as
 
 Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the flat_hash_map, while using a lower memory ceiling.
 
+### In Conclusion
 
-
+We have seen that the novel parallel hashmap approach, used withing a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.
 
 
 ### Thanks
@@ -192,5 +193,9 @@ I would like to thank Google's Matt Kulukundis for his excellent presentation of
 
 [github repository for the benchmark code used in this paper](https://github.com/greg7mdp/parallel-hashmap)
 
+[Swiss Tables doc](https://abseil.io/blog/20180927-swisstables)
+
 [Google Abseil repository](https://github.com/abseil/abseil-cpp)
+
+[Matt Kulukindis: Designing a Fast, Efficient, Cache-friendly Hash Table, Step by Step](https://www.youtube.com/watch?v=ncHmEUmJZf4)
 
