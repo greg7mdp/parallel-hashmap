@@ -48,7 +48,7 @@ providing an index between 0 and 15.
 
 > In the actual implementation, the size of the array of hash tables is configurable to a power of two, so it can be 2, 4, 8, 16, 32, ... The following illustration shows a parallel_hash_map with 8 submaps.
 
-![index_computation](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/index_computation.PNG?raw=true)
+![index_computation](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/index_computation.png?raw=true)
 
 The benefit of this approach would be that the internal tables would each resize on its own when they reach 87.5% capacity, and since each table contains approximately one sixteenth of the values, the memory usage peak would be only one sixteenth of the size we saw for the single flat_hash_map.
 
