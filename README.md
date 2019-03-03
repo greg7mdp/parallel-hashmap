@@ -98,7 +98,84 @@ This is already looking pretty good. For large hash_maps, the parallel_flat_hash
 
 But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hash maps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
 
-Because the parallel_hash_map is built of sixteen separate subtables, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different subtables, you would be able to insert
+Because the parallel_hash_map is built of sixteen separate subtables, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different subtables, you would be able to insert into the same parallel_hash_map at the same time from the different threads without any locking. 
+
+So, if you can iterate over the values you want to insert into the hash table, the idea is that each thread will iterate over all values, and then for each value:
+
+1. compute the hash for that value
+2. compute the subtable index for that hash
+3. if the subtable index is the assigned to this thread, do nothing and continue to the next value, otherwise insert the value
+
+Here is the code for the single-threaded insert:
+
+```c++
+template <class HT>
+void _fill_random_inner(int64_t cnt, HT &hash, RSU &rsu)
+{
+    for (int64_t i=0; i<cnt; ++i)
+    {
+        hash.insert(typename HT::value_type(rsu.next(), 0));
+        ++num_keys[0];
+    }
+}
+```
+
+and here is the code for the multi-threaded insert:
+
+```c++
+// --------------------------------------------------------------------------
+template <class HT>
+struct TD
+{
+    int64_t thread_idx;
+    int64_t num_threads;
+    int64_t cnt;
+    HT     &hash;
+    RSU     rsu;   // generates a random sequence of unique integers
+};
+
+// --------------------------------------------------------------------------
+template <class HT>
+void _fill_random_inner_thr(TD<HT> td)
+{
+    typename HT::hasher hasher;                         // get hasher object from the hash table
+    size_t modulo = td.hash.subcnt() / td.num_threads;  // subcnt() returns the number of subtables
+
+    for (int64_t i=0; i<td.cnt; ++i)                    // iterate over all values
+    {
+        unsigned int key = td.rsu.next();               // get next key to insert
+        size_t hash = hasher(key);                      // compute its hash
+        size_t idx  = td.hash.subidx(hash);             // compute the subtable index for this hash
+        if (idx / modulo == td.thread_idx)              // if the subtable is suitable for this thread
+        {
+            td.hash.insert(typename HT::value_type(key, 0));  // insert the value
+            ++(num_keys[td.thread_idx]);                      // increment count of inserted values
+        }
+    }
+}
+
+// --------------------------------------------------------------------------
+template <class HT>
+void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
+{
+    constexpr int64_t num_threads = 8;   // has to be a power of two
+    std::unique_ptr<std::thread> threads[num_threads];
+
+    for (int64_t i=0; i<num_threads; ++i)
+    {
+        TD<HT> td {i, num_threads, cnt, hash, rsu};
+        threads[i].reset(new std::thread(_fill_random_inner_thr<HT>, td));
+    }
+
+    // rsu passed by value to threads... we need to increment the reference object
+    for (int64_t i=0; i<cnt; ++i)
+        rsu.next();
+    
+    for (int64_t i=0; i<num_threads; ++i)
+        threads[i]->join();
+}
+```
+
 
 
 

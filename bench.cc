@@ -58,7 +58,7 @@ private:
 // --------------------------------------------------------------------------
 //  from: https://github.com/preshing/RandomSequence
 // --------------------------------------------------------------------------
-class RandomSequenceOfUnique
+class RSU
 {
 private:
     unsigned int m_index;
@@ -74,7 +74,7 @@ private:
     }
 
 public:
-    RandomSequenceOfUnique(unsigned int seedBase, unsigned int seedOffset)
+    RSU(unsigned int seedBase, unsigned int seedOffset)
     {
         m_index = permuteQPR(permuteQPR(seedBase) + 0x682f0161);
         m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
@@ -146,7 +146,7 @@ static const char *test = "random";
 
 // --------------------------------------------------------------------------
 template <class HT>
-void _fill_random_inner(int64_t cnt, HT &hash, RandomSequenceOfUnique &rsu)
+void _fill_random_inner(int64_t cnt, HT &hash, RSU &rsu)
 {
     for (int64_t i=0; i<cnt; ++i)
     {
@@ -163,7 +163,7 @@ struct TD
     int64_t num_threads;
     int64_t cnt;
     HT     &hash;
-    RandomSequenceOfUnique rsu;
+    RSU     rsu;   // generates a random sequence of unique integers
 };
 
 // --------------------------------------------------------------------------
@@ -171,17 +171,18 @@ template <class HT>
 void _fill_random_inner_thr(TD<HT> td)
 {
 #ifdef MT_SUPPORT
-    typename HT::hasher hasher;
-    size_t modulo = td.hash.subcnt() / td.num_threads;
-    for (int64_t i=0; i<td.cnt; ++i)
+    typename HT::hasher hasher;                         // get hasher object from the hash table
+    size_t modulo = td.hash.subcnt() / td.num_threads;  // subcnt() returns the number of subtables
+
+    for (int64_t i=0; i<td.cnt; ++i)                    // iterate over all values
     {
-        unsigned int key = td.rsu.next();
-        size_t hash = hasher(key);
-        size_t idx = td.hash.subidx(hash);
-        if (idx / modulo == td.thread_idx)
+        unsigned int key = td.rsu.next();               // get next key to insert
+        size_t hash = hasher(key);                      // compute its hash
+        size_t idx  = td.hash.subidx(hash);             // compute the subtable index for this hash
+        if (idx / modulo == td.thread_idx)              // if the subtable is suitable for this thread
         {
-            td.hash.insert(typename HT::value_type(key, 0));
-            ++(num_keys[td.thread_idx]);
+            td.hash.insert(typename HT::value_type(key, 0));  // insert the value
+            ++(num_keys[td.thread_idx]);                      // increment count of inserted values
         }
     }
 #endif
@@ -189,17 +190,18 @@ void _fill_random_inner_thr(TD<HT> td)
 
 // --------------------------------------------------------------------------
 template <class HT>
-void _fill_random_inner_mt(int64_t cnt, HT &hash, RandomSequenceOfUnique &rsu)
+void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 {
-    constexpr int64_t num_threads = 8;
+    constexpr int64_t num_threads = 8;   // has to be a power of two
     std::unique_ptr<std::thread> threads[num_threads];
 
     for (int64_t i=0; i<num_threads; ++i)
     {
         TD<HT> td {i, num_threads, cnt, hash, rsu};
-        assert(&td.hash == &hash);
         threads[i].reset(new std::thread(_fill_random_inner_thr<HT>, td));
     }
+
+    // rsu passed by value to threads... we need to increment the reference object
     for (int64_t i=0; i<cnt; ++i)
         rsu.next();
     
@@ -222,7 +224,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
 {
     test = "random";
     unsigned int seed = 76687;
-	RandomSequenceOfUnique rsu(seed, seed + 1);
+	RSU rsu(seed, seed + 1);
 
     Timer timer(true);
     const int64_t num_loops = 10;
