@@ -169,7 +169,11 @@ Here is the graphical visualization of the results:
 
 ![mt_stl_flat_par comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true)
 
+We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we had when populating the parallel_hash_map using a single thread. The (obvious) reason is that when using a single thread, only one of the subtables would resize at a time, ensuring that the peak would only be 1/16th of the one for the flat_hash_map (provided of course that the hash function distributes the values somewhat evenly between the subtables).
 
+When running in multi-threaded mode (in this case eight threads), potentially as many as eight subtables can resize simultaneaously, so for a parallel_hash_map with sixteen tables the memory peak size can be half as large as the one for the flat_hash_map.
+
+Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the flat_hash_map, while using a lower memory ceiling.
 
 
 
