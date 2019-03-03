@@ -157,48 +157,34 @@ void _fill_random_inner(int64_t cnt, HT &hash, RSU &rsu)
 
 // --------------------------------------------------------------------------
 template <class HT>
-struct TD
-{
-    int64_t thread_idx;
-    int64_t num_threads;
-    int64_t cnt;
-    HT     &hash;
-    RSU     rsu;   // generates a random sequence of unique integers
-};
-
-// --------------------------------------------------------------------------
-template <class HT>
-void _fill_random_inner_thr(TD<HT> td)
-{
-#ifdef MT_SUPPORT
-    typename HT::hasher hasher;                         // get hasher object from the hash table
-    size_t modulo = td.hash.subcnt() / td.num_threads;  // subcnt() returns the number of subtables
-
-    for (int64_t i=0; i<td.cnt; ++i)                    // iterate over all values
-    {
-        unsigned int key = td.rsu.next();               // get next key to insert
-        size_t hash = hasher(key);                      // compute its hash
-        size_t idx  = td.hash.subidx(hash);             // compute the subtable index for this hash
-        if (idx / modulo == td.thread_idx)              // if the subtable is suitable for this thread
-        {
-            td.hash.insert(typename HT::value_type(key, 0));  // insert the value
-            ++(num_keys[td.thread_idx]);                      // increment count of inserted values
-        }
-    }
-#endif
-}
-
-// --------------------------------------------------------------------------
-template <class HT>
 void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 {
     constexpr int64_t num_threads = 8;   // has to be a power of two
     std::unique_ptr<std::thread> threads[num_threads];
 
+    auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
+#ifdef MT_SUPPORT
+        typename HT::hasher hasher;                         // get hasher object from the hash table
+        size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of subtables
+
+        for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
+        {
+            unsigned int key = rsu.next();                  // get next key to insert
+            size_t hashval = hasher(key);                   // compute its hash
+            size_t idx  = hash.subidx(hashval);             // compute the subtable index for this hash
+            if (idx / modulo == thread_idx)                 // if the subtable is suitable for this thread
+            {
+                hash.insert(typename HT::value_type(key, 0)); // insert the value
+                ++(num_keys[thread_idx]);                     // increment count of inserted values
+            }
+        }
+#endif
+    };
+
     for (int64_t i=0; i<num_threads; ++i)
     {
         TD<HT> td {i, num_threads, cnt, hash, rsu};
-        threads[i].reset(new std::thread(_fill_random_inner_thr<HT>, td));
+        threads[i].reset(new std::thread(thread_fn, i, rsu));
     }
 
     // rsu passed by value to threads... we need to increment the reference object
