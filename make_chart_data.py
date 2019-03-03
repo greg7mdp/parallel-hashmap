@@ -39,9 +39,9 @@ for line in lines:
     benches[benchtype] = 1
 
 proper_names = {
-    'std::unordered_map':             'std::unordered_map',
-    'absl::flat_hash_map':            'absl::flat_hash_map',
-    'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map'
+    'std::unordered_map':             'std::unordered_map (1 thread)',
+    'absl::flat_hash_map':            'absl::flat_hash_map (1 thread)',
+    'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (8 threads)'
 }
 
 proper_color = {

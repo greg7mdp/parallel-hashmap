@@ -163,9 +163,11 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 }
 ```
 
+Using multiple threads, we are able to populate the parallel_flat_hash_map (inserting 100 million values) three times faster than the standard flat_hash_map (which we could not have populated from multiple threads without explicit locks, which would have prevented performance improvements).
 
+Here is the graphical visualization of the results:
 
-
+![mt_stl_flat_par comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true)
 
 
 
