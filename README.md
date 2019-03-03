@@ -58,7 +58,6 @@ I was delighted to find out that not only the parallel_flat_hash_map has signifi
 
 
 
-
 ### The parallel_hash_map: memory usage
 
 So, without further ado, let's see the same graphs graphs as above, with the addition of the parallel_flat_hash_map. Let us first look at memory usage (the second graph provides a "zoomed-in" view of the location where resizing occurs):
@@ -68,6 +67,7 @@ So, without further ado, let's see the same graphs graphs as above, with the add
 ![stl_flat_par_zoomed comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem_zoomed.PNG?raw=true)
 
 We see that the parallel_hash_map behaves as expected. The memory usage matches exactly the memory usage of its base flat_hash_map, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual sub-tables resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual hash maps.
+
 
 ### The parallel_hash_map: speed
 
@@ -99,6 +99,8 @@ This is already looking pretty good. For large hash_maps, the parallel_flat_hash
 But there is another aspect of the inherent parallelism of the parallel_hash_map which is interesting to explore. As we know, typical hash maps cannot be modified from multiple threads without explicit synchronization. And bracketing write accesses to a shared hash_map with synchronization primitives, such as mutexes, can reduce the concurrency of our program, and even cause deadlocks.
 
 Because the parallel_hash_map is built of sixteen separate subtables, it posesses some intrinsic parallelism. Indeed, suppose you can make sure that different threads will use different subtables, you would be able to insert into the same parallel_hash_map at the same time from the different threads without any locking. 
+
+### Using the intrinsic parallelism of the parallel_hash_map to insert values from multiple threads, lock free.
 
 So, if you can iterate over the values you want to insert into the hash table, the idea is that each thread will iterate over all values, and then for each value:
 
@@ -165,13 +167,13 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 
 Using multiple threads, we are able to populate the parallel_flat_hash_map (inserting 100 million values) three times faster than the standard flat_hash_map (which we could not have populated from multiple threads without explicit locks, which would have prevented performance improvements).
 
-Here is the graphical visualization of the results:
+And the graphical visualization of the results:
 
 ![mt_stl_flat_par comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true)
 
-We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we had when populating the parallel_hash_map using a single thread. The (obvious) reason is that when using a single thread, only one of the subtables would resize at a time, ensuring that the peak would only be 1/16th of the one for the flat_hash_map (provided of course that the hash function distributes the values somewhat evenly between the subtables).
+We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we saw when populating the parallel_hash_map using a single thread. The obvious reason is that, when using a single thread, only one of the subtables would resize at a time, ensuring that the peak would only be 1/16th of the one for the flat_hash_map (provided of course that the hash function distributes the values somewhat evenly between the subtables).
 
-When running in multi-threaded mode (in this case eight threads), potentially as many as eight subtables can resize simultaneaously, so for a parallel_hash_map with sixteen tables the memory peak size can be half as large as the one for the flat_hash_map.
+When running in multi-threaded mode (in this case eight threads), potentially as many as eight subtables can resize simultaneaously, so for a parallel_hash_map with sixteen subtables the memory peak size can be half as large as the one for the flat_hash_map.
 
 Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the flat_hash_map, while using a lower memory ceiling.
 
