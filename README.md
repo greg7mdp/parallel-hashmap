@@ -186,6 +186,7 @@ I would like to thank Google's Matt Kulukundis for his excellent presentation of
 
 ### Links
 
-[github repository for the benchmark code use in this paper](https://github.com/greg7mdp/parallel-hashmap)
+[github repository for the benchmark code used in this paper](https://github.com/greg7mdp/parallel-hashmap)
+
 [Google Abseil repository](https://github.com/abseil/abseil-cpp)
 
