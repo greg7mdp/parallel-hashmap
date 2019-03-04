@@ -1,9 +1,7 @@
 # The Parallel Hashmap
    or Abseiling from the shoulders of giants - &copy; Gregory Popovitch - March 3, 2019
 
-[tl;dr] built on top of Abseil's flat_hash_map, the parallel flat_hash_map is 
-       more memory friendly, and can be used from multiple threads with high levels of 
-       concurrency
+[tl;dr] built on top of Abseil's flat_hash_map, the parallel hashmap is more memory friendly, almost as fast as the underlying flat_hash_map, and can be used from multiple threads with high levels of concurrency.
 
 ### A quick look at the current state of the art
 
@@ -78,11 +76,11 @@ But what about the speed? After all, for each value inserted into the parallel h
 2. compute the index of the target sub-table from the hash)
 3. insert the value into the sub-table
 
-The first step (compute the hash) is the most problematic one, as it can potentially be costly. As we mentioned above, the second step (computing the index from the hash) is very simple and its cost in minimal (3 processor instruction as shown below in Matt Godbolt's compiler explorer):
+The first step (compute the hash) is the most problematic one, as it can potentially be costly. As we mentioned above, the second step (computing the index from the hash) is very simple and its cost in minimal (3 processor instruction as shown below in *Matt Godbolt*'s compiler explorer):
 
 ![index computation cost](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/idx_computation_cost.PNG?raw=true)
 
-As for the hash value computation, fortunately we can eliminate this cost by providing the computed hash to the sub-table functions, so that it is computed only once. This is exactly what I have done in my implementation pof the parallel_hash_map withing the Abseil library, adding a few extra APIs to the Abseil internal raw_hash_map.h header,= which allow the parallel_hash_map to pass the precomputed hash value to the underlying hash tables.
+As for the hash value computation, fortunately we can eliminate this cost by providing the computed hash to the sub-table functions, so that it is computed only once. This is exactly what I have done in my implementation pof the parallel_hash_map within the Abseil library, adding a few extra APIs to the Abseil internal raw_hash_map.h header,= which allow the parallel_hash_map to pass the precomputed hash value to the underlying hash tables.
 
 So we have all but eliminated the cost of the first step, and seen that the cost of the second step is very minimal. At this point we expect that the parallel_hash_map performance will be close to the one of its underlying flat_hash_map, and this is confirmed by the chart below:
 
@@ -181,17 +179,17 @@ Still, this is a pretty good result, we are now inserting values into our parall
 
 ### In Conclusion
 
-We have seen that the novel parallel hashmap approach, used withing a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.
+We have seen that the novel parallel hashmap approach, used within a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.
 
 
 ### Thanks
 
-I would like to thank Google's Matt Kulukundis for his excellent presentation of the flat_hash_map design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are Alkis Evlogimenos and Roman Perepelitsa - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son Andre for reviewing this paper, and for his patience when I was rambling to him about the parallel_hash_map and all its benefits. 
+I would like to thank Google's *Matt Kulukundis* for his excellent presentation of the flat_hash_map design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are *Alkis Evlogimenos* and *Roman Perepelitsa* - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son *Andre* for reviewing this paper, and for his patience when I was rambling to him about the parallel_hash_map and all its benefits. 
 
 
 ### Links
 
-[github repository for the benchmark code used in this paper](https://github.com/greg7mdp/parallel-hashmap)
+[Github repository for the benchmark code used in this paper](https://github.com/greg7mdp/parallel-hashmap)
 
 [Swiss Tables doc](https://abseil.io/blog/20180927-swisstables)
 

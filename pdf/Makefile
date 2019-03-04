@@ -24,10 +24,7 @@ SRC = parallel_hashmap.md
 
 OBJ = $(SRC:.md=.html)
 
-all: pdf
-
-img/%.png: img/%.pdf
-	convert -density 150 $< $@
+all: html
 
 includes.exe: includes.hs
 	stack exec ghc -- -o $@ -no-keep-hi-files -no-keep-o-files includes.hs
@@ -38,14 +35,8 @@ html: ../README.md $(FILTER) ${TEMPLATE_HTML} ${STYLE}
 %.pdf: %.md $(FILTER) ${TEMPLATE_TEX}
 	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${TEX_OPT} $(FLAGS) -o $@ $<
 
-%.epub: %.md $(FILTER) 
-	$(PANDOC) ${FILTER_OPT} ${IFORMAT} $(FLAGS) -o $@ $<
-
 pdf: $(FILTER) ${TEMPLATE_TEX} 
 	rm -f parallel_hashmap.pdf; $(PANDOC) ${FILTER_OPT} ${IFORMAT} ${TEX_OPT} $(FLAGS) -o parallel_hashmap.pdf title.md $(SRC)
-
-epub: $(FILTER)
-	$(PANDOC) ${FILTER_OPT} ${IFORMAT} $(FLAGS) ${EPUB_COVER} -o cppi.epub title.md $(SRC)
 
 native: 
 	$(PANDOC) -s -t native $(SRC)
