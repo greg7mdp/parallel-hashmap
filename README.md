@@ -17,7 +17,7 @@ The graphs below show a comparison of time and memory usage necessary to insert 
                        
 On the bottom graph, we can see that, as expected, the Abseil *flat_hash_map* is significantly faster that the default stl implementation, typically about three times faster.
 
-### Peak memory usage: the issue
+### The peak memory usage issue
 
 The top graph shown the memory usage for both tables. 
 
@@ -37,7 +37,7 @@ When the Abseil library was open sourced, I started pondering the issue again. C
 
 If only there was a way to eliminate those peaks, the *flat_hash_map* would be close to perfect. But how?
 
-### Peak memory usage: the solution
+### The peak memory usage solution
 
 Suddenly, it hit me. I had a solution. I would create a hash table that internally is made of an array of 16 hash tables (the submaps). When inserting or looking up an item, the index of the target submap would be decided by the hash of the value to insert. For example, if for a given `size_t hashval`, the index for the inner submap would be computed with: 
 
@@ -58,7 +58,7 @@ I was delighted to find out that not only the *parallel_flat_hash_map* has signi
 > I will use the names *parallel_hash_map* and *parallel_flat_hash_map* interchangably. They refer to the same data structure. The name used in my Abseil fork is *absl::parallel_flat_hash_map*, as it may be desirable to also provide a *absl::parallel_node_hash_map*.
 
 
-### The parallel_hash_map: memory usage
+### The Parallel Hashmap: memory usage
 
 So, without further ado, let's see the same graphs graphs as above, with the addition of the *parallel_flat_hash_map*. Let us first look at memory usage (the second graph provides a "zoomed-in" view of the location where resizing occurs):
 
@@ -69,7 +69,7 @@ So, without further ado, let's see the same graphs graphs as above, with the add
 We see that the parallel_hash_map behaves as expected. The memory usage matches exactly the memory usage of its base *flat_hash_map*, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual submaps resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual submaps.
 
 
-### The parallel_hash_map: speed
+### The Parallel Hashmap: speed
 
 But what about the speed? After all, for each value inserted into the parallel hashmap, we have to do some extra work (steps 1 and 2 below):
 1. compute the hash for the value to insert

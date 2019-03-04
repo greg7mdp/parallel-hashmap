@@ -115,7 +115,7 @@
 <p>The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hashmap of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hast_map:</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_both.PNG?raw=true" alt="stl_flat comparison" /></p>
 <p>On the bottom graph, we can see that, as expected, the Abseil <em>flat_hash_map</em> is significantly faster that the default stl implementation, typically about three times faster.</p>
-<h3 id="peak-memory-usage-the-issue">Peak memory usage: the issue</h3>
+<h3 id="the-peak-memory-usage-issue">The peak memory usage issue</h3>
 <p>The top graph shown the memory usage for both tables.</p>
 <p>I used a separate thread to monitor the memory usage, which allows to track the increased memory usage when the table resizes. Indeed, both tables have a peak memory usage that is significantly higher than the memory usage seen between insertions.</p>
 <p>In the case of Abseil's <em>flat_hash_map</em>, the values are stored directly in a memory array. The memory usage is constant until the table needs to resize, which is what we see with these horizontal sections of memory usage.</p>
@@ -125,7 +125,7 @@
 <p>For my work developing mechanical engineering software, this has kept me from using flat hash maps, as the high peak memory usage was the limiting factor for the size of FE models which could be loaded on a given machine. So I used other types of maps, such as sparsepp or Google's cpp-btree.</p>
 <p>When the Abseil library was open sourced, I started pondering the issue again. Compared to Google's old dense_hash_map which resized at 50% capacity, the new <em>absl::flat_hash_map</em> resizing at 87.5% capacity was more memory friendly, but it still had these significant peaks of memory usage when resizing.</p>
 <p>If only there was a way to eliminate those peaks, the <em>flat_hash_map</em> would be close to perfect. But how?</p>
-<h3 id="peak-memory-usage-the-solution">Peak memory usage: the solution</h3>
+<h3 id="the-peak-memory-usage-solution">The peak memory usage solution</h3>
 <p>Suddenly, it hit me. I had a solution. I would create a hash table that internally is made of an array of 16 hash tables (the submaps). When inserting or looking up an item, the index of the target submap would be decided by the hash of the value to insert. For example, if for a given <code>size_t hashval</code>, the index for the inner submap would be computed with:</p>
 <p><code>submap_index = (hashval ^ (hashval &gt;&gt; 4)) &amp; 0xF;</code></p>
 <p>providing an index between 0 and 15.</p>
@@ -139,12 +139,12 @@
 <blockquote>
 <p>I will use the names <em>parallel_hash_map</em> and <em>parallel_flat_hash_map</em> interchangably. They refer to the same data structure. The name used in my Abseil fork is <em>absl::parallel_flat_hash_map</em>, as it may be desirable to also provide a <em>absl::parallel_node_hash_map</em>.</p>
 </blockquote>
-<h3 id="the-parallel_hash_map-memory-usage">The parallel_hash_map: memory usage</h3>
+<h3 id="the-parallel-hashmap-memory-usage">The Parallel Hashmap: memory usage</h3>
 <p>So, without further ado, let's see the same graphs graphs as above, with the addition of the <em>parallel_flat_hash_map</em>. Let us first look at memory usage (the second graph provides a "zoomed-in" view of the location where resizing occurs):</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem.PNG?raw=true" alt="stl_flat_par comparison" /></p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem_zoomed.PNG?raw=true" alt="stl_flat_par_zoomed comparison" /></p>
 <p>We see that the parallel_hash_map behaves as expected. The memory usage matches exactly the memory usage of its base <em>flat_hash_map</em>, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual submaps resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual submaps.</p>
-<h3 id="the-parallel_hash_map-speed">The parallel_hash_map: speed</h3>
+<h3 id="the-parallel-hashmap-speed">The Parallel Hashmap: speed</h3>
 <p>But what about the speed? After all, for each value inserted into the parallel hashmap, we have to do some extra work (steps 1 and 2 below):</p>
 <ol>
 <li>compute the hash for the value to insert</li>
