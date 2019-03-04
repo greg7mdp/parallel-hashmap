@@ -107,7 +107,7 @@
 </div>
 <h1 id="the-parallel-hashmap">The Parallel Hashmap</h1>
 <p>or Abseiling from the shoulders of giants - © Gregory Popovitch - March 3, 2019</p>
-<p>[tl;dr] built on top of Abseil's <em>flat_hash_map</em>, the parallel hashmap is more memory friendly, almost as fast as the underlying <em>flat_hash_map</em>, and can be used from multiple threads with high levels of concurrency.</p>
+<p>[tl;dr] We present a novel hashmap design, the Parallel Hashmap. Built on top of Abseil's <em>flat_hash_map</em>, the Parallel Hashmap has lower space requirements, is nearly as fast as the underlying <em>flat_hash_map</em>, and can be used from multiple threads with high levels of concurrency.</p>
 <h3 id="a-quick-look-at-the-current-state-of-the-art">A quick look at the current state of the art</h3>
 <p>If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The <em>absl::flat_hash_map</em> stores the values directly in a memory array, which avoids memory indirections (this is referred to as closed hashing).</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/closed_hashing.png?raw=true" alt="closed_hashing" /></p>

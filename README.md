@@ -1,7 +1,7 @@
 # The Parallel Hashmap
    or Abseiling from the shoulders of giants - &copy; Gregory Popovitch - March 3, 2019
 
-[tl;dr] built on top of Abseil's *flat_hash_map*, the parallel hashmap is more memory friendly, almost as fast as the underlying *flat_hash_map*, and can be used from multiple threads with high levels of concurrency.
+[tl;dr] We present a novel hashmap design, the Parallel Hashmap. Built on top of Abseil's *flat_hash_map*, the Parallel Hashmap has lower space requirements, is nearly as fast as the underlying *flat_hash_map*, and can be used from multiple threads with high levels of concurrency.
 
 ### A quick look at the current state of the art
 
