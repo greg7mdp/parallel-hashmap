@@ -204,9 +204,13 @@ template <class K, class V,
 class parallel_flat_hash_map;
 ```
 
-Let's see what result we get for the insertion of random values from multiple threads, however this time we modify the code so that each thread can insert variables in any submap (no pre-selection). 
+Let's see what result we get for the insertion of random values from multiple threads, however this time we create a parallel_hash_map with internal locking, and modify the code so that each thread can insert values in any submap (no pre-selection). 
 
 ![no_preselection](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true)
+
+
+
+![flat_par_mutex_4](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true)
 
 ### In Conclusion
 

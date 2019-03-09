@@ -227,7 +227,7 @@
 <p>Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the <em>flat_hash_map</em>, while using a lower memory ceiling.</p>
 <h3 id="using-the-intrinsic-parallelism-of-the-parallel_hash_map-with-internal-mutexes">Using the intrinsic parallelism of the parallel_hash_map with internal mutexes</h3>
 <p>It may not be practical to add logic into your program to ensure you use different internal submaps from each thread. Still, locking the whole parallel_hash_map for each access would forego taking advantage of its intrinsic parallelism.</p>
-<p>For that reason, the parallel_hash_map provides optional internal locking using the <code>absl::Mutex</code> (the default template parameter is <code>absl::NullMutex</code>, which does no locking and doesn't have any extra size cost). When selecting <code>absl::Mutex</code>, one mutex is created for each internal submap at a cost of 8 bytes per submap.</p>
+<p>For that reason, the parallel_hash_map can provide internal locking using the <code>absl::Mutex</code> (the default template parameter is <code>absl::NullMutex</code>, which does no locking and has no size cost). When selecting <code>absl::Mutex</code>, one mutex is created for each internal submap at a cost of 8 bytes per submap.</p>
 <table>
 <thead>
 <tr class="header">
@@ -268,6 +268,9 @@
           class Mutex     = absl::NullMutex&gt;   // use absl::Mutex to enable internal locks
 class parallel_flat_hash_map;
 </code></pre>
+<p>Let's see what result we get for the insertion of random values from multiple threads, however this time we create a parallel_hash_map with internal locking, and modify the code so that each thread can insert values in any submap (no pre-selection).</p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true" alt="no_preselection" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true" alt="flat_par_mutex_4" /></p>
 <h3 id="in-conclusion">In Conclusion</h3>
 <p>We have seen that the novel parallel hashmap approach, used within a single thread, provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.</p>
 <h3 id="thanks">Thanks</h3>
