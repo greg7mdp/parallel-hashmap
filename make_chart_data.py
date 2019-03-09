@@ -44,14 +44,20 @@ proper_names = {
     'std::unordered_map':             'std::unordered_map (1 thread)',
     'absl::flat_hash_map':            'absl::flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
-    'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)'
+    'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)',
+    'absl::parallel_flat_hash_map_4':  'absl::parallel_flat_hash_map (N=4, 8 threads)',
+    'absl::parallel_flat_hash_map_5':  'absl::parallel_flat_hash_map (N=5, 8 threads)',
+    'absl::parallel_flat_hash_map_6':  'absl::parallel_flat_hash_map (N=6, 8 threads)'
 }
 
 proper_color = {
     'std::unordered_map':             0,
     'absl::flat_hash_map':            1,
     'absl::parallel_flat_hash_map':   2,
-    'absl::parallel_flat_hash_map_mt':   2
+    'absl::parallel_flat_hash_map_mt':   2,
+    'absl::parallel_flat_hash_map_4':   2,
+    'absl::parallel_flat_hash_map_5':   3,
+    'absl::parallel_flat_hash_map_6':   4
 }
 
 bench_titles = {
@@ -70,14 +76,19 @@ program_slugs = [
     'std::unordered_map',
     'absl::flat_hash_map',
     'absl::parallel_flat_hash_map',
-    'absl::parallel_flat_hash_map_mt'
+    'absl::parallel_flat_hash_map_mt',
+    'absl::parallel_flat_hash_map_4',
+    'absl::parallel_flat_hash_map_5',
+    'absl::parallel_flat_hash_map_6'
 ]
 
 chart_data = {}
 
 for i, (benchtype, programs) in enumerate(by_benchtype.items()):
     chart_data[benchtype] = []
-    for j, program in enumerate(programs):
+    k = programs.keys()
+    k.sort()
+    for program in k:
         data = programs.get(program, [])
         chart_data[benchtype].append({
             'label': proper_names[program],

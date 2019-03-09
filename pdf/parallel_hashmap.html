@@ -270,6 +270,8 @@ class parallel_flat_hash_map;
 </code></pre>
 <p>Let's see what result we get for the insertion of random values from multiple threads, however this time we create a parallel_hash_map with internal locking, and modify the code so that each thread can insert values in any submap (no pre-selection).</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true" alt="no_preselection" /></p>
+<p>If we were to do a intensive insertion test into a hash map from multiple threads, where we lock the whole hash table during each insertion, we would be likely to get even worse results than for a single threaded insert, because of heavy lock contention.</p>
+<p>In this case, our expectation is that the finer grained locking of the parallel_hash_map (on internal submaps) will provide a speed benefit when compared to the single threaded insertion, and this is indeed what the benchmark shows:</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true" alt="flat_par_mutex_4" /></p>
 <h3 id="in-conclusion">In Conclusion</h3>
 <p>We have seen that the novel parallel hashmap approach, used within a single thread, provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.</p>

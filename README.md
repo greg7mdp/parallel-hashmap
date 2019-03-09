@@ -208,9 +208,15 @@ Let's see what result we get for the insertion of random values from multiple th
 
 ![no_preselection](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true)
 
+If we were to do a intensive insertion test into a hash map from multiple threads, where we lock the whole hash table for each insertion, we would be likely to get even worse results than for a single threaded insert, because of heavy lock contention. 
 
+In this case, our expectation is that the finer grained locking of the parallel_hash_map (separate locks for each internal submap) will provide a speed benefit when compared to the single threaded insertion, and this is indeed what the benchmarks show:
 
 ![flat_par_mutex_4](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true)
+
+If we increase the number of submaps, we should see more parallelism (less lock contention across threads, as the odds of two seperate threads inserting in the same subhash diminishes)m and this is indeed what we see:
+
+
 
 ### In Conclusion
 
