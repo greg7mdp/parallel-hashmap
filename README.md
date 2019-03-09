@@ -177,14 +177,45 @@ When running in multi-threaded mode (in this case eight threads), potentially as
 
 Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the *flat_hash_map*, while using a lower memory ceiling.
 
+
+### Using the intrinsic parallelism of the parallel_hash_map with internal mutexes
+
+It may not be practical to add logic into your program to ensure you use different internal submaps from each thread. Still, locking the whole parallel_hash_map for each access would forego taking advantage of its intrinsic parallelism.
+
+For that reason, the parallel_hash_map can provide internal locking using the `absl::Mutex` (the default template parameter is `absl::NullMutex`, which does no locking and has no size cost). When selecting `absl::Mutex`, one mutex is created for each internal submap at a cost of 8 bytes per submap.
+
+
+| map          |  Number of submaps |sizeof(map) |
+| :---         |        :---:       |       ---: |
+| std::unordered_map (vs2017) | - | 64 |
+| absl::flat_hash_map | - |48 |
+| absl::parallel_flat_hash_map, N=4, absl::NullMutex | 16 |768 |
+| absl::parallel_flat_hash_map, N=4, absl::Mutex | 16 | 896 |
+
+It is about time we provide the complete parallel_flat_hash_map class declaration (the declaration for parallel_flat_hash_set is similar):
+
+```
+template <class K, class V,
+          class Hash      = absl::container_internal::hash_default_hash<K>,
+          class Eq        = absl::container_internal::hash_default_eq<K>,
+          class Allocator = std::allocator<std::pair<const K, V>>,
+          size_t N        = 4,                 // 2**N submaps
+          class Mutex     = absl::NullMutex>   // use absl::Mutex to enable internal locks
+class parallel_flat_hash_map;
+```
+
+Let's see what result we get for the insertion of random values from multiple threads, however this time we modify the code so that each thread can insert variables in any submap (no pre-selection). 
+
+![no_preselection](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true)
+
 ### In Conclusion
 
-We have seen that the novel parallel hashmap approach, used within a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.
+We have seen that the novel parallel hashmap approach, used within a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.
 
 
 ### Thanks
 
-I would like to thank Google's *Matt Kulukundis* for his excellent presentation of the *flat_hash_map* design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are *Alkis Evlogimenos* and *Roman Perepelitsa* - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son *Andre* for reviewing this paper, and for his patience when I was rambling to him about the parallel_hash_map and all its benefits. 
+I would like to thank Google's *Matt Kulukundis* for his eye-opening presentation of the *flat_hash_map* design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the *parallel_hash_map*. Also many thanks to the Abseil container developers - I believe the main contributors are *Alkis Evlogimenos* and *Roman Perepelitsa* - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son *Andre* for reviewing this paper, and for his patience when I was rambling about the parallel_hash_map and its benefits. 
 
 
 ### Links

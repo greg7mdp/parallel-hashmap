@@ -27,10 +27,12 @@ lines = [ line.strip() for line in sys.stdin if line.strip() ]
 
 by_benchtype = {}
 benches = {}
+programs = {}
 
 for line in lines:
     benchtype, type, nkeys, program, value = line.split(',')
     nkeys = int(nkeys)
+    programs[program] = 1
     
     if (type == 'time'):
         by_benchtype.setdefault("%s-runtime" % benchtype, {}).setdefault(program, []).append([nkeys, float(value)])
@@ -41,13 +43,15 @@ for line in lines:
 proper_names = {
     'std::unordered_map':             'std::unordered_map (1 thread)',
     'absl::flat_hash_map':            'absl::flat_hash_map (1 thread)',
-    'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (8 threads)'
+    'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
+    'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)'
 }
 
 proper_color = {
     'std::unordered_map':             0,
     'absl::flat_hash_map':            1,
-    'absl::parallel_flat_hash_map':   2
+    'absl::parallel_flat_hash_map':   2,
+    'absl::parallel_flat_hash_map_mt':   2
 }
 
 bench_titles = {
@@ -65,14 +69,15 @@ bench_titles = {
 program_slugs = [
     'std::unordered_map',
     'absl::flat_hash_map',
-    'absl::parallel_flat_hash_map'
+    'absl::parallel_flat_hash_map',
+    'absl::parallel_flat_hash_map_mt'
 ]
 
 chart_data = {}
 
 for i, (benchtype, programs) in enumerate(by_benchtype.items()):
     chart_data[benchtype] = []
-    for j, program in enumerate(program_slugs):
+    for j, program in enumerate(programs):
         data = programs.get(program, [])
         chart_data[benchtype].append({
             'label': proper_names[program],

@@ -225,10 +225,53 @@
 <p>We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we saw when populating the parallel_hash_map using a single thread. The obvious reason is that, when using a single thread, only one of the submaps would resize at a time, ensuring that the peak would only be 1/16th of the one for the <em>flat_hash_map</em> (provided of course that the hash function distributes the values somewhat evenly between the submaps).</p>
 <p>When running in multi-threaded mode (in this case eight threads), potentially as many as eight submaps can resize simultaneaously, so for a parallel_hash_map with sixteen submaps the memory peak size can be half as large as the one for the <em>flat_hash_map</em>.</p>
 <p>Still, this is a pretty good result, we are now inserting values into our parallel_hash_map three times faster than we were able to do using the <em>flat_hash_map</em>, while using a lower memory ceiling.</p>
+<h3 id="using-the-intrinsic-parallelism-of-the-parallel_hash_map-with-internal-mutexes">Using the intrinsic parallelism of the parallel_hash_map with internal mutexes</h3>
+<p>It may not be practical to add logic into your program to ensure you use different internal submaps from each thread. Still, locking the whole parallel_hash_map for each access would forego taking advantage of its intrinsic parallelism.</p>
+<p>For that reason, the parallel_hash_map provides optional internal locking using the <code>absl::Mutex</code> (the default template parameter is <code>absl::NullMutex</code>, which does no locking and doesn't have any extra size cost). When selecting <code>absl::Mutex</code>, one mutex is created for each internal submap at a cost of 8 bytes per submap.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">map</th>
+<th style="text-align: center;">Number of submaps</th>
+<th style="text-align: right;">sizeof(map)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">std::unordered_map (vs2017)</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: right;">64</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">absl::flat_hash_map</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: right;">48</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">absl::parallel_flat_hash_map, N=4, absl::NullMutex</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: right;">768</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">absl::parallel_flat_hash_map, N=4, absl::Mutex</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: right;">896</td>
+</tr>
+</tbody>
+</table>
+<p>It is about time we provide the complete parallel_flat_hash_map class declaration (the declaration for parallel_flat_hash_set is similar):</p>
+<pre><code>template &lt;class K, class V,
+          class Hash      = absl::container_internal::hash_default_hash&lt;K&gt;,
+          class Eq        = absl::container_internal::hash_default_eq&lt;K&gt;,
+          class Allocator = std::allocator&lt;std::pair&lt;const K, V&gt;&gt;,
+          size_t N        = 4,                 // 2**N submaps
+          class Mutex     = absl::NullMutex&gt;   // use absl::Mutex to enable internal locks
+class parallel_flat_hash_map;
+</code></pre>
 <h3 id="in-conclusion">In Conclusion</h3>
-<p>We have seen that the novel parallel hashmap approach, used within a single thread, provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.</p>
+<p>We have seen that the novel parallel hashmap approach, used within a single thread, provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.</p>
 <h3 id="thanks">Thanks</h3>
-<p>I would like to thank Google's <em>Matt Kulukundis</em> for his excellent presentation of the <em>flat_hash_map</em> design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the parallel_map_map. Also many thanks to the Abseil container developers - I believe the main contributors are <em>Alkis Evlogimenos</em> and <em>Roman Perepelitsa</em> - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son <em>Andre</em> for reviewing this paper, and for his patience when I was rambling to him about the parallel_hash_map and all its benefits.</p>
+<p>I would like to thank Google's <em>Matt Kulukundis</em> for his eye-opening presentation of the <em>flat_hash_map</em> design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the <em>parallel_hash_map</em>. Also many thanks to the Abseil container developers - I believe the main contributors are <em>Alkis Evlogimenos</em> and <em>Roman Perepelitsa</em> - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son <em>Andre</em> for reviewing this paper, and for his patience when I was rambling about the parallel_hash_map and its benefits.</p>
 <h3 id="links">Links</h3>
 <p><a href="https://github.com/greg7mdp/parallel-hashmap">Github repository for the benchmark code used in this paper</a></p>
 <p><a href="https://abseil.io/blog/20180927-swisstables">Swiss Tables doc</a></p>

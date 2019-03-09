@@ -7,7 +7,7 @@ PROGS       = stl_unordered_map abseil_flat abseil_parallel_flat
 BUILD_PROGS = $(addprefix build/,$(PROGS))
 SIZE        = 100000000
 
-all: builddir $(BUILD_PROGS) test
+all: test
 
 builddir: 
 	@if [ ! -d build ]; then mkdir build; fi
@@ -19,10 +19,11 @@ build/abseil_flat: bench.cc Makefile
 	$(CXX) -DABSEIL_FLAT -I ../abseil-cpp bench.cc /MD -o $@ /link /LIBPATH:../abseil-cpp/build2/lib ${ABSEIL_LIBS}
 
 build/abseil_parallel_flat: bench.cc Makefile
-	$(CXX) -DABSEIL_PARALLEL_FLAT -I ../abseil-cpp bench.cc /MD -o $@ /link /LIBPATH:../abseil-cpp/build2/lib ${ABSEIL_LIBS}
+	$(CXX) -DABSEIL_PARALLEL_FLAT -I ../abseil-cpp bench.cc /MD -o $@ /link /LIBPATH:../abseil-cpp/build/lib ${ABSEIL_LIBS}
 
+progs:	$(BUILD_PROGS)
 
-test:
+test: builddir progs
 	-rm -f output
 	./build/stl_unordered_map $(SIZE) random > output
 	./build/abseil_flat $(SIZE) random >> output
