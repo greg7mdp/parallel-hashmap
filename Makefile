@@ -30,6 +30,16 @@ test: builddir progs
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
+test_cust: 
+	-rm -f output
+	./build/abseil_flat $(SIZE) random >> output
+	./build/abseil_parallel_flat_4 $(SIZE) random >> output
+	./build/abseil_parallel_flat_5 $(SIZE) random >> output
+	./build/abseil_parallel_flat_6 $(SIZE) random >> output
+	python make_chart_data.py < output
+
+
+
 chart:
 	python make_chart_data.py < output
 

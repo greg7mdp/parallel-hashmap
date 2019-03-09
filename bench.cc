@@ -1,23 +1,46 @@
 #include <inttypes.h>
 
-
 #ifdef STL_UNORDERED
     #include <unordered_map>
     #define MAPNAME std::unordered_map
+    #define EXTRAARGS
 #elif defined(ABSEIL_FLAT)
     #include "absl/container/flat_hash_map.h"
     #define MAPNAME absl::flat_hash_map
+    #define EXTRAARGS
 #elif defined(ABSEIL_PARALLEL_FLAT)
     #include "absl/container/parallel_flat_hash_map.h"
     #define MAPNAME absl::parallel_flat_hash_map
-    #define MT_SUPPORT 1
+    #define MT_SUPPORT 2
+    #if MT_SUPPORT == 1
+        // create the parallel_flat_hash_map without internal mutexes, for when 
+        // we programatically ensure that each thread uses different internal submaps
+        // --------------------------------------------------------------------------
+        #define EXTRAARGS , absl::container_internal::hash_default_hash<K>, \
+                            absl::container_internal::hash_default_eq<K>, \
+                            std::allocator<std::pair<const K, V>>, 4, absl::NullMutex
+    #elif MT_SUPPORT == 2
+        // create the parallel_flat_hash_map with internal mutexes, for when 
+        // we read/write the same parallel_flat_hash_map from multiple threads, 
+        // without any special precautions.
+        // --------------------------------------------------------------------------
+        #define EXTRAARGS , absl::container_internal::hash_default_hash<K>, \
+                            absl::container_internal::hash_default_eq<K>, \
+                            std::allocator<std::pair<const K, V>>, 4, absl::Mutex
+    #endif
+
 #endif
 
 #define xstr(s) str(s)
 #define str(s) #s
 
-using hash_t     = MAPNAME<int64_t, int64_t>;
-using str_hash_t = MAPNAME<const char *, int64_t>;
+template <class K, class V>
+using HashT     = MAPNAME<K, V EXTRAARGS>;
+
+using hash_t     = HashT<int64_t, int64_t>;
+using str_hash_t = HashT<const char *, int64_t>;
+
+const char *program_slug = xstr(MAPNAME); // "_4";
 
 #include <cassert>
 #include <ctime>
@@ -127,15 +150,15 @@ Timer _fill_random(vector<T> &v, HT &hash)
 }
 
 // --------------------------------------------------------------------------
-void out(const char* test, int64_t cnt, const char* map, const Timer &t)
+void out(const char* test, int64_t cnt, const Timer &t)
 {
-    printf("%s,time,%lld,%s,%f\n", test, cnt, map, (float)((double)t.elapsed().count() / 1000));
+    printf("%s,time,%lld,%s,%f\n", test, cnt, program_slug, (float)((double)t.elapsed().count() / 1000));
 }
 
 // --------------------------------------------------------------------------
-void outmem(const char* test, int64_t cnt, const char* map, uint64_t mem)
+void outmem(const char* test, int64_t cnt, uint64_t mem)
 {
-    printf("%s,memory,%lld,%s,%lld\n", test, cnt, map, mem);
+    printf("%s,memory,%lld,%s,%lld\n", test, cnt, program_slug, mem);
 }
 
 static bool all_done = false;
@@ -170,9 +193,13 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
             unsigned int key = rsu.next();                  // get next key to insert
+#if MT_SUPPORT == 1
             size_t hashval = hasher(key);                   // compute its hash
             size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
             if (idx / modulo == thread_idx)                 // if the submap is suitable for this thread
+#elif MT_SUPPORT == 2
+            if (i % num_threads == thread_idx)
+#endif
             {
                 hash.insert(typename HT::value_type(key, 0)); // insert the value
                 ++(num_keys[thread_idx]);                     // increment count of inserted values
@@ -223,15 +250,13 @@ Timer _fill_random2(int64_t cnt, HT &hash)
 
     for (loop_idx=0; loop_idx<num_loops; ++loop_idx)
     {
-        if (!strcmp(xstr(MAPNAME),"absl::parallel_flat_hash_map"))
-        {
-            // multithreaded insert
-            _fill_random_inner_mt(inner_cnt, hash, rsu);
-        }
-        else
-            _fill_random_inner(inner_cnt, hash, rsu);
-        
-        out(test, total_num_keys(), xstr(MAPNAME), timer);
+#if MT_SUPPORT
+        // multithreaded insert
+        _fill_random_inner_mt(inner_cnt, hash, rsu);
+#else
+        _fill_random_inner(inner_cnt, hash, rsu);
+#endif
+        out(test, total_num_keys(), timer);
     }
     fprintf(stderr, "inserted %.2lfM\n", (double)hash.size() / 1000000);
     return timer;
@@ -275,7 +300,7 @@ void memlog()
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     uint64_t nbytes_old_out = spp::GetProcessMemoryUsed();
     uint64_t nbytes_old     = spp::GetProcessMemoryUsed(); // last non outputted mem measurement
-    outmem(test, 0, xstr(MAPNAME), nbytes_old);
+    outmem(test, 0, nbytes_old);
     int64_t last_loop = 0;
 
     while (!all_done)
@@ -286,14 +311,14 @@ void memlog()
             (double)_abs(nbytes - nbytes_old) / nbytes_old > 0.01)
         {
             if ((double)(nbytes - nbytes_old) / nbytes_old > 0.03)
-                outmem(test, total_num_keys() - 1, xstr(MAPNAME), nbytes_old);
-            outmem(test, total_num_keys(), xstr(MAPNAME), nbytes);
+                outmem(test, total_num_keys() - 1, nbytes_old);
+            outmem(test, total_num_keys(), nbytes);
             nbytes_old_out = nbytes;
             last_loop = loop_idx;
         } 
         else if (loop_idx > last_loop)
         {
-            outmem(test, total_num_keys(), xstr(MAPNAME), nbytes);
+            outmem(test, total_num_keys(), nbytes);
             nbytes_old_out = nbytes;
             last_loop = loop_idx;
         }
@@ -318,6 +343,9 @@ int main(int argc, char ** argv)
 
     srand(1); // for a fair/deterministic comparison 
     Timer timer(true);
+    
+    if (!strcmp(program_slug,"absl::parallel_flat_hash_map"))
+        program_slug = xstr(MAPNAME) "_mt";
 
     std::thread t1(memlog);
 
@@ -333,13 +361,14 @@ int main(int argc, char ** argv)
         {
             vector<int64_t> v(num_keys);
             timer = _fill_random(v, hash);
-            out("random", num_keys, xstr(MAPNAME), timer);
+            out("random", num_keys, timer);
         }
 #endif
         else if(!strcmp(argv[2], "random"))
         {
+            fprintf(stderr, "size = %d\n", sizeof(hash));
             timer = _fill_random2(num_keys, hash);
-            //out("random", num_keys, xstr(MAPNAME), timer);
+            //out("random", num_keys, timer);
             //fprintf(stderr, "inserted %llu\n", hash.size());
         }
         else if(!strcmp(argv[2], "lookup"))

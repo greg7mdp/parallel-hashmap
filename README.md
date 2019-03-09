@@ -1,5 +1,5 @@
 # The Parallel Hashmap
-   or Abseiling from the shoulders of giants - &copy; Gregory Popovitch - March 3, 2019
+   or Abseiling from the shoulders of giants - &copy; Gregory Popovitch - March 10, 2019
 
 [tl;dr] We present a novel hashmap design, the Parallel Hashmap. Built on top of Abseil's *flat_hash_map*, the Parallel Hashmap has lower space requirements, is nearly as fast as the underlying *flat_hash_map*, and can be used from multiple threads with high levels of concurrency.
 
@@ -80,7 +80,7 @@ The first step (compute the hash) is the most problematic one, as it can potenti
 
 ![index computation cost](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/idx_computation_cost.PNG?raw=true)
 
-As for the hash value computation, fortunately we can eliminate this cost by providing the computed hash to the submap functions, so that it is computed only once. This is exactly what I have done in my implementation pof the parallel_hash_map within the Abseil library, adding a few extra APIs to the Abseil internal raw_hash_map.h header,= which allow the parallel_hash_map to pass the precomputed hash value to the underlying hash tables.
+As for the hash value computation, fortunately we can eliminate this cost by providing the computed hash to the submap functions, so that it is computed only once. This is exactly what I have done in my implementation of the parallel_hash_map within the Abseil library, adding a few extra APIs to the Abseil internal raw_hash_map.h header, which allow the parallel_hash_map to pass the precomputed hash value to the underlying submaps.
 
 So we have all but eliminated the cost of the first step, and seen that the cost of the second step is very minimal. At this point we expect that the parallel_hash_map performance will be close to the one of its underlying *flat_hash_map*, and this is confirmed by the chart below:
 
@@ -214,8 +214,16 @@ In this case, our expectation is that the finer grained locking of the parallel_
 
 ![flat_par_mutex_4](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true)
 
-If we increase the number of submaps, we should see more parallelism (less lock contention across threads, as the odds of two seperate threads inserting in the same subhash diminishes)m and this is indeed what we see:
+If we increase the number of submaps, we should see more parallelism (less lock contention across threads, as the odds of two separate threads inserting in the same subhash diminishes)m and this is indeed what we see:
 
+![lock_various_sizes](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/lock_various_sizes.PNG?raw=true)
+
+| map          |  Number of submaps |sizeof(map) | time 100M insertions |
+| :---         |        :---:       |       ---: |                ---:  |
+| absl::flat_hash_map | - |48 | 14.77s |
+| absl::parallel_flat_hash_map, N=4, absl::Mutex | 16 | 896 | 8.36s |
+| absl::parallel_flat_hash_map, N=5, absl::Mutex | 32 | 1792 | 7.14s |
+| absl::parallel_flat_hash_map, N=6, absl::Mutex | 64 | 3584 | 6.61s |
 
 
 ### In Conclusion
@@ -233,6 +241,8 @@ I would like to thank Google's *Matt Kulukundis* for his eye-opening presentatio
 [Github repository for the benchmark code used in this paper](https://github.com/greg7mdp/parallel-hashmap)
 
 [Swiss Tables doc](https://abseil.io/blog/20180927-swisstables)
+
+[My fork of Google Abseil repository, with the parallel_flat_hash_map implementation](https://github.com/greg7mdp/abseil-cpp)
 
 [Google Abseil repository](https://github.com/abseil/abseil-cpp)
 

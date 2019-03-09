@@ -270,9 +270,47 @@ class parallel_flat_hash_map;
 </code></pre>
 <p>Let's see what result we get for the insertion of random values from multiple threads, however this time we create a parallel_hash_map with internal locking, and modify the code so that each thread can insert values in any submap (no pre-selection).</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true" alt="no_preselection" /></p>
-<p>If we were to do a intensive insertion test into a hash map from multiple threads, where we lock the whole hash table during each insertion, we would be likely to get even worse results than for a single threaded insert, because of heavy lock contention.</p>
-<p>In this case, our expectation is that the finer grained locking of the parallel_hash_map (on internal submaps) will provide a speed benefit when compared to the single threaded insertion, and this is indeed what the benchmark shows:</p>
+<p>If we were to do a intensive insertion test into a hash map from multiple threads, where we lock the whole hash table for each insertion, we would be likely to get even worse results than for a single threaded insert, because of heavy lock contention.</p>
+<p>In this case, our expectation is that the finer grained locking of the parallel_hash_map (separate locks for each internal submap) will provide a speed benefit when compared to the single threaded insertion, and this is indeed what the benchmarks show:</p>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true" alt="flat_par_mutex_4" /></p>
+<p>If we increase the number of submaps, we should see more parallelism (less lock contention across threads, as the odds of two separate threads inserting in the same subhash diminishes)m and this is indeed what we see:</p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/lock_various_sizes.PNG?raw=true" alt="lock_various_sizes" /></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">map</th>
+<th style="text-align: center;">Number of submaps</th>
+<th style="text-align: right;">sizeof(map)</th>
+<th style="text-align: right;">time 100M insertions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">absl::flat_hash_map</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">14.77s</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">absl::parallel_flat_hash_map, N=4, absl::Mutex</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: right;">896</td>
+<td style="text-align: right;">8.36s</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">absl::parallel_flat_hash_map, N=5, absl::Mutex</td>
+<td style="text-align: center;">32</td>
+<td style="text-align: right;">1792</td>
+<td style="text-align: right;">7.14s</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">absl::parallel_flat_hash_map, N=6, absl::Mutex</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: right;">3584</td>
+<td style="text-align: right;">6.61s</td>
+</tr>
+</tbody>
+</table>
 <h3 id="in-conclusion">In Conclusion</h3>
 <p>We have seen that the novel parallel hashmap approach, used within a single thread, provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by drastically reducing (or even eliminating) lock contention when accessing the parallel hashmap.</p>
 <h3 id="thanks">Thanks</h3>
