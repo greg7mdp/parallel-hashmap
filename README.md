@@ -241,6 +241,11 @@ There is still some overhead from the mutex lock/unlock, and the occasional lock
 We have seen that the novel parallel hashmap approach, used within a single thread,  provides significant space advantages, with a very minimal time penalty. When used in a multi-thread context, the parallel hashmap still provides a significant space benefit, in addition to a consequential time benefit by reducing (or even eliminating) lock contention when accessing the parallel hashmap.
 
 
+### Future work
+
+I believe it would be beneficial to provide additional APIs for the *parallel_flat_hash_map* and *parallel_flat_hash_set* taking a precomputed hash value. This would enable the lock-free usage of the *parallel_flat_hash_map*, described above for multi-threaded environments, without requiring a double hash computation.
+
+
 ### Thanks
 
 I would like to thank Google's *Matt Kulukundis* for his eye-opening presentation of the *flat_hash_map* design at CPPCON 2017 - my frustration with not being able to use it helped trigger my insight into the *parallel_hash_map*. Also many thanks to the Abseil container developers - I believe the main contributors are *Alkis Evlogimenos* and *Roman Perepelitsa* - who created an excellent codebase into which the graft of this new hashmap took easily, and finally to Google for open-sourcing Abseil. Thanks also to my son *Andre* for reviewing this paper, and for his patience when I was rambling about the *parallel_hash_map* and its benefits. 
