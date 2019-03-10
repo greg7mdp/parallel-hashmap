@@ -14,7 +14,7 @@ body {
 
 h1, h2, h3, h4, h5 {
   color: #332;
-  font-family: "Signika";
+  font-family: HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: 400;
   font-size: 1.4em;
   line-height: 1.1;
