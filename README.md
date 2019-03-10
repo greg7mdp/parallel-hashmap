@@ -11,7 +11,7 @@ If you haven't been living under a rock, you know that Google open sourced late 
 
 Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.
 
-The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hashmap of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hast_map:
+The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hashmap of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hash_map:
 
 ![stl_flat comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_both.PNG?raw=true)
                        
@@ -28,6 +28,8 @@ In the case of Abseil's *flat_hash_map*, the values are stored directly in a mem
 When the *flat_hash_map* reaches 87.5% occupancy, a new array of twice the size is allocated, the values are moved (rehashed) from the smaller to the larger array, and then the smaller array, now empty, is freed. So we see that during the resize, the occupancy is only one third of 87.5%, or 29.1%, and when the smaller array is released, occupancy is half of 87.5% or 43.75%.
 
 The default STL implementation is also subject to this higher peak memory usage, since it typically is implemented with an array of buckets, each bucket having a pointer to a linked list of nodes containing the values. In order to maintain O(1) lookups, the array of buckets also needs to be resized as the table size grows, requiring a 3x temporary memory requirement for moving the old bucket array (1x) to the newly allocated, larger (2x) array. In between the bucket array resizes, the default STL implementation memory usage grows at a constant rate as new values are added to the linked lists.
+
+> Instead of having a separate linked list for each bucket, *std::unordered_map* implementations often use a single linked list (making iteration faster), with buckets pointing to locations within the single linked list. *absl::node_hash_map*, on the other hand, has each bucket pointing to a single value, and collisions are handled with open addressing like for the *absl::flat_hash_map*.
 
 This peak memory usage can be the limiting factor for large tables. Suppose you are on a machine with 32 GB of ram, and the *flat_hash_map* needs to resize when you inserted 10 GB of values in it. 10 GB of values means the array size is 11.42 GB (resizing at 87.5% occupancy), and we need to allocate a new array of double size (22.85 GB), which obviously will not be possible on our 32 GB machine.
 
@@ -171,7 +173,7 @@ And the graphical visualization of the results:
 
 ![mt_stl_flat_par comparison](https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true)
 
-We notice in this last graph that the memory usage peaks, while still smaller than those of the flat_hast_map, are larger that those we saw when populating the *parallel_hash_map* using a single thread. The obvious reason is that, when using a single thread, only one of the submaps would resize at a time, ensuring that the peak would only be 1/16th of the one for the *flat_hash_map* (provided of course that the hash function distributes the values somewhat evenly between the submaps).
+We notice in this last graph that the memory usage peaks, while still smaller than those of the *flat_hash_map*, are larger that those we saw when populating the *parallel_hash_map* using a single thread. The obvious reason is that, when using a single thread, only one of the submaps would resize at a time, ensuring that the peak would only be 1/16th of the one for the *flat_hash_map* (provided of course that the hash function distributes the values somewhat evenly between the submaps).
 
 When running in multi-threaded mode (in this case eight threads), potentially as many as eight submaps can resize simultaneaously, so for a *parallel_hash_map* with sixteen submaps the memory peak size can be half as large as the one for the *flat_hash_map*.
 
@@ -243,7 +245,9 @@ We have seen that the novel parallel hashmap approach, used within a single thre
 
 ### Future work
 
-I believe it would be beneficial to provide additional APIs for the *parallel_flat_hash_map* and *parallel_flat_hash_set* taking a precomputed hash value. This would enable the lock-free usage of the *parallel_flat_hash_map*, described above for multi-threaded environments, without requiring a double hash computation.
+1. It would be beneficial to provide additional APIs for the *parallel_flat_hash_map* and *parallel_flat_hash_set* taking a precomputed hash value. This would enable the lock-free usage of the *parallel_flat_hash_map*, described above for multi-threaded environments, without requiring a double hash computation.
+
+2. We may consider providing *parallel_node_hash_map* and *parallel_node_hash_set* in Abseil, for the cases when pointer stability is required for keys and/or values. This would be a simple addition.
 
 
 ### Thanks

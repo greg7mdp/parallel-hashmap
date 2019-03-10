@@ -1,4 +1,5 @@
 CXX=CL -EHsc -DNDEBUG -Fo$@ -O2
+#CXX=CL -EHsc -g -debug -Zi  -Fo$@
 #CXX=g++ -ggdb -O2 -lm -std=c++11 -DNDEBUG 
 
 ABSEIL_LIBS=absl_bad_optional_access.lib absl_bad_variant_access.lib absl_base.lib absl_demangle_internal.lib absl_hash.lib absl_int128.lib absl_internal_bad_any_cast_impl.lib absl_internal_city.lib absl_internal_civil_time.lib absl_internal_debugging_internal.lib absl_internal_graphcycles_internal.lib absl_internal_hashtablez_sampler.lib absl_internal_malloc_internal.lib absl_internal_spinlock_wait.lib absl_internal_strings_internal.lib absl_internal_throw_delegate.lib absl_internal_time_zone.lib absl_optional.lib absl_raw_hash_set.lib absl_stacktrace.lib absl_strings.lib absl_symbolize.lib absl_synchronization.lib absl_time.lib
