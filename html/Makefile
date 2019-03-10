@@ -30,7 +30,7 @@ includes.exe: includes.hs
 	stack exec ghc -- -o $@ -no-keep-hi-files -no-keep-o-files includes.hs
 
 html: ../README.md $(FILTER) ${TEMPLATE_HTML} ${STYLE}
-	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${HTML_OPT} $(FLAGS) ${PGTITLE} -o parallel_hashmap.html ../README.md
+	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${HTML_OPT} $(FLAGS) ${PGTITLE} -o ../index.html ../README.md
 
 %.pdf: %.md $(FILTER) ${TEMPLATE_TEX}
 	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${TEX_OPT} $(FLAGS) -o $@ $<
