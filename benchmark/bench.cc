@@ -4,6 +4,11 @@
     #include <unordered_map>
     #define MAPNAME std::unordered_map
     #define EXTRAARGS
+#elif defined(SPARSEPP)
+    #define SPP_USE_SPP_ALLOC 1
+    #include <sparsepp/spp.h>
+    #define MAPNAME spp::sparse_hash_map
+    #define EXTRAARGS
 #elif defined(ABSEIL_FLAT)
     #include "absl/container/flat_hash_map.h"
     #define MAPNAME absl::flat_hash_map
@@ -12,7 +17,7 @@
     #include "absl/container/parallel_flat_hash_map.h"
     #define MAPNAME absl::parallel_flat_hash_map
 
-    #define MT_SUPPORT 2
+    //#define MT_SUPPORT 2
     #if MT_SUPPORT == 1
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
@@ -28,6 +33,8 @@
         #define EXTRAARGS , absl::container_internal::hash_default_hash<K>, \
                             absl::container_internal::hash_default_eq<K>, \
                             std::allocator<std::pair<const K, V>>, 4, absl::Mutex
+    #else
+        #define EXTRAARGS
     #endif
 
 #endif
@@ -251,7 +258,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
 
     for (loop_idx=0; loop_idx<num_loops; ++loop_idx)
     {
-#if MT_SUPPORT
+#ifdef MT_SUPPORT
         // multithreaded insert
         _fill_random_inner_mt(inner_cnt, hash, rsu);
 #else

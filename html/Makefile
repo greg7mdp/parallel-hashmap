@@ -29,8 +29,8 @@ all: html
 includes.exe: includes.hs
 	stack exec ghc -- -o $@ -no-keep-hi-files -no-keep-o-files includes.hs
 
-html: ../README.md $(FILTER) ${TEMPLATE_HTML} ${STYLE}
-	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${HTML_OPT} $(FLAGS) ${PGTITLE} -o ../index.html ../README.md
+html: parallel_hashmap.md $(FILTER) ${TEMPLATE_HTML} ${STYLE}
+	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${HTML_OPT} $(FLAGS) ${PGTITLE} -o ../index.html parallel_hashmap.md
 
 %.pdf: %.md $(FILTER) ${TEMPLATE_TEX}
 	$(PANDOC) ${FILTER_OPT} ${IFORMAT} ${TEX_OPT} $(FLAGS) -o $@ $<

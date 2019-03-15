@@ -110,10 +110,10 @@
 <p>[tl;dr] We present a novel hashmap design, the Parallel Hashmap. Built on top of Abseil's <em>flat_hash_map</em>, the Parallel Hashmap has lower space requirements, is nearly as fast as the underlying <em>flat_hash_map</em>, and can be used from multiple threads with high levels of concurrency.</p>
 <h3 id="a-quick-look-at-the-current-state-of-the-art">A quick look at the current state of the art</h3>
 <p>If you haven't been living under a rock, you know that Google open sourced late last year their Abseil library, which includes a very efficient flat hash table implementation. The <em>absl::flat_hash_map</em> stores the values directly in a memory array, which avoids memory indirections (this is referred to as closed hashing).</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/closed_hashing.png?raw=true" alt="closed_hashing" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/closed_hashing.png?raw=true" alt="closed_hashing" /></p>
 <p>Using parallel SSE2 instructions, the flat hash table is able to look up items by checking 16 slots in parallel, which allows the implementation to remain fast even when the table is filled to 87.5% capacity.</p>
 <p>The graphs below show a comparison of time and memory usage necessary to insert up to 100 million values (each value is composed of two 8-byte integers), between the default hashmap of Visual Studio 2017 (std::unordered_map), and Abseil's flat_hash_map:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_both.PNG?raw=true" alt="stl_flat comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/stl_flat_both.PNG?raw=true" alt="stl_flat comparison" /></p>
 <p>On the bottom graph, we can see that, as expected, the Abseil <em>flat_hash_map</em> is significantly faster that the default stl implementation, typically about three times faster.</p>
 <h3 id="the-peak-memory-usage-issue">The peak memory usage issue</h3>
 <p>The top graph shown the memory usage for both tables.</p>
@@ -135,7 +135,7 @@
 <blockquote>
 <p>In the actual implementation, the size of the array of hash tables is configurable to a power of two, so it can be 2, 4, 8, 16, 32, ... The following illustration shows a parallel_hash_map with 8 submaps.</p>
 </blockquote>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/index_computation.png?raw=true" alt="index_computation" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/index_computation.png?raw=true" alt="index_computation" /></p>
 <p>The benefit of this approach would be that the internal tables would each resize on its own when they reach 87.5% capacity, and since each table contains approximately one sixteenth of the values, the memory usage peak would be only one sixteenth of the size we saw for the single <em>flat_hash_map</em>.</p>
 <p>The rest of this article describes my implementation of this concept that I have done inside the Abseil library (I have submitted a pull request in the hope it will be merged into the main Abseil codebase). The current name for it is <em>parallel_flat_hash_map</em> or <em>parallel_flat_hash_set</em>. It does provide the same external API as Abseil's other hash tables, and internally it uses a std::array of N <em>flat_hash_maps</em>.</p>
 <p>I was delighted to find out that not only the <em>parallel_flat_hash_map</em> has significant memory usage benefits compared to the <em>flat_hash_map</em>, but it also has significant advantages for concurrent programming as I will show later.</p>
@@ -144,8 +144,8 @@
 </blockquote>
 <h3 id="the-parallel-hashmap-memory-usage">The Parallel Hashmap: memory usage</h3>
 <p>So, without further ado, let's see the same graphs graphs as above, with the addition of the <em>parallel_flat_hash_map</em>. Let us first look at memory usage (the second graph provides a "zoomed-in" view of the location where resizing occurs):</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem.PNG?raw=true" alt="stl_flat_par comparison" /></p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_mem_zoomed.PNG?raw=true" alt="stl_flat_par_zoomed comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/stl_flat_par_mem.PNG?raw=true" alt="stl_flat_par comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/stl_flat_par_mem_zoomed.PNG?raw=true" alt="stl_flat_par_zoomed comparison" /></p>
 <p>We see that the <em>parallel_hash_map</em> behaves as expected. The memory usage matches exactly the memory usage of its base <em>flat_hash_map</em>, except that the peaks of memory usage which occur when the table resizes are drastically reduced, to the point that they are not objectionable anymore. In the "zoomed-in" view, we can see the sixteen dots corresponding to each of the individual submaps resizing. The fact that those resizes are occuring at roughly the same x location in the graph shows that we have a good hash function distribution, distributing the values evenly between the sixteen individual submaps.</p>
 <h3 id="the-parallel-hashmap-speed">The Parallel Hashmap: speed</h3>
 <p>But what about the speed? After all, for each value inserted into the parallel hashmap, we have to do some extra work (steps 1 and 2 below):</p>
@@ -155,12 +155,12 @@
 <li>insert the value into the submap</li>
 </ol>
 <p>The first step (compute the hash) is the most problematic one, as it can potentially be costly. As we mentioned above, the second step (computing the index from the hash) is very simple and its cost in minimal (3 processor instruction as shown below in <em>Matt Godbolt</em>'s compiler explorer):</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/idx_computation_cost.PNG?raw=true" alt="index computation cost" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/idx_computation_cost.PNG?raw=true" alt="index computation cost" /></p>
 <p>As for the hash value computation, fortunately we can eliminate this cost by providing the computed hash to the submap functions, so that it is computed only once. This is exactly what I have done in my implementation of the <em>parallel_hash_map</em> within the Abseil library, adding a few extra APIs to the Abseil internal raw_hash_map.h header, which allow the <em>parallel_hash_map</em> to pass the precomputed hash value to the underlying submaps.</p>
 <p>So we have all but eliminated the cost of the first step, and seen that the cost of the second step is very minimal. At this point we expect that the <em>parallel_hash_map</em> performance will be close to the one of its underlying <em>flat_hash_map</em>, and this is confirmed by the chart below:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/stl_flat_par_speed.PNG?raw=true" alt="stl_flat_par comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/stl_flat_par_speed.PNG?raw=true" alt="stl_flat_par comparison" /></p>
 <p>Indeed, because of the scale is somewhat compressed due to the longer times of the std::unordered_map, we can barely distinguish between the blue curve of the <em>flat_hash_map</em> and the red curve of the <em>parallel_hash_map</em>. So let's look at a graph without the std::unordered_map:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_speed.PNG?raw=true" alt="flat_par comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_par_speed.PNG?raw=true" alt="flat_par comparison" /></p>
 <p>This last graph shows that the <em>parallel_hash_map</em> is slightly slower especially for smaller table sizes. For a reason not obvious to me (maybe better memory locality), the speeds of the <em>parallel_hash_map</em> and <em>flat_hash_map</em> are essentially undistinguishable for larger map sizes (&gt; 80 million values).</p>
 <h3 id="are-we-done-yet">Are we done yet?</h3>
 <p>This is already looking pretty good. For large hash_maps, the <em>parallel_flat_hash_map</em> is a very appealing solution, as it provides essentially the excellent performance of the <em>flat_hash_map</em>, while virtually eliminating the peaks of memory usage which occur when the hash table resizes.</p>
@@ -224,7 +224,7 @@
 <a class="sourceLine" id="cb2-38" title="38">}</a></code></pre></div>
 <p>Using multiple threads, we are able to populate the <em>parallel_flat_hash_map</em> (inserting 100 million values) three times faster than the standard <em>flat_hash_map</em> (which we could not have populated from multiple threads without explicit locks, which would have prevented performance improvements).</p>
 <p>And the graphical visualization of the results:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/mt_stl_flat_par_both_run2.PNG?raw=true" alt="mt_stl_flat_par comparison" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/mt_stl_flat_par_both_run2.PNG?raw=true" alt="mt_stl_flat_par comparison" /></p>
 <p>We notice in this last graph that the memory usage peaks, while still smaller than those of the <em>flat_hash_map</em>, are larger that those we saw when populating the <em>parallel_hash_map</em> using a single thread. The obvious reason is that, when using a single thread, only one of the submaps would resize at a time, ensuring that the peak would only be 1/16th of the one for the <em>flat_hash_map</em> (provided of course that the hash function distributes the values somewhat evenly between the submaps).</p>
 <p>When running in multi-threaded mode (in this case eight threads), potentially as many as eight submaps can resize simultaneaously, so for a <em>parallel_hash_map</em> with sixteen submaps the memory peak size can be half as large as the one for the <em>flat_hash_map</em>.</p>
 <p>Still, this is a pretty good result, we are now inserting values into our <em>parallel_hash_map</em> three times faster than we were able to do using the <em>flat_hash_map</em>, while using a lower memory ceiling.</p>
@@ -273,15 +273,15 @@
 class parallel_flat_hash_map;
 </code></pre>
 <p>Let's see what result we get for the insertion of random values from multiple threads, however this time we create a <em>parallel_hash_map</em> with internal locking (by providing absl::Mutex as the last template argument), and modify the code so that each thread inserts values in any submap (no pre-selection).</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/no_preselection.PNG?raw=true" alt="no_preselection" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/no_preselection.PNG?raw=true" alt="no_preselection" /></p>
 <p>If we were to do a intensive insertion test into a hash map from multiple threads, where we lock the whole hash table for each insertion, we would be likely to get even worse results than for a single threaded insert, because of heavy lock contention.</p>
 <p>In this case, our expectation is that the finer grained locking of the <em>parallel_hash_map</em> (separate locks for each internal submap) will provide a speed benefit when compared to the single threaded insertion, and this is indeed what the benchmarks show:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/flat_par_mutex_4.PNG?raw=true" alt="flat_par_mutex_4" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_par_mutex_4.PNG?raw=true" alt="flat_par_mutex_4" /></p>
 <p>Interestingly, we notice that the memory peaks (when resizing occur) are again very small, in the order of 1/16th of those for the <em>flat_hash_map</em>. This is likely because, as soon as one of the submaps resizes (which takes much longer than a regular insertion), the other threads very soon have to wait on the resizing submap's mutex for an insertion, before they reach their own resizing threashold.</p>
 <p>Since threads statistically will insert on a different submap for each value, it would be a surprising coincidence indeed if two submaps reached their resizing threshold without the resizing of the first submap blocking all the other threads first.</p>
 <p>If we increase the number of submaps, we should see more parallelism (less lock contention across threads, as the odds of two separate threads inserting in the same subhash is lower), but with diminishing returns as every submap resize will quickly block the other threads until the resize is completed.</p>
 <p>This is indeed what we see:</p>
-<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/img/lock_various_sizes.PNG?raw=true" alt="lock_various_sizes" /></p>
+<p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/lock_various_sizes.PNG?raw=true" alt="lock_various_sizes" /></p>
 <table>
 <thead>
 <tr class="header">

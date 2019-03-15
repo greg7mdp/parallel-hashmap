@@ -1,4 +1,4 @@
-build
-output
-charts.html
+benchmark/build
+benchmark/output
+benchmark/charts.html
 pdf2

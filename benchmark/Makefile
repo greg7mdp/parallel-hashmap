@@ -4,9 +4,10 @@ CXX=CL -EHsc -DNDEBUG -Fo$@ -O2
 
 ABSEIL_LIBS=absl_bad_optional_access.lib absl_bad_variant_access.lib absl_base.lib absl_demangle_internal.lib absl_hash.lib absl_int128.lib absl_internal_bad_any_cast_impl.lib absl_internal_city.lib absl_internal_civil_time.lib absl_internal_debugging_internal.lib absl_internal_graphcycles_internal.lib absl_internal_hashtablez_sampler.lib absl_internal_malloc_internal.lib absl_internal_spinlock_wait.lib absl_internal_strings_internal.lib absl_internal_throw_delegate.lib absl_internal_time_zone.lib absl_optional.lib absl_raw_hash_set.lib absl_stacktrace.lib absl_strings.lib absl_symbolize.lib absl_synchronization.lib absl_time.lib
 
-PROGS       = stl_unordered_map abseil_flat abseil_parallel_flat
+PROGS       = stl_unordered_map sparsepp abseil_flat abseil_parallel_flat
 BUILD_PROGS = $(addprefix build/,$(PROGS))
 SIZE        = 100000000
+ABSEIL      = ../../abseil-cpp
 
 all: test
 
@@ -16,27 +17,30 @@ builddir:
 build/stl_unordered_map: bench.cc Makefile
 	$(CXX) -DSTL_UNORDERED bench.cc -o $@
 
+build/sparsepp: bench.cc Makefile
+	$(CXX) -DSPARSEPP -I../../sparsepp bench.cc -o $@
+
 build/abseil_flat: bench.cc Makefile
-	$(CXX) -DABSEIL_FLAT -I ../abseil-cpp bench.cc /MD -o $@ /link /LIBPATH:../abseil-cpp/build2/lib ${ABSEIL_LIBS}
+	$(CXX) -DABSEIL_FLAT -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
 build/abseil_parallel_flat: bench.cc Makefile
-	$(CXX) -DABSEIL_PARALLEL_FLAT -I ../abseil-cpp bench.cc /MD -o $@ /link /LIBPATH:../abseil-cpp/build/lib ${ABSEIL_LIBS}
+	$(CXX) -DABSEIL_PARALLEL_FLAT -I $(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
 progs:	$(BUILD_PROGS)
 
 test: builddir progs
 	-rm -f output
-	./build/stl_unordered_map $(SIZE) random > output
+	#./build/stl_unordered_map $(SIZE) random >> output
 	./build/abseil_flat $(SIZE) random >> output
+	./build/sparsepp    $(SIZE) random >> output
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
 test_cust: 
 	-rm -f output
 	./build/abseil_flat $(SIZE) random >> output
-	./build/abseil_parallel_flat_4 $(SIZE) random >> output
-	./build/abseil_parallel_flat_5 $(SIZE) random >> output
-	./build/abseil_parallel_flat_6 $(SIZE) random >> output
+	./build/sparsepp    $(SIZE) random >> output
+	#./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
 

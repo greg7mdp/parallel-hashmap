@@ -42,6 +42,7 @@ for line in lines:
 
 proper_names = {
     'std::unordered_map':             'std::unordered_map (1 thread)',
+    'spp::sparse_hash_map':           'sparsepp (1 thread, use_spp_alloc)',
     'absl::flat_hash_map':            'absl::flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)',
@@ -52,6 +53,7 @@ proper_names = {
 
 proper_color = {
     'std::unordered_map':             0,
+    'spp::sparse_hash_map':             0,
     'absl::flat_hash_map':            1,
     'absl::parallel_flat_hash_map':   2,
     'absl::parallel_flat_hash_map_mt':   2,
@@ -74,6 +76,7 @@ bench_titles = {
 # too much
 program_slugs = [
     'std::unordered_map',
+    'sparsepp',
     'absl::flat_hash_map',
     'absl::parallel_flat_hash_map',
     'absl::parallel_flat_hash_map_mt',
