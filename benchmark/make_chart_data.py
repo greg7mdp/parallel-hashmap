@@ -47,7 +47,7 @@ proper_names = {
     'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)',
     'absl::parallel_flat_hash_map_4':  'absl::parallel_flat_hash_map (N=4, 8 threads)',
-    'absl::parallel_flat_hash_map_5':  'absl::parallel_flat_hash_map (N=5, 8 threads)',
+    'absl::parallel_flat_hash_map_5':  'absl::parallel_flat_hash_map (64b aligned, 8 threads)',
     'absl::parallel_flat_hash_map_6':  'absl::parallel_flat_hash_map (N=6, 8 threads)'
 }
 

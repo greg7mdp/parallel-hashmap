@@ -32,15 +32,16 @@ test: builddir progs
 	-rm -f output
 	#./build/stl_unordered_map $(SIZE) random >> output
 	./build/abseil_flat $(SIZE) random >> output
-	./build/sparsepp    $(SIZE) random >> output
+	#./build/sparsepp    $(SIZE) random >> output
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
 test_cust: 
 	-rm -f output
-	./build/abseil_flat $(SIZE) random >> output
-	./build/sparsepp    $(SIZE) random >> output
-	#./build/abseil_parallel_flat $(SIZE) random >> output
+	#./build/abseil_flat $(SIZE) random >> output
+	#./build/sparsepp    $(SIZE) random >> output
+	./build/abseil_parallel_flat_5 $(SIZE) random >> output
+	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
 
