@@ -473,6 +473,100 @@ inline size_t GrowthToLowerboundCapacity(size_t growth)
     return growth + static_cast<size_t>((static_cast<int64_t>(growth) - 1) / 7);
 }
 
+namespace hashtable_debug_internal {
+
+// If it is a map, call get<0>().
+using std::get;
+template <typename T, typename = typename T::mapped_type>
+auto GetKey(const typename T::value_type& pair, int) -> decltype(get<0>(pair)) {
+    return get<0>(pair);
+}
+
+// If it is not a map, return the value directly.
+template <typename T>
+const typename T::key_type& GetKey(const typename T::key_type& key, char) {
+    return key;
+}
+
+// --------------------------------------------------------------------------
+// Containers should specialize this to provide debug information for that
+// container.
+// --------------------------------------------------------------------------
+template <class Container, typename Enabler = void>
+struct HashtableDebugAccess 
+{
+    // Returns the number of probes required to find `key` in `c`.  The "number of
+    // probes" is a concept that can vary by container.  Implementations should
+    // return 0 when `key` was found in the minimum number of operations and
+    // should increment the result for each non-trivial operation required to find
+    // `key`.
+    //
+    // The default implementation uses the bucket api from the standard and thus
+    // works for `std::unordered_*` containers.
+    // --------------------------------------------------------------------------
+    static size_t GetNumProbes(const Container& c,
+                               const typename Container::key_type& key) {
+        if (!c.bucket_count()) return {};
+        size_t num_probes = 0;
+        size_t bucket = c.bucket(key);
+        for (auto it = c.begin(bucket), e = c.end(bucket);; ++it, ++num_probes) {
+            if (it == e) return num_probes;
+            if (c.key_eq()(key, GetKey<Container>(*it, 0))) return num_probes;
+        }
+    }
+};
+
+}  // namespace hashtable_debug_internal
+
+// ----------------------------------------------------------------------------
+//                    I N F O Z   S T U B S
+// ----------------------------------------------------------------------------
+struct HashtablezInfo 
+{
+    void PrepareForSampling() {}
+};
+
+inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {}
+
+void RecordInsertSlow(HashtablezInfo* info, size_t hash,
+                      size_t distance_from_desired) {}
+
+inline void RecordEraseSlow(HashtablezInfo* info) {}
+
+HashtablezInfo* SampleSlow(int64_t* next_sample) { return nullptr; }
+void UnsampleSlow(HashtablezInfo* info) {}
+
+class HashtablezInfoHandle 
+{
+public:
+    inline void RecordStorageChanged(size_t size, size_t capacity) {}
+    inline void RecordRehash(size_t total_probe_length) {}
+    inline void RecordInsert(size_t hash, size_t distance_from_desired) {}
+    inline void RecordErase() {}
+    friend inline void swap(HashtablezInfoHandle& lhs,
+                            HashtablezInfoHandle& rhs) {}
+};
+
+inline HashtablezInfoHandle Sample() { return HashtablezInfoHandle(); }
+
+class HashtablezSampler 
+{
+public:
+    // Returns a global Sampler.
+    static HashtablezSampler& Global() {  static HashtablezSampler hzs; return hzs; }
+    HashtablezInfo* Register() {  static HashtablezInfo info; return &info; }
+    void Unregister(HashtablezInfo* sample) {}
+
+    using DisposeCallback = void (*)(const HashtablezInfo&);
+    DisposeCallback SetDisposeCallback(DisposeCallback f) {}
+    int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) {}
+};
+
+void SetHashtablezEnabled(bool enabled) {}
+void SetHashtablezSampleParameter(int32_t rate) {}
+void SetHashtablezMaxSamples(int32_t max) {}
+
+
 // ----------------------------------------------------------------------------
 //                     R A W _ H A S H _ S E T
 // ----------------------------------------------------------------------------
