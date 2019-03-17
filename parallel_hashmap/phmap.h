@@ -46,6 +46,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <cassert>
 
 #include "phmap_bits.h"
 #include "phmap_base.h"
