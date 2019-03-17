@@ -13,9 +13,14 @@
     #include "absl/container/flat_hash_map.h"
     #define MAPNAME absl::flat_hash_map
     #define EXTRAARGS
-#elif defined(ABSEIL_PARALLEL_FLAT)
-    #include "absl/container/parallel_flat_hash_map.h"
-    #define MAPNAME absl::parallel_flat_hash_map
+#elif defined(ABSEIL_PARALLEL_FLAT) || defined(PHMAP)
+    #if defined(ABSEIL_PARALLEL_FLAT)
+        #include "absl/container/parallel_flat_hash_map.h"
+        #define MAPNAME absl::parallel_flat_hash_map
+    #else
+        #include "parallel_hashmap/phmap.h"
+        #define MAPNAME phmap::parallel_flat_hash_map
+    #endif
 
     //#define MT_SUPPORT 2
     #if MT_SUPPORT == 1
