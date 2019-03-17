@@ -3770,6 +3770,7 @@ template <bool C>
 using EnableIf = typename std::enable_if<C, int>::type;
 
 // Can `T` be a template argument of `Layout`?
+// ---------------------------------------------------------------------------
 template <class T>
 using IsLegalElementType = std::integral_constant<
     bool, !std::is_reference<T>::value && !std::is_volatile<T>::value &&
@@ -3780,6 +3781,7 @@ using IsLegalElementType = std::integral_constant<
 template <class Elements, class SizeSeq, class OffsetSeq>
 class LayoutImpl;
 
+// ---------------------------------------------------------------------------
 // Public base class of `Layout` and the result type of `Layout::Partial()`.
 //
 // `Elements...` contains all template arguments of `Layout` that created this
@@ -3791,6 +3793,7 @@ class LayoutImpl;
 // `OffsetSeq...` is `[0, NumOffsets)` where `NumOffsets` is
 // `Min(sizeof...(Elements), NumSizes + 1)` (the number of arrays for which we
 // can compute offsets).
+// ---------------------------------------------------------------------------
 template <class... Elements, size_t... SizeSeq, size_t... OffsetSeq>
 class LayoutImpl<std::tuple<Elements...>, phmap::index_sequence<SizeSeq...>,
                  phmap::index_sequence<OffsetSeq...>> 
@@ -4098,6 +4101,7 @@ public:
     // be missing (as in the example above). Only fields with known offsets are
     // described. Type names may differ across platforms: one compiler might
     // produce "unsigned*" where another produces "unsigned int *".
+    // ---------------------------------------------------------------------------
     std::string DebugString() const {
         const auto offsets = Offsets();
         const size_t sizes[] = {SizeOf<ElementType<OffsetSeq>>()...};
@@ -4129,12 +4133,14 @@ using LayoutType = LayoutImpl<
 
 }  // namespace internal_layout
 
+// ---------------------------------------------------------------------------
 // Descriptor of arrays of various types and sizes laid out in memory one after
 // another. See the top of the file for documentation.
 //
 // Check out the public API of internal_layout::LayoutImpl above. The type is
 // internal to the library but its methods are public, and they are inherited
 // by `Layout`.
+// ---------------------------------------------------------------------------
 template <class... Ts>
 class Layout : public internal_layout::LayoutType<sizeof...(Ts), Ts...> 
 {
@@ -4168,5 +4174,277 @@ public:
 }  // namespace container_internal
 }  // namespace phmap
 
+// ---------------------------------------------------------------------------
+//  compressed_tuple.h
+// ---------------------------------------------------------------------------
+
+#ifdef _MSC_VER
+    // We need to mark these classes with this declspec to ensure that
+    // CompressedTuple happens.
+    #define PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC __declspec(empty_bases)
+#else  // _MSC_VER
+    #define PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC
+#endif  // _MSC_VER
+
+namespace phmap {
+namespace container_internal {
+
+template <typename... Ts>
+class CompressedTuple;
+
+namespace internal_compressed_tuple {
+
+template <typename D, size_t I>
+struct Elem;
+template <typename... B, size_t I>
+struct Elem<CompressedTuple<B...>, I>
+    : std::tuple_element<I, std::tuple<B...>> {};
+template <typename D, size_t I>
+using ElemT = typename Elem<D, I>::type;
+
+// ---------------------------------------------------------------------------
+// Use the __is_final intrinsic if available. Where it's not available, classes
+// declared with the 'final' specifier cannot be used as CompressedTuple
+// elements.
+// TODO(sbenza): Replace this with std::is_final in C++14.
+// ---------------------------------------------------------------------------
+template <typename T>
+constexpr bool IsFinal() {
+#if defined(__clang__) || defined(__GNUC__)
+    return __is_final(T);
+#else
+    return false;
+#endif
+}
+
+template <typename T>
+constexpr bool ShouldUseBase() {
+  return std::is_class<T>::value && std::is_empty<T>::value && !IsFinal<T>();
+}
+
+// The storage class provides two specializations:
+//  - For empty classes, it stores T as a base class.
+//  - For everything else, it stores T as a member.
+// ------------------------------------------------
+template <typename D, size_t I, bool = ShouldUseBase<ElemT<D, I>>()>
+struct Storage 
+{
+    using T = ElemT<D, I>;
+    T value;
+    constexpr Storage() = default;
+    explicit constexpr Storage(T&& v) : value(phmap::forward<T>(v)) {}
+    constexpr const T& get() const& { return value; }
+    T& get() & { return value; }
+    constexpr const T&& get() const&& { return phmap::move(*this).value; }
+    T&& get() && { return std::move(*this).value; }
+};
+
+template <typename D, size_t I>
+struct PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC Storage<D, I, true>
+    : ElemT<D, I> 
+{
+    using T = internal_compressed_tuple::ElemT<D, I>;
+    constexpr Storage() = default;
+    explicit constexpr Storage(T&& v) : T(phmap::forward<T>(v)) {}
+    constexpr const T& get() const& { return *this; }
+    T& get() & { return *this; }
+    constexpr const T&& get() const&& { return phmap::move(*this); }
+    T&& get() && { return std::move(*this); }
+};
+
+template <typename D, typename I>
+struct PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTupleImpl;
+
+template <typename... Ts, size_t... I>
+struct PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC
+    CompressedTupleImpl<CompressedTuple<Ts...>, phmap::index_sequence<I...>>
+    // We use the dummy identity function through std::integral_constant to
+    // convince MSVC of accepting and expanding I in that context. Without it
+    // you would get:
+    //   error C3548: 'I': parameter pack cannot be used in this context
+    : Storage<CompressedTuple<Ts...>,
+              std::integral_constant<size_t, I>::value>... 
+{
+    constexpr CompressedTupleImpl() = default;
+    explicit constexpr CompressedTupleImpl(Ts&&... args)
+        : Storage<CompressedTuple<Ts...>, I>(phmap::forward<Ts>(args))... {}
+};
+
+}  // namespace internal_compressed_tuple
+
+// ---------------------------------------------------------------------------
+// Helper class to perform the Empty Base Class Optimization.
+// Ts can contain classes and non-classes, empty or not. For the ones that
+// are empty classes, we perform the CompressedTuple. If all types in Ts are
+// empty classes, then CompressedTuple<Ts...> is itself an empty class.
+//
+// To access the members, use member .get<N>() function.
+//
+// Eg:
+//   phmap::container_internal::CompressedTuple<int, T1, T2, T3> value(7, t1, t2,
+//                                                                    t3);
+//   assert(value.get<0>() == 7);
+//   T1& t1 = value.get<1>();
+//   const T2& t2 = value.get<2>();
+//   ...
+//
+// https://en.cppreference.com/w/cpp/language/ebo
+// ---------------------------------------------------------------------------
+template <typename... Ts>
+class PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTuple
+    : private internal_compressed_tuple::CompressedTupleImpl<
+          CompressedTuple<Ts...>, phmap::index_sequence_for<Ts...>> 
+{
+private:
+    template <int I>
+        using ElemT = internal_compressed_tuple::ElemT<CompressedTuple, I>;
+
+public:
+    constexpr CompressedTuple() = default;
+    explicit constexpr CompressedTuple(Ts... base)
+        : CompressedTuple::CompressedTupleImpl(phmap::forward<Ts>(base)...) {}
+
+    template <int I>
+        ElemT<I>& get() & {
+        return internal_compressed_tuple::Storage<CompressedTuple, I>::get();
+    }
+
+    template <int I>
+        constexpr const ElemT<I>& get() const& {
+        return internal_compressed_tuple::Storage<CompressedTuple, I>::get();
+    }
+
+    template <int I>
+        ElemT<I>&& get() && {
+        return std::move(*this)
+            .internal_compressed_tuple::template Storage<CompressedTuple, I>::get();
+    }
+
+    template <int I>
+        constexpr const ElemT<I>&& get() const&& {
+        return phmap::move(*this)
+            .internal_compressed_tuple::template Storage<CompressedTuple, I>::get();
+    }
+};
+
+// Explicit specialization for a zero-element tuple
+// (needed to avoid ambiguous overloads for the default constructor).
+// ---------------------------------------------------------------------------
+template <>
+class PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTuple<> {};
+
+}  // namespace container_internal
+}  // namespace phmap
+
+// ---------------------------------------------------------------------------
+//  thread_annotations.h
+// ---------------------------------------------------------------------------
+
+#if defined(__clang__)
+    #define PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(x)   __attribute__((x))
+#else
+    #define PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(x)   // no-op
+#endif
+
+#define PHMAP_GUARDED_BY(x) PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define PHMAP_PT_GUARDED_BY(x) PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
+
+#define PHMAP_ACQUIRED_AFTER(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(__VA_ARGS__))
+
+#define PHMAP_ACQUIRED_BEFORE(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(__VA_ARGS__))
+
+#define PHMAP_EXCLUSIVE_LOCKS_REQUIRED(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
+
+#define PHMAP_SHARED_LOCKS_REQUIRED(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
+
+#define PHMAP_LOCKS_EXCLUDED(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(__VA_ARGS__))
+
+#define PHMAP_LOCK_RETURNED(x) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
+
+#define PHMAP_LOCKABLE \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(lockable)
+
+#define PHMAP_SCOPED_LOCKABLE \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(scoped_lockable)
+
+#define PHMAP_EXCLUSIVE_LOCK_FUNCTION(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_lock_function(__VA_ARGS__))
+
+#define PHMAP_SHARED_LOCK_FUNCTION(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(shared_lock_function(__VA_ARGS__))
+
+#define PHMAP_UNLOCK_FUNCTION(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
+
+#define PHMAP_EXCLUSIVE_TRYLOCK_FUNCTION(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_trylock_function(__VA_ARGS__))
+
+#define PHMAP_SHARED_TRYLOCK_FUNCTION(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
+
+#define PHMAP_ASSERT_EXCLUSIVE_LOCK(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(assert_exclusive_lock(__VA_ARGS__))
+
+#define PHMAP_ASSERT_SHARED_LOCK(...) \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(assert_shared_lock(__VA_ARGS__))
+
+#define PHMAP_NO_THREAD_SAFETY_ANALYSIS \
+  PHMAP_THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
+
+//------------------------------------------------------------------------------
+// Tool-Supplied Annotations
+//------------------------------------------------------------------------------
+
+// TS_UNCHECKED should be placed around lock expressions that are not valid
+// C++ syntax, but which are present for documentation purposes.  These
+// annotations will be ignored by the analysis.
+#define PHMAP_TS_UNCHECKED(x) ""
+
+// TS_FIXME is used to mark lock expressions that are not valid C++ syntax.
+// It is used by automated tools to mark and disable invalid expressions.
+// The annotation should either be fixed, or changed to TS_UNCHECKED.
+#define PHMAP_TS_FIXME(x) ""
+
+// Like NO_THREAD_SAFETY_ANALYSIS, this turns off checking within the body of
+// a particular function.  However, this attribute is used to mark functions
+// that are incorrect and need to be fixed.  It is used by automated tools to
+// avoid breaking the build when the analysis is updated.
+// Code owners are expected to eventually fix the routine.
+#define PHMAP_NO_THREAD_SAFETY_ANALYSIS_FIXME  PHMAP_NO_THREAD_SAFETY_ANALYSIS
+
+// Similar to NO_THREAD_SAFETY_ANALYSIS_FIXME, this macro marks a GUARDED_BY
+// annotation that needs to be fixed, because it is producing thread safety
+// warning.  It disables the GUARDED_BY.
+#define PHMAP_GUARDED_BY_FIXME(x)
+
+// Disables warnings for a single read operation.  This can be used to avoid
+// warnings when it is known that the read is not actually involved in a race,
+// but the compiler cannot confirm that.
+#define PHMAP_TS_UNCHECKED_READ(x) thread_safety_analysis::ts_unchecked_read(x)
+
+
+namespace phmap {
+namespace thread_safety_analysis {
+
+// Takes a reference to a guarded data member, and returns an unguarded
+// reference.
+template <typename T>
+inline const T& ts_unchecked_read(const T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
+    return v;
+}
+
+template <typename T>
+inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
+    return v;
+}
+
+}  // namespace thread_safety_analysis
+}  // phmap
 
 #endif // phmap_base_h_guard_
