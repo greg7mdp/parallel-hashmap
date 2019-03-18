@@ -44,6 +44,8 @@ proper_names = {
     'std::unordered_map':             'std::unordered_map (1 thread)',
     'spp::sparse_hash_map':           'sparsepp (1 thread, use_spp_alloc)',
     'absl::flat_hash_map':            'absl::flat_hash_map (1 thread)',
+    'phmap::parallel_flat_hash_map':   'phmap::parallel_flat_hash_map (1 thread)',
+    'phmap::parallel_flat_hash_map_mt':   'phmap::parallel_flat_hash_map (8 thread8)',
     'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)',
     'absl::parallel_flat_hash_map_4':  'absl::parallel_flat_hash_map (N=4, 8 threads)',
@@ -52,14 +54,16 @@ proper_names = {
 }
 
 proper_color = {
-    'std::unordered_map':             0,
+    'std::unordered_map':               0,
     'spp::sparse_hash_map':             0,
-    'absl::flat_hash_map':            1,
-    'absl::parallel_flat_hash_map':   2,
-    'absl::parallel_flat_hash_map_mt':   2,
-    'absl::parallel_flat_hash_map_4':   2,
-    'absl::parallel_flat_hash_map_5':   3,
-    'absl::parallel_flat_hash_map_6':   4
+    'absl::flat_hash_map':              1,
+    'phmap::parallel_flat_hash_map':    2,
+    'phmap::parallel_flat_hash_map_mt': 2,
+    'absl::parallel_flat_hash_map':     3,
+    'absl::parallel_flat_hash_map_mt':  3,
+    'absl::parallel_flat_hash_map_4':   3,
+    'absl::parallel_flat_hash_map_5':   4,
+    'absl::parallel_flat_hash_map_6':   5
 }
 
 bench_titles = {
@@ -79,6 +83,8 @@ program_slugs = [
     'sparsepp',
     'absl::flat_hash_map',
     'absl::parallel_flat_hash_map',
+    'phmap::parallel_flat_hash_map',
+    'phmap::parallel_flat_hash_map_mt',
     'absl::parallel_flat_hash_map_mt',
     'absl::parallel_flat_hash_map_4',
     'absl::parallel_flat_hash_map_5',

@@ -34,8 +34,6 @@
 // limitations under the License.
 // ---------------------------------------------------------------------------
 
-
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -263,6 +261,7 @@ inline size_t HashSeed(const ctrl_t* ctrl) {
 inline size_t H1(size_t hash, const ctrl_t* ctrl) {
   return (hash >> 7) ^ HashSeed(ctrl);
 }
+
 inline ctrl_t H2(size_t hash) { return hash & 0x7F; }
 
 inline bool IsEmpty(ctrl_t c) { return c == kEmpty; }
@@ -301,6 +300,7 @@ struct GroupSse2Impl
     }
 
     // Returns a bitmask representing the positions of slots that match hash.
+    // ----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> Match(h2_t hash) const {
         auto match = _mm_set1_epi8(hash);
         return BitMask<uint32_t, kWidth>(
@@ -308,6 +308,7 @@ struct GroupSse2Impl
     }
 
     // Returns a bitmask representing the positions of empty slots.
+    // ------------------------------------------------------------
     BitMask<uint32_t, kWidth> MatchEmpty() const {
 #if PHMAP_HAVE_SSSE3
         // This only works because kEmpty is -128.
@@ -319,6 +320,7 @@ struct GroupSse2Impl
     }
 
     // Returns a bitmask representing the positions of empty or deleted slots.
+    // -----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> MatchEmptyOrDeleted() const {
         auto special = _mm_set1_epi8(kSentinel);
         return BitMask<uint32_t, kWidth>(
@@ -326,12 +328,14 @@ struct GroupSse2Impl
     }
 
     // Returns the number of trailing empty or deleted elements in the group.
+    // ----------------------------------------------------------------------
     uint32_t CountLeadingEmptyOrDeleted() const {
         auto special = _mm_set1_epi8(kSentinel);
         return TrailingZeros(
             _mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1);
     }
 
+    // ----------------------------------------------------------------------
     void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
         auto msbs = _mm_set1_epi8(static_cast<char>(-128));
         auto x126 = _mm_set1_epi8(126);
@@ -404,7 +408,7 @@ struct GroupPortableImpl
     uint64_t ctrl;
 };
 
-#if PHMAP_HAVE_SSE2
+#if PHMAP_HAVE_SSE2  
     using Group = GroupSse2Impl;
 #else
     using Group = GroupPortableImpl;
@@ -3971,6 +3975,20 @@ struct HashEq
 
 #if 0
 
+struct int64_t_hash 
+{
+    using is_transparent = void;
+    size_t operator()(int64_t v) const {
+        return (size_t)v;
+    }
+};
+
+template <>
+struct HashEq<int64_t> {
+    using Hash = int64_t_hash;
+    using Eq   = std::equal_to<int64_t>;
+};
+
 struct StringHash 
 {
     using is_transparent = void;
@@ -4118,7 +4136,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 // -----------------------------------------------------------------------------
 // A class that implements the Mutex interface, but does nothing. This is to be 
 // used as a default template parameters for classes who provide optional 
-// internal locking (like absl::parallel_flat_hash_map).
+// internal locking (like phmap::parallel_flat_hash_map).
 // -----------------------------------------------------------------------------
 class PHMAP_LOCKABLE NullMutex {
 public:

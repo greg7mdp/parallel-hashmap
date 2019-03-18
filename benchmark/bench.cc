@@ -17,27 +17,29 @@
     #if defined(ABSEIL_PARALLEL_FLAT)
         #include "absl/container/parallel_flat_hash_map.h"
         #define MAPNAME absl::parallel_flat_hash_map
+        #define NMSP absl
     #else
         #include "parallel_hashmap/phmap.h"
         #define MAPNAME phmap::parallel_flat_hash_map
+        #define NMSP phmap
     #endif
 
-    //#define MT_SUPPORT 2
+    #define MT_SUPPORT 1
     #if MT_SUPPORT == 1
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
         // --------------------------------------------------------------------------
-        #define EXTRAARGS , absl::container_internal::hash_default_hash<K>, \
-                            absl::container_internal::hash_default_eq<K>, \
-                            std::allocator<std::pair<const K, V>>, 4, absl::NullMutex
+        #define EXTRAARGS , NMSP::container_internal::hash_default_hash<K>, \
+                            NMSP::container_internal::hash_default_eq<K>, \
+                            std::allocator<std::pair<const K, V>>, 4, NMSP::NullMutex
     #elif MT_SUPPORT == 2
         // create the parallel_flat_hash_map with internal mutexes, for when 
         // we read/write the same parallel_flat_hash_map from multiple threads, 
         // without any special precautions.
         // --------------------------------------------------------------------------
-        #define EXTRAARGS , absl::container_internal::hash_default_hash<K>, \
-                            absl::container_internal::hash_default_eq<K>, \
-                            std::allocator<std::pair<const K, V>>, 4, absl::Mutex
+        #define EXTRAARGS , NMSP::container_internal::hash_default_hash<K>, \
+                            NMSP::container_internal::hash_default_eq<K>, \
+                            std::allocator<std::pair<const K, V>>, 4, NMSP::Mutex
     #else
         #define EXTRAARGS
     #endif
@@ -357,8 +359,11 @@ int main(int argc, char ** argv)
     srand(1); // for a fair/deterministic comparison 
     Timer timer(true);
     
-    if (!strcmp(program_slug,"absl::parallel_flat_hash_map"))
+#ifdef MT_SUPPORT
+    if (!strcmp(program_slug,"absl::parallel_flat_hash_map") || 
+        !strcmp(program_slug,"phmap::parallel_flat_hash_map"))
         program_slug = xstr(MAPNAME) "_mt";
+#endif
 
     std::thread t1(memlog);
 

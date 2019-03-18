@@ -8,6 +8,7 @@ PROGS       = stl_unordered_map sparsepp phmap abseil_flat abseil_parallel_flat
 BUILD_PROGS = $(addprefix build/,$(PROGS))
 SIZE        = 100000000
 ABSEIL      = ../../abseil-cpp
+PHMAP_SRC   = ../parallel_hashmap
 
 all: test
 
@@ -20,7 +21,7 @@ build/stl_unordered_map: bench.cc Makefile
 build/sparsepp: bench.cc Makefile
 	$(CXX) -DSPARSEPP -I../../sparsepp bench.cc -o $@
 
-build/phmap: bench.cc Makefile
+build/phmap: bench.cc Makefile $(PHMAP_SRC)/phmap.h
 	$(CXX) -DPHMAP -I.. bench.cc /MD -o $@ 
 
 build/abseil_flat: bench.cc Makefile
@@ -34,7 +35,8 @@ progs:	$(BUILD_PROGS)
 test: builddir progs
 	-rm -f output
 	#./build/stl_unordered_map $(SIZE) random >> output
-	./build/abseil_flat $(SIZE) random >> output
+	#./build/abseil_flat  $(SIZE) random >> output
+	./build/phmap        $(SIZE) random >> output
 	#./build/sparsepp    $(SIZE) random >> output
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
@@ -47,11 +49,8 @@ test_cust:
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
-
-
 chart:
 	python make_chart_data.py < output
 
 clean:
 	-rm -fr output build
-
