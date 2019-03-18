@@ -46,6 +46,8 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <mutex>
+#include <array>
 #include <cassert>
 
 #include "phmap_bits.h"
@@ -2199,13 +2201,13 @@ protected:
     public:
         explicit MutexLock_(Mutex *mu) PHMAP_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
             if (this->mu_)
-                this->mu_->Lock();
+                this->mu_->lock();
         }
 
         void set_mutex(Mutex *mu) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
             assert(mu && this->mu_ == nullptr);
             this->mu_ = mu;
-            this->mu_->Lock();
+            this->mu_->lock();
         }
 
         MutexLock_(const MutexLock_ &)           = delete;  // NOLINT(runtime/mutex)
@@ -2213,10 +2215,10 @@ protected:
         MutexLock_& operator=(const MutexLock_&) = delete;
         MutexLock_& operator=(MutexLock_&&)      = delete;
 
-        ~MutexLock_() PHMAP_UNLOCK_FUNCTION() { if (this->mu_) this->mu_->Unlock(); }
+        ~MutexLock_() PHMAP_UNLOCK_FUNCTION() { if (this->mu_) this->mu_->unlock(); }
 
     private:
-        Mutex * mu_;
+        Mutex *mu_;
     };
 
     // --------------------------------------------------------------------
@@ -3953,6 +3955,98 @@ public:
     static const Value& value(const value_type* elem) { return elem->second; }
 };
 
+
+// --------------------------------------------------------------------------
+//  hash_default
+// --------------------------------------------------------------------------
+
+// The hash of an object of type T is computed by using phmap::Hash.
+template <class T, class E = void>
+struct HashEq 
+{
+    //using Hash = phmap::Hash<T>;
+    using Hash = std::hash<T>;
+    using Eq   = std::equal_to<T>;
+};
+
+#if 0
+
+struct StringHash 
+{
+    using is_transparent = void;
+
+    size_t operator()(phmap::string_view v) const {
+        return phmap::Hash<phmap::string_view>{}(v);
+    }
+};
+
+// Supports heterogeneous lookup for string-like elements.
+struct StringHashEq 
+{
+    using Hash = StringHash;
+    struct Eq {
+        using is_transparent = void;
+        bool operator()(phmap::string_view lhs, phmap::string_view rhs) const {
+            return lhs == rhs;
+        }
+    };
+};
+
+template <>
+struct HashEq<std::string> : StringHashEq {};
+
+template <>
+struct HashEq<phmap::string_view> : StringHashEq {};
+
+#endif
+
+// Supports heterogeneous lookup for pointers and smart pointers.
+template <class T>
+struct HashEq<T*> 
+{
+    struct Hash {
+        using is_transparent = void;
+        template <class U>
+        size_t operator()(const U& ptr) const {
+            //return phmap::Hash<const T*>{}(HashEq::ToPtr(ptr));
+            return std::hash<const T*>{}(HashEq::ToPtr(ptr));
+        }
+    };
+
+    struct Eq {
+        using is_transparent = void;
+        template <class A, class B>
+        bool operator()(const A& a, const B& b) const {
+            return HashEq::ToPtr(a) == HashEq::ToPtr(b);
+        }
+    };
+
+private:
+    static const T* ToPtr(const T* ptr) { return ptr; }
+    template <class U, class D>
+    static const T* ToPtr(const std::unique_ptr<U, D>& ptr) {
+        return ptr.get();
+    }
+
+    template <class U>
+    static const T* ToPtr(const std::shared_ptr<U>& ptr) {
+        return ptr.get();
+    }
+};
+
+template <class T, class D>
+struct HashEq<std::unique_ptr<T, D>> : HashEq<T*> {};
+
+template <class T>
+struct HashEq<std::shared_ptr<T>> : HashEq<T*> {};
+
+template <class T>
+using hash_default_hash = typename container_internal::HashEq<T>::Hash;
+
+template <class T>
+using hash_default_eq = typename container_internal::HashEq<T>::Eq;
+
+
 namespace debug {
 
 // --------------------------------------------------------------------------
@@ -4018,6 +4112,23 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 
 }  // namespace debug
 }  // namespace container_internal
+
+// -----------------------------------------------------------------------------
+// NullMutex
+// -----------------------------------------------------------------------------
+// A class that implements the Mutex interface, but does nothing. This is to be 
+// used as a default template parameters for classes who provide optional 
+// internal locking (like absl::parallel_flat_hash_map).
+// -----------------------------------------------------------------------------
+class PHMAP_LOCKABLE NullMutex {
+public:
+    NullMutex() {}
+    ~NullMutex() {}
+    void lock()     PHMAP_EXCLUSIVE_LOCK_FUNCTION() {}
+    void unlock()   PHMAP_UNLOCK_FUNCTION() {}
+    bool try_lock() PHMAP_EXCLUSIVE_TRYLOCK_FUNCTION(true) { return true; }
+};
+
 
 // -----------------------------------------------------------------------------
 // phmap::flat_hash_set
