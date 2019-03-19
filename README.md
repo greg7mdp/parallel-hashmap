@@ -70,7 +70,6 @@ Key points:
 - The benefits of the `parallel` hash maps are:
 
    a. reduced peak memory usage (when resizing), and 
-
    b. multithreading support (and inherent internal parallelism)
 
 
