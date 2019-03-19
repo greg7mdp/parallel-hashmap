@@ -11,9 +11,10 @@ This repository should be construed as an independent work, with no guarantees o
 
 This repository aims to provide an set of excellent hash map implementations, with the following charecteristics:
 - **header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
-- compiler with **C++11 support** is required, **C++14 and C++17 APIs are provided**
+- compiler with **C++11 support** required, **C++14 and C++17 APIs are provided**
 - **Very efficient**, significantly faster than your compiler's unordered map/set or Boost's, or than [sparsepp](https://github.com/greg7mdp/sparsepp)
 - **Memory friendly**: low memory usage, although higher that [sparsepp](https://github.com/greg7mdp/sparsepp)
+- support heterogeneous lookup
 - Not yet **Tested** ~~on Windows (vs2010-2015, g++), linux (g++, clang++) and MacOS (clang++)~~.
 
 
