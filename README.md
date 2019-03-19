@@ -23,6 +23,11 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Not yet **Tested** ~~on Windows (vs2010-2015, g++), linux (g++, clang++) and MacOS (clang++)~~.
 
+## Installation
+
+Copy the parallel_hashmap directory to your project. That's all.
+
+> The CMakeLists.txt are provided for building the tests and examples.
 
 ## Example
 
