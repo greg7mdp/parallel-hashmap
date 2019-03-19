@@ -68,8 +68,10 @@ Key points:
 - The `parallel` hash maps are preferred when you have a few hash maps that will store a very large number of values. The `non-parallel` hash maps are preferred if you have a large number of hash maps, each storing a relatively small number of values.
 
 - The benefits of the `parallel` hash maps are:
-   a. reduced peak memory usage (when resizing), and 
-   b. multithreading support (and inherent internal parallelism)
+
+... a. reduced peak memory usage (when resizing), and 
+
+... b. multithreading support (and inherent internal parallelism)
 
 
 
