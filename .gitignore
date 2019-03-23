@@ -1,4 +1,5 @@
 benchmark/build
 benchmark/output
 benchmark/charts.html
-pdf2
+build
+tests
