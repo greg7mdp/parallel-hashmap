@@ -48,8 +48,25 @@ if (PHMAP_BUILD_TESTS)
     check_target(gtest_main)
     check_target(gmock)
 
+    # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parallel_hashmap)
+
     phmap_cc_test(NAME flat_hash_set SRCS "tests/flat_hash_set_test.cc"
                   COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
+
+    phmap_cc_test(NAME flat_hash_map SRCS "tests/flat_hash_map_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME parallel_flat_hash_map SRCS "tests/parallel_flat_hash_map_test.cc"
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+
+    phmap_cc_test(NAME parallel_flat_hash_set SRCS "tests/parallel_flat_hash_set_test.cc"
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
+
+    phmap_cc_test(NAME node_hash_map SRCS "tests/node_hash_map_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME node_hash_set SRCS "tests/node_hash_set_test.cc"
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
 
 endif()
 

@@ -47,10 +47,9 @@ template <class T>  T phmap_max(T a, T b) { return a >= b ? a : b; }
 template <class T>
 struct Hash
 {
-    inline size_t operator()(const T &__v) const noexcept
+    inline size_t operator()(const T& __v) noexcept
     {
-        PHMAP_HASH_CLASS<T> hasher;
-        return hasher(__v);
+        return PHMAP_HASH_CLASS<T>()(__v);
     }
 };
 
