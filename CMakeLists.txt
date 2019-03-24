@@ -9,10 +9,11 @@ project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(PHMAP_HEADERS phmap.h phmap_base.h phmap_bits.h phmap_utils.h phmap_config.h)
 set(PHMAP_DIR parallel_hashmap)
-set(CMAKE_SUPPRESS_REGENERATION true)  ## suppress ZERO_CHECK project
+set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(helpers)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -38,7 +39,31 @@ option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
 if (PHMAP_BUILD_TESTS)
-    add_subdirectory(tests)
+    #add_subdirectory(tests)
+    include(cmake/DownloadGTest.cmake)
+
+    check_target(gtest)
+    check_target(gtest_main)
+    check_target(gmock)
+
+    list(APPEND ABSL_TEST_COMMON_LIBRARIES
+         gtest_main
+         gtest
+         gmock
+         ${CMAKE_THREAD_LIBS_INIT}
+    )
+
+absl_cc_test(
+  NAME
+    flat_hash_set_test
+  SRCS
+    "tests/flat_hash_set_test.cc"
+  COPTS
+    "-DUNORDERED_SET_CXX17"
+  DEPS
+    gmock_main
+)
+
 endif()
 
 if (PHMAP_BUILD_EXAMPLES)
