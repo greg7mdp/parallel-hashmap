@@ -17,7 +17,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - **Very efficient**, significantly faster than your compiler's unordered map/set or Boost's, or than [sparsepp](https://github.com/greg7mdp/sparsepp)
 
-- **Memory friendly**: low memory usage, although higher that [sparsepp](https://github.com/greg7mdp/sparsepp)
+- **Memory friendly**: low memory usage, although a little higher than [sparsepp](https://github.com/greg7mdp/sparsepp)
 
 - support heterogeneous lookup
 
@@ -27,7 +27,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 Copy the parallel_hashmap directory to your project. That's all.
 
-> The CMakeLists.txt are provided for building the tests and examples.
+> cmake configuration files (CMakeLists.txt) are provided for building the tests and examples.
 
 ## Example
 

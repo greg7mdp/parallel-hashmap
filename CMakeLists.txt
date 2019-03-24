@@ -4,9 +4,12 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(DetectVersion)
 
+cmake_policy(SET CMP0048 NEW)                    ## set VERSION as documented by the project() command.
+set(CMAKE_CXX_STANDARD 11)                       ## compile with C++11 support
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
 set(PHMAP_HEADERS phmap.h phmap_base.h phmap_bits.h phmap_utils.h phmap_config.h)
 set(PHMAP_DIR parallel_hashmap)
 set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
@@ -45,13 +48,6 @@ if (PHMAP_BUILD_TESTS)
     check_target(gtest)
     check_target(gtest_main)
     check_target(gmock)
-
-    list(APPEND ABSL_TEST_COMMON_LIBRARIES
-         gtest_main
-         gtest
-         gmock
-         ${CMAKE_THREAD_LIBS_INIT}
-    )
 
 absl_cc_test(
   NAME
