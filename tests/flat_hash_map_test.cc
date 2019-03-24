@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef THIS_HASH_MAP
+    #define THIS_HASH_MAP   flat_hash_map
+    #define THIS_TEST_NAME  FlatHashMap
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #if defined(PHMAP_HAVE_STD_ANY)
@@ -34,7 +39,7 @@ using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
 template <class K, class V>
-using Map = flat_hash_map<K, V, StatefulTestingHash, StatefulTestingEqual,
+using Map = THIS_HASH_MAP<K, V, StatefulTestingHash, StatefulTestingEqual,
                           Alloc<std::pair<const K, V>>>;
 
 static_assert(!std::is_standard_layout<NonStandardLayout>(), "");
@@ -44,12 +49,12 @@ using MapTypes =
                      Map<Enum, std::string>, Map<EnumClass, int>,
                      Map<int, NonStandardLayout>, Map<NonStandardLayout, int>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashMap, ConstructorTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashMap, LookupTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashMap, MembersTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashMap, ModifiersTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ConstructorTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, LookupTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, MembersTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, MapTypes);
 
-TEST(FlatHashMap, StandardLayout) {
+TEST(THIS_TEST_NAME, StandardLayout) {
   struct Int {
     explicit Int(size_t value) : value(value) {}
     Int() : value(0) { ADD_FAILURE(); }
@@ -67,14 +72,14 @@ TEST(FlatHashMap, StandardLayout) {
   // Verify that neither the key nor the value get default-constructed or
   // copy-constructed.
   {
-    flat_hash_map<Int, Int, Hash> m;
+    THIS_HASH_MAP<Int, Int, Hash> m;
     m.try_emplace(Int(1), Int(2));
     m.try_emplace(Int(3), Int(4));
     m.erase(Int(1));
     m.rehash(2 * m.bucket_count());
   }
   {
-    flat_hash_map<Int, Int, Hash> m;
+    THIS_HASH_MAP<Int, Int, Hash> m;
     m.try_emplace(Int(1), Int(2));
     m.try_emplace(Int(3), Int(4));
     m.erase(Int(1));
@@ -85,12 +90,12 @@ TEST(FlatHashMap, StandardLayout) {
 // gcc becomes unhappy if this is inside the method, so pull it out here.
 struct balast {};
 
-TEST(FlatHashMap, IteratesMsan) {
+TEST(THIS_TEST_NAME, IteratesMsan) {
   // Because SwissTable randomizes on pointer addresses, we keep old tables
   // around to ensure we don't reuse old memory.
-  std::vector<phmap::flat_hash_map<int, balast>> garbage;
+  std::vector<phmap::THIS_HASH_MAP<int, balast>> garbage;
   for (int i = 0; i < 100; ++i) {
-    phmap::flat_hash_map<int, balast> t;
+    phmap::THIS_HASH_MAP<int, balast> t;
     for (int j = 0; j < 100; ++j) {
       t[j];
       for (const auto& p : t) EXPECT_THAT(p, Pair(_, _));
@@ -138,12 +143,12 @@ struct Eq {
   }
 };
 
-TEST(FlatHashMap, LazyKeyPattern) {
+TEST(THIS_TEST_NAME, LazyKeyPattern) {
   // hashes are only guaranteed in opt mode, we use assertions to track internal
   // state that can cause extra calls to hash.
   int conversions = 0;
   int hashes = 0;
-  flat_hash_map<size_t, size_t, Hash, Eq> m(0, Hash{&hashes});
+  THIS_HASH_MAP<size_t, size_t, Hash, Eq> m(0, Hash{&hashes});
   m.reserve(3);
 
   m[LazyInt(1, &conversions)] = 1;
@@ -175,12 +180,12 @@ TEST(FlatHashMap, LazyKeyPattern) {
 #endif
 }
 
-TEST(FlatHashMap, BitfieldArgument) {
+TEST(THIS_TEST_NAME, BitfieldArgument) {
   union {
     int n : 1;
   };
   n = 0;
-  flat_hash_map<int, int> m;
+  THIS_HASH_MAP<int, int> m;
   m.erase(n);
   m.count(n);
   m.prefetch(n);
@@ -195,10 +200,10 @@ TEST(FlatHashMap, BitfieldArgument) {
   m[n];
 }
 
-TEST(FlatHashMap, MergeExtractInsert) {
-  // We can't test mutable keys, or non-copyable keys with flat_hash_map.
+TEST(THIS_TEST_NAME, MergeExtractInsert) {
+  // We can't test mutable keys, or non-copyable keys with THIS_HASH_MAP.
   // Test that the nodes have the proper API.
-  phmap::flat_hash_map<int, int> m = {{1, 7}, {2, 9}};
+  phmap::THIS_HASH_MAP<int, int> m = {{1, 7}, {2, 9}};
   auto node = m.extract(1);
   EXPECT_TRUE(node);
   EXPECT_EQ(node.key(), 1);
@@ -210,8 +215,8 @@ TEST(FlatHashMap, MergeExtractInsert) {
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 17), Pair(2, 9)));
 }
 #if !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__) && defined(PHMAP_HAVE_STD_ANY)
-TEST(FlatHashMap, Any) {
-  phmap::flat_hash_map<int, std::any> m;
+TEST(THIS_TEST_NAME, Any) {
+  phmap::THIS_HASH_MAP<int, std::any> m;
   m.emplace(1, 7);
   auto it = m.find(1);
   ASSERT_NE(it, m.end());
@@ -234,7 +239,7 @@ TEST(FlatHashMap, Any) {
   struct E {
     bool operator()(const std::any&, const std::any&) const { return true; }
   };
-  phmap::flat_hash_map<std::any, int, H, E> m2;
+  phmap::THIS_HASH_MAP<std::any, int, H, E> m2;
   m2.emplace(1, 7);
   auto it2 = m2.find(1);
   ASSERT_NE(it2, m2.end());

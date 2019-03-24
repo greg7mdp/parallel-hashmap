@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef THIS_HASH_MAP
+    #define THIS_HASH_MAP   node_hash_map
+    #define THIS_TEST_NAME  NodeHashMap
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #include "tracked.h"
@@ -29,20 +34,20 @@ using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
 using MapTypes = ::testing::Types<
-    phmap::node_hash_map<int, int, StatefulTestingHash, StatefulTestingEqual,
+    phmap::THIS_HASH_MAP<int, int, StatefulTestingHash, StatefulTestingEqual,
                         Alloc<std::pair<const int, int>>>,
-    phmap::node_hash_map<std::string, std::string, StatefulTestingHash,
+    phmap::THIS_HASH_MAP<std::string, std::string, StatefulTestingHash,
                         StatefulTestingEqual,
                         Alloc<std::pair<const std::string, std::string>>>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashMap, ConstructorTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashMap, LookupTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashMap, MembersTest, MapTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashMap, ModifiersTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ConstructorTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, LookupTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, MembersTest, MapTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, MapTypes);
 
-using M = phmap::node_hash_map<std::string, Tracked<int>>;
+using M = phmap::THIS_HASH_MAP<std::string, Tracked<int>>;
 
-TEST(NodeHashMap, Emplace) {
+TEST(THIS_TEST_NAME, Emplace) {
   M m;
   Tracked<int> t(53);
   m.emplace("a", t);
@@ -110,10 +115,10 @@ TEST(NodeHashMap, Emplace) {
   ASSERT_EQ(7, t.num_copies());
 }
 
-TEST(NodeHashMap, AssignRecursive) {
+TEST(THIS_TEST_NAME, AssignRecursive) {
   struct Tree {
     // Verify that unordered_map<K, IncompleteType> can be instantiated.
-    phmap::node_hash_map<int, Tree> children;
+    phmap::THIS_HASH_MAP<int, Tree> children;
   };
   Tree root;
   const Tree& child = root.children.emplace().first->second;
@@ -133,7 +138,7 @@ TEST(FlatHashMap, MoveOnlyKey) {
   struct Hash {
     size_t operator()(const Key&) const { return 0; }
   };
-  phmap::node_hash_map<Key, int, Hash, Eq> m;
+  phmap::THIS_HASH_MAP<Key, int, Hash, Eq> m;
   m[Key()];
 }
 
@@ -155,8 +160,8 @@ struct NonMovableKeyEq {
   bool operator()(const NonMovableKey& a, int b) const { return a.i == b; }
 };
 
-TEST(NodeHashMap, MergeExtractInsert) {
-  phmap::node_hash_map<NonMovableKey, int, NonMovableKeyHash, NonMovableKeyEq>
+TEST(THIS_TEST_NAME, MergeExtractInsert) {
+  phmap::THIS_HASH_MAP<NonMovableKey, int, NonMovableKeyHash, NonMovableKeyEq>
       set1, set2;
   set1.emplace(std::piecewise_construct, std::make_tuple(7),
                std::make_tuple(-7));

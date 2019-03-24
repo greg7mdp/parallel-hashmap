@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef THIS_HASH_SET
+    #define THIS_HASH_SET   node_hash_set
+    #define THIS_TEST_NAME  NodeHashSet
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #include "unordered_set_constructor_test.h"
@@ -28,25 +33,25 @@ using ::testing::Pointee;
 using ::testing::UnorderedElementsAre;
 
 using SetTypes = ::testing::Types<
-    node_hash_set<int, StatefulTestingHash, StatefulTestingEqual, Alloc<int>>,
-    node_hash_set<std::string, StatefulTestingHash, StatefulTestingEqual,
+    THIS_HASH_SET<int, StatefulTestingHash, StatefulTestingEqual, Alloc<int>>,
+    THIS_HASH_SET<std::string, StatefulTestingHash, StatefulTestingEqual,
                   Alloc<std::string>>,
-    node_hash_set<Enum, StatefulTestingHash, StatefulTestingEqual, Alloc<Enum>>,
-    node_hash_set<EnumClass, StatefulTestingHash, StatefulTestingEqual,
+    THIS_HASH_SET<Enum, StatefulTestingHash, StatefulTestingEqual, Alloc<Enum>>,
+    THIS_HASH_SET<EnumClass, StatefulTestingHash, StatefulTestingEqual,
                   Alloc<EnumClass>>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashSet, ConstructorTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashSet, LookupTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashSet, MembersTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(NodeHashSet, ModifiersTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ConstructorTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, LookupTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, MembersTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, SetTypes);
 
-TEST(NodeHashSet, MoveableNotCopyableCompiles) {
-  node_hash_set<std::unique_ptr<void*>> t;
-  node_hash_set<std::unique_ptr<void*>> u;
+TEST(THIS_TEST_NAME, MoveableNotCopyableCompiles) {
+  THIS_HASH_SET<std::unique_ptr<void*>> t;
+  THIS_HASH_SET<std::unique_ptr<void*>> u;
   u = std::move(t);
 }
 
-TEST(NodeHashSet, MergeExtractInsert) {
+TEST(THIS_TEST_NAME, MergeExtractInsert) {
   struct Hash {
     size_t operator()(const std::unique_ptr<int>& p) const { return *p; }
   };
@@ -56,7 +61,7 @@ TEST(NodeHashSet, MergeExtractInsert) {
       return *a == *b;
     }
   };
-  phmap::node_hash_set<std::unique_ptr<int>, Hash, Eq> set1, set2;
+  phmap::THIS_HASH_SET<std::unique_ptr<int>, Hash, Eq> set1, set2;
   set1.insert(phmap::make_unique<int>(7));
   set1.insert(phmap::make_unique<int>(17));
 

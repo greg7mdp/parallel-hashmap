@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef THIS_HASH_SET
+    #define THIS_HASH_SET   flat_hash_set
+    #define THIS_TEST_NAME  FlatHashSet
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #include <vector>
@@ -34,30 +39,30 @@ using ::testing::UnorderedElementsAreArray;
 
 template <class T>
 using Set =
-    phmap::flat_hash_set<T, StatefulTestingHash, StatefulTestingEqual, Alloc<T>>;
+    phmap::THIS_HASH_SET<T, StatefulTestingHash, StatefulTestingEqual, Alloc<T>>;
 
 using SetTypes =
     ::testing::Types<Set<int>, Set<std::string>, Set<Enum>, Set<EnumClass>>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashSet, ConstructorTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashSet, LookupTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashSet, MembersTest, SetTypes);
-INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashSet, ModifiersTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ConstructorTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, LookupTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, MembersTest, SetTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, SetTypes);
 
 #if PHMAP_HAVE_STD_STRING_VIEW
-TEST(FlatHashSet, EmplaceString) {
+TEST(THIS_TEST_NAME, EmplaceString) {
   std::vector<std::string> v = {"a", "b"};
-  phmap::flat_hash_set<std::string_view> hs(v.begin(), v.end());
+  phmap::THIS_HASH_SET<std::string_view> hs(v.begin(), v.end());
   EXPECT_THAT(hs, UnorderedElementsAreArray(v));
 }
 #endif
 
-TEST(FlatHashSet, BitfieldArgument) {
+TEST(THIS_TEST_NAME, BitfieldArgument) {
   union {
     int n : 1;
   };
   n = 0;
-  phmap::flat_hash_set<int> s = {n};
+  phmap::THIS_HASH_SET<int> s = {n};
   s.insert(n);
   s.insert(s.end(), n);
   s.insert({n});
@@ -69,7 +74,7 @@ TEST(FlatHashSet, BitfieldArgument) {
   s.equal_range(n);
 }
 
-TEST(FlatHashSet, MergeExtractInsert) {
+TEST(THIS_TEST_NAME, MergeExtractInsert) {
   struct Hash {
     size_t operator()(const std::unique_ptr<int>& p) const { return *p; }
   };
@@ -79,7 +84,7 @@ TEST(FlatHashSet, MergeExtractInsert) {
       return *a == *b;
     }
   };
-  phmap::flat_hash_set<std::unique_ptr<int>, Hash, Eq> set1, set2;
+  phmap::THIS_HASH_SET<std::unique_ptr<int>, Hash, Eq> set1, set2;
   set1.insert(phmap::make_unique<int>(7));
   set1.insert(phmap::make_unique<int>(17));
 
