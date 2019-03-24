@@ -42,23 +42,14 @@ option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
 if (PHMAP_BUILD_TESTS)
-    #add_subdirectory(tests)
     include(cmake/DownloadGTest.cmake)
 
     check_target(gtest)
     check_target(gtest_main)
     check_target(gmock)
 
-absl_cc_test(
-  NAME
-    flat_hash_set_test
-  SRCS
-    "tests/flat_hash_set_test.cc"
-  COPTS
-    "-DUNORDERED_SET_CXX17"
-  DEPS
-    gmock_main
-)
+    phmap_cc_test(NAME flat_hash_set SRCS "tests/flat_hash_set_test.cc"
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
 
 endif()
 

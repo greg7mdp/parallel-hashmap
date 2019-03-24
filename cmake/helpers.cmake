@@ -1,7 +1,7 @@
 #set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(ABSL_IDE_FOLDER Abseil)
+set(PHMAP_IDE_FOLDER Abseil)
 
-# absl_cc_test(
+# phmap_cc_test(
 #   NAME
 #     awesome_test
 #   SRCS
@@ -11,35 +11,35 @@ set(ABSL_IDE_FOLDER Abseil)
 #     gmock
 #     gtest_main
 # )
-function(absl_cc_test)
-  cmake_parse_arguments(ABSL_CC_TEST
+function(phmap_cc_test)
+  cmake_parse_arguments(PHMAP_CC_TEST
     ""
     "NAME"
     "SRCS;COPTS;DEFINES;LINKOPTS;DEPS"
     ${ARGN}
   )
 
-  set(_NAME "absl_${ABSL_CC_TEST_NAME}")
+  set(_NAME "test_${PHMAP_CC_TEST_NAME}")
   add_executable(${_NAME} "")
-  target_sources(${_NAME} PRIVATE ${ABSL_CC_TEST_SRCS})
+  target_sources(${_NAME} PRIVATE ${PHMAP_CC_TEST_SRCS})
   target_include_directories(${_NAME}
-    PUBLIC ${ABSL_COMMON_INCLUDE_DIRS}
+    PUBLIC ${PHMAP_COMMON_INCLUDE_DIRS}
     PRIVATE ${GMOCK_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS}
   )
   target_compile_definitions(${_NAME}
-    PUBLIC ${ABSL_CC_TEST_DEFINES}
+    PUBLIC ${PHMAP_CC_TEST_DEFINES}
   )
   target_compile_options(${_NAME}
-    PRIVATE ${ABSL_CC_TEST_COPTS}
+    PRIVATE ${PHMAP_CC_TEST_COPTS}
   )
   target_link_libraries(${_NAME}
-    PUBLIC ${ABSL_CC_TEST_DEPS}
-    PRIVATE ${ABSL_CC_TEST_LINKOPTS}
+    PUBLIC ${PHMAP_CC_TEST_DEPS}
+    PRIVATE ${PHMAP_CC_TEST_LINKOPTS}
   )
   # Add all Abseil targets to a a folder in the IDE for organization.
-  set_property(TARGET ${_NAME} PROPERTY FOLDER ${ABSL_IDE_FOLDER}/test)
+  set_property(TARGET ${_NAME} PROPERTY FOLDER ${PHMAP_IDE_FOLDER}/test)
 
-  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${ABSL_CXX_STANDARD})
+  set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${PHMAP_CXX_STANDARD})
   set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
   add_test(NAME ${_NAME} COMMAND ${_NAME})
@@ -49,7 +49,7 @@ endfunction()
 
 function(check_target my_target)
   if(NOT TARGET ${my_target})
-    message(FATAL_ERROR " ABSL: compiling absl requires a ${my_target} CMake target in your project,
+    message(FATAL_ERROR " PHMAP: compiling phmap tests requires a ${my_target} CMake target in your project,
                    see CMake/README.md for more details")
   endif(NOT TARGET ${my_target})
 endfunction()
