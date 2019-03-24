@@ -211,30 +211,30 @@ TEST(FlatHashMap, MergeExtractInsert) {
 }
 #if !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__) && defined(PHMAP_HAVE_STD_ANY)
 TEST(FlatHashMap, Any) {
-  phmap::flat_hash_map<int, phmap::any> m;
+  phmap::flat_hash_map<int, std::any> m;
   m.emplace(1, 7);
   auto it = m.find(1);
   ASSERT_NE(it, m.end());
-  EXPECT_EQ(7, phmap::any_cast<int>(it->second));
+  EXPECT_EQ(7, std::any_cast<int>(it->second));
 
   m.emplace(std::piecewise_construct, std::make_tuple(2), std::make_tuple(8));
   it = m.find(2);
   ASSERT_NE(it, m.end());
-  EXPECT_EQ(8, phmap::any_cast<int>(it->second));
+  EXPECT_EQ(8, std::any_cast<int>(it->second));
 
   m.emplace(std::piecewise_construct, std::make_tuple(3),
-            std::make_tuple(phmap::any(9)));
+            std::make_tuple(std::any(9)));
   it = m.find(3);
   ASSERT_NE(it, m.end());
-  EXPECT_EQ(9, phmap::any_cast<int>(it->second));
+  EXPECT_EQ(9, std::any_cast<int>(it->second));
 
   struct H {
-    size_t operator()(const phmap::any&) const { return 0; }
+    size_t operator()(const std::any&) const { return 0; }
   };
   struct E {
-    bool operator()(const phmap::any&, const phmap::any&) const { return true; }
+    bool operator()(const std::any&, const std::any&) const { return true; }
   };
-  phmap::flat_hash_map<phmap::any, int, H, E> m2;
+  phmap::flat_hash_map<std::any, int, H, E> m2;
   m2.emplace(1, 7);
   auto it2 = m2.find(1);
   ASSERT_NE(it2, m2.end());

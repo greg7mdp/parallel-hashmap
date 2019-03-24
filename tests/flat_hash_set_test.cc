@@ -22,8 +22,6 @@
 #include "unordered_set_members_test.h"
 #include "unordered_set_modifiers_test.h"
 
-// #include "absl/memory/memory.h"
-
 namespace phmap {
 namespace container_internal {
 namespace {
