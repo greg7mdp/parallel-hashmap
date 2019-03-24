@@ -143,6 +143,7 @@ TEST(ParallelFlatHashMap, LazyKeyPattern) {
   int conversions = 0;
   int hashes = 0;
   parallel_flat_hash_map<size_t, size_t, Hash, Eq> m(0, Hash{&hashes});
+  m.reserve(3);
 
   m[LazyInt(1, &conversions)] = 1;
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 1)));
