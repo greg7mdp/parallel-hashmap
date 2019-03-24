@@ -3992,8 +3992,7 @@ public:
 template <class T, class E = void>
 struct HashEq 
 {
-    //using Hash = phmap::Hash<T>;
-    using Hash = std::hash<T>;
+    using Hash = phmap::Hash<T>;
     using Eq   = std::equal_to<T>;
 };
 
@@ -4013,12 +4012,16 @@ struct HashEq<int64_t> {
     using Eq   = std::equal_to<int64_t>;
 };
 
+#endif
+
+#if PHMAP_HAVE_STD_STRING_VIEW
+
 struct StringHash 
 {
     using is_transparent = void;
 
-    size_t operator()(phmap::string_view v) const {
-        return phmap::Hash<phmap::string_view>{}(v);
+    size_t operator()(std::string_view v) const {
+        return phmap::Hash<std::string_view>{}(v);
     }
 };
 
@@ -4028,7 +4031,7 @@ struct StringHashEq
     using Hash = StringHash;
     struct Eq {
         using is_transparent = void;
-        bool operator()(phmap::string_view lhs, phmap::string_view rhs) const {
+        bool operator()(std::string_view lhs, std::string_view rhs) const {
             return lhs == rhs;
         }
     };
@@ -4038,7 +4041,7 @@ template <>
 struct HashEq<std::string> : StringHashEq {};
 
 template <>
-struct HashEq<phmap::string_view> : StringHashEq {};
+struct HashEq<std::string_view> : StringHashEq {};
 
 #endif
 
@@ -4050,8 +4053,8 @@ struct HashEq<T*>
         using is_transparent = void;
         template <class U>
         size_t operator()(const U& ptr) const {
-            //return phmap::Hash<const T*>{}(HashEq::ToPtr(ptr));
-            return std::hash<const T*>{}(HashEq::ToPtr(ptr));
+            return phmap::Hash<const T*>{}(HashEq::ToPtr(ptr));
+            //return std::hash<const T*>{}(HashEq::ToPtr(ptr));
         }
     };
 

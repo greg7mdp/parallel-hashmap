@@ -1707,7 +1707,7 @@ struct nullopt_t
     explicit constexpr nullopt_t(init_t& /*unused*/) {}
 };
 
-extern const nullopt_t nullopt;
+constexpr nullopt_t nullopt(nullopt_t::init);
 
 namespace optional_internal {
 
