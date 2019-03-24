@@ -20,8 +20,6 @@
 #include "unordered_set_constructor_test.h"
 #include "unordered_set_lookup_test.h"
 #include "unordered_set_modifiers_test.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
 
 namespace phmap {
 namespace container_internal {
@@ -44,11 +42,13 @@ INSTANTIATE_TYPED_TEST_SUITE_P(ParallelFlatHashSet, ConstructorTest, SetTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(ParallelFlatHashSet, LookupTest, SetTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(ParallelFlatHashSet, ModifiersTest, SetTypes);
 
+#if PHMAP_HAVE_STD_STRING_VIEW
 TEST(ParallelFlatHashSet, EmplaceString) {
   std::vector<std::string> v = {"a", "b"};
   phmap::parallel_flat_hash_set<phmap::string_view> hs(v.begin(), v.end());
   EXPECT_THAT(hs, UnorderedElementsAreArray(v));
 }
+#endif
 
 TEST(ParallelFlatHashSet, BitfieldArgument) {
   union {

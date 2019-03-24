@@ -42,6 +42,10 @@ option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
 if (PHMAP_BUILD_TESTS)
+    if(MSVC)
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+    endif()
+
     include(cmake/DownloadGTest.cmake)
 
     check_target(gtest)
