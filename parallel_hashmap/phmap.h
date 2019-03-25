@@ -4535,6 +4535,138 @@ public:
     using Base::key_eq;
 };
 
+// -----------------------------------------------------------------------------
+// phmap::parallel_node_hash_set
+// -----------------------------------------------------------------------------
+// An `phmap::node_hash_set<T>` is an unordered associative container which
+// has been optimized for both speed and memory footprint in most common use
+// cases. Its interface is similar to that of `std::unordered_set<T>` with the
+// following notable differences:
+//
+// * Supports heterogeneous lookup, through `find()`, `operator[]()` and
+//   `insert()`, provided that the map is provided a compatible heterogeneous
+//   hashing function and equality operator.
+// * Contains a `capacity()` member function indicating the number of element
+//   slots (open, deleted, and empty) within the hash set.
+// * Returns `void` from the `erase(iterator)` overload.
+// -----------------------------------------------------------------------------
+template <class T, 
+          class Hash  = phmap::container_internal::hash_default_hash<T>,
+          class Eq    = phmap::container_internal::hash_default_eq<T>,
+          class Alloc = std::allocator<T>,
+          size_t N    = 4,
+          class Mutex = phmap::NullMutex>
+class parallel_node_hash_set
+    : public phmap::container_internal::parallel_hash_set<
+             N, phmap::container_internal::raw_hash_set, Mutex,
+             phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
+{
+    using Base = typename parallel_node_hash_set::parallel_hash_set;
+
+public:
+    parallel_node_hash_set() {}
+    using Base::Base;
+    using Base::begin;
+    using Base::cbegin;
+    using Base::cend;
+    using Base::end;
+    using Base::capacity;
+    using Base::empty;
+    using Base::max_size;
+    using Base::size;
+    using Base::clear;
+    using Base::erase;
+    using Base::insert;
+    using Base::emplace;
+    using Base::emplace_hint;
+    using Base::extract;
+    using Base::merge;
+    using Base::swap;
+    using Base::rehash;
+    using Base::reserve;
+    using Base::contains;
+    using Base::count;
+    using Base::equal_range;
+    using Base::find;
+    using Base::bucket_count;
+    using Base::load_factor;
+    using Base::max_load_factor;
+    using Base::get_allocator;
+    using Base::hash_function;
+    using Base::key_eq;
+    typename Base::hasher hash_funct() { return this->hash_function(); }
+    void resize(typename Base::size_type hint) { this->rehash(hint); }
+};
+
+// -----------------------------------------------------------------------------
+// phmap::parallel_node_hash_map
+// -----------------------------------------------------------------------------
+//
+// An `phmap::node_hash_map<K, V>` is an unordered associative container which
+// has been optimized for both speed and memory footprint in most common use
+// cases. Its interface is similar to that of `std::unordered_map<K, V>` with
+// the following notable differences:
+//
+// * Supports heterogeneous lookup, through `find()`, `operator[]()` and
+//   `insert()`, provided that the map is provided a compatible heterogeneous
+//   hashing function and equality operator.
+// * Contains a `capacity()` member function indicating the number of element
+//   slots (open, deleted, and empty) within the hash map.
+// * Returns `void` from the `erase(iterator)` overload.
+// -----------------------------------------------------------------------------
+template <class Key, class Value,
+          class Hash  = phmap::container_internal::hash_default_hash<Key>,
+          class Eq    = phmap::container_internal::hash_default_eq<Key>,
+          class Alloc = std::allocator<std::pair<const Key, Value>>,
+          size_t N    = 4,
+          class Mutex = phmap::NullMutex>
+class parallel_node_hash_map
+    : public phmap::container_internal::parallel_hash_map<
+          N, phmap::container_internal::raw_hash_set, Mutex,
+          phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
+          Alloc> 
+{
+    using Base = typename parallel_node_hash_map::parallel_hash_map;
+
+public:
+    parallel_node_hash_map() {}
+    using Base::Base;
+    using Base::begin;
+    using Base::cbegin;
+    using Base::cend;
+    using Base::end;
+    using Base::capacity;
+    using Base::empty;
+    using Base::max_size;
+    using Base::size;
+    using Base::clear;
+    using Base::erase;
+    using Base::insert;
+    using Base::insert_or_assign;
+    using Base::emplace;
+    using Base::emplace_hint;
+    using Base::try_emplace;
+    using Base::extract;
+    using Base::merge;
+    using Base::swap;
+    using Base::rehash;
+    using Base::reserve;
+    using Base::at;
+    using Base::contains;
+    using Base::count;
+    using Base::equal_range;
+    using Base::find;
+    using Base::operator[];
+    using Base::bucket_count;
+    using Base::load_factor;
+    using Base::max_load_factor;
+    using Base::get_allocator;
+    using Base::hash_function;
+    using Base::key_eq;
+    typename Base::hasher hash_funct() { return this->hash_function(); }
+    void resize(typename Base::size_type hint) { this->rehash(hint); }
+};
+
 }  // namespace phmap
 
 #endif // phmap_h_guard_

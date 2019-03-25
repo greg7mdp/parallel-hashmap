@@ -72,6 +72,12 @@ if (PHMAP_BUILD_TESTS)
     phmap_cc_test(NAME node_hash_set SRCS "tests/node_hash_set_test.cc"
                   COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
 
+    phmap_cc_test(NAME parallel_node_hash_map SRCS "tests/parallel_node_hash_map_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME parallel_node_hash_set SRCS "tests/parallel_node_hash_set_test.cc"
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
+
 endif()
 
 if (PHMAP_BUILD_EXAMPLES)
