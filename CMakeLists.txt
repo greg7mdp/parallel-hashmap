@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.4)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -24,7 +24,7 @@ target_sources(${PROJECT_NAME} INTERFACE ${PHMAP_HEADERS})
 
 target_include_directories(
      ${PROJECT_NAME} INTERFACE
-     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${PHMAP_DIR}>
+     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
      $<INSTALL_INTERFACE:include>)
 
 install(
@@ -44,9 +44,12 @@ option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 if (PHMAP_BUILD_TESTS)
     if(MSVC)
          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+    else()
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     endif()
 
     include(cmake/DownloadGTest.cmake)
+    include_directories(${PROJECT_SOURCE_DIR})
 
     check_target(gtest)
     check_target(gtest_main)

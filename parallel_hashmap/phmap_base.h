@@ -750,6 +750,91 @@ using identity_t = typename identity<T>::type;
 
 #endif  // __cpp_inline_variables
 
+// ----------- throw_delegate
+
+namespace phmap {
+namespace base_internal {
+
+namespace {
+template <typename T>
+[[noreturn]] void Throw(const T& error) {
+#ifdef PHMAP_HAVE_EXCEPTIONS
+  throw error;
+#else
+  PHMAP_RAW_LOG(FATAL, "%s", error.what());
+  std::abort();
+#endif
+}
+}  // namespace
+
+void ThrowStdLogicError(const std::string& what_arg) {
+  Throw(std::logic_error(what_arg));
+}
+void ThrowStdLogicError(const char* what_arg) {
+  Throw(std::logic_error(what_arg));
+}
+void ThrowStdInvalidArgument(const std::string& what_arg) {
+  Throw(std::invalid_argument(what_arg));
+}
+void ThrowStdInvalidArgument(const char* what_arg) {
+  Throw(std::invalid_argument(what_arg));
+}
+
+void ThrowStdDomainError(const std::string& what_arg) {
+  Throw(std::domain_error(what_arg));
+}
+void ThrowStdDomainError(const char* what_arg) {
+  Throw(std::domain_error(what_arg));
+}
+
+void ThrowStdLengthError(const std::string& what_arg) {
+  Throw(std::length_error(what_arg));
+}
+void ThrowStdLengthError(const char* what_arg) {
+  Throw(std::length_error(what_arg));
+}
+
+void ThrowStdOutOfRange(const std::string& what_arg) {
+  Throw(std::out_of_range(what_arg));
+}
+void ThrowStdOutOfRange(const char* what_arg) {
+  Throw(std::out_of_range(what_arg));
+}
+
+void ThrowStdRuntimeError(const std::string& what_arg) {
+  Throw(std::runtime_error(what_arg));
+}
+void ThrowStdRuntimeError(const char* what_arg) {
+  Throw(std::runtime_error(what_arg));
+}
+
+void ThrowStdRangeError(const std::string& what_arg) {
+  Throw(std::range_error(what_arg));
+}
+void ThrowStdRangeError(const char* what_arg) {
+  Throw(std::range_error(what_arg));
+}
+
+void ThrowStdOverflowError(const std::string& what_arg) {
+  Throw(std::overflow_error(what_arg));
+}
+void ThrowStdOverflowError(const char* what_arg) {
+  Throw(std::overflow_error(what_arg));
+}
+
+void ThrowStdUnderflowError(const std::string& what_arg) {
+  Throw(std::underflow_error(what_arg));
+}
+void ThrowStdUnderflowError(const char* what_arg) {
+  Throw(std::underflow_error(what_arg));
+}
+
+void ThrowStdBadFunctionCall() { Throw(std::bad_function_call()); }
+
+void ThrowStdBadAlloc() { Throw(std::bad_alloc()); }
+
+}  // namespace base_internal
+}  // namespace phmap
 
 // ----------- invoke.h
 
@@ -2965,7 +3050,7 @@ using EnableIfMutable =
 template <typename T>
 bool EqualImpl(Span<T> a, Span<T> b) {
   static_assert(std::is_const<T>::value, "");
-  return phmap::equal(a.begin(), a.end(), b.begin(), b.end());
+  return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
 
 template <typename T>
@@ -3735,25 +3820,6 @@ constexpr size_t Max(size_t a, size_t b, Ts... rest) {
     return adl_barrier::Max(b < a ? a : b, rest...);
 }
 
-template <class T>
-std::string TypeName() {
-    std::string out;
-    int status = 0;
-    char* demangled = nullptr;
-#ifdef PHMAP_INTERNAL_HAS_CXA_DEMANGLE
-    demangled = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status);
-#endif
-    if (status == 0 && demangled != nullptr) {  // Demangling succeeded.
-        phmap::StrAppend(&out, "<", demangled, ">");
-        free(demangled);
-    } else {
-#if defined(__GXX_RTTI) || defined(_CPPRTTI)
-        phmap::StrAppend(&out, "<", typeid(T).name(), ">");
-#endif
-    }
-    return out;
-}
-
 }  // namespace adl_barrier
 
 template <bool C>
@@ -4073,42 +4139,6 @@ public:
             ASAN_POISON_MEMORY_REGION(p + start, Offset<N>() - start);
         }
 #endif
-    }
-
-    // Human-readable description of the memory layout. Useful for debugging.
-    // Slow.
-    //
-    //   // char[5], 3 bytes of padding, int[3], 4 bytes of padding, followed
-    //   // by an unknown number of doubles.
-    //   auto x = Layout<char, int, double>::Partial(5, 3);
-    //   assert(x.DebugString() ==
-    //          "@0<char>(1)[5]; @8<int>(4)[3]; @24<double>(8)");
-    //
-    // Each field is in the following format: @offset<type>(sizeof)[size] (<type>
-    // may be missing depending on the target platform). For example,
-    // @8<int>(4)[3] means that at offset 8 we have an array of ints, where each
-    // int is 4 bytes, and we have 3 of those ints. The size of the last field may
-    // be missing (as in the example above). Only fields with known offsets are
-    // described. Type names may differ across platforms: one compiler might
-    // produce "unsigned*" where another produces "unsigned int *".
-    // ---------------------------------------------------------------------------
-    std::string DebugString() const {
-        const auto offsets = Offsets();
-        const size_t sizes[] = {SizeOf<ElementType<OffsetSeq>>()...};
-        const std::string types[] = {
-            adl_barrier::TypeName<ElementType<OffsetSeq>>()...};
-        std::string res = phmap::StrCat("@0", types[0], "(", sizes[0], ")");
-        for (size_t i = 0; i != NumOffsets - 1; ++i) {
-            phmap::StrAppend(&res, "[", size_[i], "]; @", offsets[i + 1], types[i + 1],
-                            "(", sizes[i + 1], ")");
-        }
-        // NumSizes is a constant that may be zero. Some compilers cannot see that
-        // inside the if statement "size_[NumSizes - 1]" must be valid.
-        int last = static_cast<int>(NumSizes) - 1;
-        if (NumTypes == NumSizes && last >= 0) {
-            phmap::StrAppend(&res, "[", size_[last], "]");
-        }
-        return res;
     }
 
 private:

@@ -577,6 +577,139 @@ void SetHashtablezSampleParameter(int32_t rate) {}
 void SetHashtablezMaxSamples(int32_t max) {}
 
 
+namespace memory_internal {
+
+// Constructs T into uninitialized storage pointed by `ptr` using the args
+// specified in the tuple.
+// ----------------------------------------------------------------------------
+template <class Alloc, class T, class Tuple, size_t... I>
+void ConstructFromTupleImpl(Alloc* alloc, T* ptr, Tuple&& t,
+                            phmap::index_sequence<I...>) {
+    phmap::allocator_traits<Alloc>::construct(
+        *alloc, ptr, std::get<I>(std::forward<Tuple>(t))...);
+}
+
+template <class T, class F>
+struct WithConstructedImplF {
+    template <class... Args>
+    decltype(std::declval<F>()(std::declval<T>())) operator()(
+        Args&&... args) const {
+        return std::forward<F>(f)(T(std::forward<Args>(args)...));
+    }
+    F&& f;
+};
+
+template <class T, class Tuple, size_t... Is, class F>
+decltype(std::declval<F>()(std::declval<T>())) WithConstructedImpl(
+    Tuple&& t, phmap::index_sequence<Is...>, F&& f) {
+    return WithConstructedImplF<T, F>{std::forward<F>(f)}(
+        std::get<Is>(std::forward<Tuple>(t))...);
+}
+
+template <class T, size_t... Is>
+auto TupleRefImpl(T&& t, phmap::index_sequence<Is...>)
+    -> decltype(std::forward_as_tuple(std::get<Is>(std::forward<T>(t))...)) {
+  return std::forward_as_tuple(std::get<Is>(std::forward<T>(t))...);
+}
+
+// Returns a tuple of references to the elements of the input tuple. T must be a
+// tuple.
+// ----------------------------------------------------------------------------
+template <class T>
+auto TupleRef(T&& t) -> decltype(
+    TupleRefImpl(std::forward<T>(t),
+                 phmap::make_index_sequence<
+                     std::tuple_size<typename std::decay<T>::type>::value>())) {
+  return TupleRefImpl(
+      std::forward<T>(t),
+      phmap::make_index_sequence<
+          std::tuple_size<typename std::decay<T>::type>::value>());
+}
+
+template <class F, class K, class V>
+decltype(std::declval<F>()(std::declval<const K&>(), std::piecewise_construct,
+                           std::declval<std::tuple<K>>(), std::declval<V>()))
+DecomposePairImpl(F&& f, std::pair<std::tuple<K>, V> p) {
+    const auto& key = std::get<0>(p.first);
+    return std::forward<F>(f)(key, std::piecewise_construct, std::move(p.first),
+                              std::move(p.second));
+}
+
+}  // namespace memory_internal
+
+// Helper functions for asan and msan.
+// ----------------------------------------------------------------------------
+inline void SanitizerPoisonMemoryRegion(const void* m, size_t s) {
+#ifdef ADDRESS_SANITIZER
+    ASAN_POISON_MEMORY_REGION(m, s);
+#endif
+#ifdef MEMORY_SANITIZER
+    __msan_poison(m, s);
+#endif
+    (void)m;
+    (void)s;
+}
+
+inline void SanitizerUnpoisonMemoryRegion(const void* m, size_t s) {
+#ifdef ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(m, s);
+#endif
+#ifdef MEMORY_SANITIZER
+    __msan_unpoison(m, s);
+#endif
+    (void)m;
+    (void)s;
+}
+
+template <typename T>
+inline void SanitizerPoisonObject(const T* object) {
+    SanitizerPoisonMemoryRegion(object, sizeof(T));
+}
+
+template <typename T>
+inline void SanitizerUnpoisonObject(const T* object) {
+    SanitizerUnpoisonMemoryRegion(object, sizeof(T));
+}
+
+// ----------------------------------------------------------------------------
+// Allocates at least n bytes aligned to the specified alignment.
+// Alignment must be a power of 2. It must be positive.
+//
+// Note that many allocators don't honor alignment requirements above certain
+// threshold (usually either alignof(std::max_align_t) or alignof(void*)).
+// Allocate() doesn't apply alignment corrections. If the underlying allocator
+// returns insufficiently alignment pointer, that's what you are going to get.
+// ----------------------------------------------------------------------------
+template <size_t Alignment, class Alloc>
+void* Allocate(Alloc* alloc, size_t n) {
+  static_assert(Alignment > 0, "");
+  assert(n && "n must be positive");
+  struct alignas(Alignment) M {};
+  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
+  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
+  A mem_alloc(*alloc);
+  void* p = AT::allocate(mem_alloc, (n + sizeof(M) - 1) / sizeof(M));
+  assert(reinterpret_cast<uintptr_t>(p) % Alignment == 0 &&
+         "allocator does not respect alignment");
+  return p;
+}
+
+// ----------------------------------------------------------------------------
+// The pointer must have been previously obtained by calling
+// Allocate<Alignment>(alloc, n).
+// ----------------------------------------------------------------------------
+template <size_t Alignment, class Alloc>
+void Deallocate(Alloc* alloc, void* p, size_t n) {
+  static_assert(Alignment > 0, "");
+  assert(n && "n must be positive");
+  struct alignas(Alignment) M {};
+  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
+  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
+  A mem_alloc(*alloc);
+  AT::deallocate(mem_alloc, static_cast<M*>(p),
+                 (n + sizeof(M) - 1) / sizeof(M));
+}
+
 // ----------------------------------------------------------------------------
 //                     R A W _ H A S H _ S E T
 // ----------------------------------------------------------------------------
@@ -3330,104 +3463,6 @@ private:
     }
 };
 
-// ----------------------------------------------------------------------------
-// Allocates at least n bytes aligned to the specified alignment.
-// Alignment must be a power of 2. It must be positive.
-//
-// Note that many allocators don't honor alignment requirements above certain
-// threshold (usually either alignof(std::max_align_t) or alignof(void*)).
-// Allocate() doesn't apply alignment corrections. If the underlying allocator
-// returns insufficiently alignment pointer, that's what you are going to get.
-// ----------------------------------------------------------------------------
-template <size_t Alignment, class Alloc>
-void* Allocate(Alloc* alloc, size_t n) {
-  static_assert(Alignment > 0, "");
-  assert(n && "n must be positive");
-  struct alignas(Alignment) M {};
-  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
-  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
-  A mem_alloc(*alloc);
-  void* p = AT::allocate(mem_alloc, (n + sizeof(M) - 1) / sizeof(M));
-  assert(reinterpret_cast<uintptr_t>(p) % Alignment == 0 &&
-         "allocator does not respect alignment");
-  return p;
-}
-
-// ----------------------------------------------------------------------------
-// The pointer must have been previously obtained by calling
-// Allocate<Alignment>(alloc, n).
-// ----------------------------------------------------------------------------
-template <size_t Alignment, class Alloc>
-void Deallocate(Alloc* alloc, void* p, size_t n) {
-  static_assert(Alignment > 0, "");
-  assert(n && "n must be positive");
-  struct alignas(Alignment) M {};
-  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
-  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
-  A mem_alloc(*alloc);
-  AT::deallocate(mem_alloc, static_cast<M*>(p),
-                 (n + sizeof(M) - 1) / sizeof(M));
-}
-
-namespace memory_internal {
-
-// Constructs T into uninitialized storage pointed by `ptr` using the args
-// specified in the tuple.
-// ----------------------------------------------------------------------------
-template <class Alloc, class T, class Tuple, size_t... I>
-void ConstructFromTupleImpl(Alloc* alloc, T* ptr, Tuple&& t,
-                            phmap::index_sequence<I...>) {
-    phmap::allocator_traits<Alloc>::construct(
-        *alloc, ptr, std::get<I>(std::forward<Tuple>(t))...);
-}
-
-template <class T, class F>
-struct WithConstructedImplF {
-    template <class... Args>
-    decltype(std::declval<F>()(std::declval<T>())) operator()(
-        Args&&... args) const {
-        return std::forward<F>(f)(T(std::forward<Args>(args)...));
-    }
-    F&& f;
-};
-
-template <class T, class Tuple, size_t... Is, class F>
-decltype(std::declval<F>()(std::declval<T>())) WithConstructedImpl(
-    Tuple&& t, phmap::index_sequence<Is...>, F&& f) {
-    return WithConstructedImplF<T, F>{std::forward<F>(f)}(
-        std::get<Is>(std::forward<Tuple>(t))...);
-}
-
-template <class T, size_t... Is>
-auto TupleRefImpl(T&& t, phmap::index_sequence<Is...>)
-    -> decltype(std::forward_as_tuple(std::get<Is>(std::forward<T>(t))...)) {
-  return std::forward_as_tuple(std::get<Is>(std::forward<T>(t))...);
-}
-
-// Returns a tuple of references to the elements of the input tuple. T must be a
-// tuple.
-// ----------------------------------------------------------------------------
-template <class T>
-auto TupleRef(T&& t) -> decltype(
-    TupleRefImpl(std::forward<T>(t),
-                 phmap::make_index_sequence<
-                     std::tuple_size<typename std::decay<T>::type>::value>())) {
-  return TupleRefImpl(
-      std::forward<T>(t),
-      phmap::make_index_sequence<
-          std::tuple_size<typename std::decay<T>::type>::value>());
-}
-
-template <class F, class K, class V>
-decltype(std::declval<F>()(std::declval<const K&>(), std::piecewise_construct,
-                           std::declval<std::tuple<K>>(), std::declval<V>()))
-DecomposePairImpl(F&& f, std::pair<std::tuple<K>, V> p) {
-    const auto& key = std::get<0>(p.first);
-    return std::forward<F>(f)(key, std::piecewise_construct, std::move(p.first),
-                              std::move(p.second));
-}
-
-}  // namespace memory_internal
 
 // Constructs T into uninitialized storage pointed by `ptr` using the args
 // specified in the tuple.
@@ -3512,39 +3547,6 @@ DecomposeValue(F&& f, Arg&& arg) {
     return std::forward<F>(f)(key, std::forward<Arg>(arg));
 }
 
-// Helper functions for asan and msan.
-// ----------------------------------------------------------------------------
-inline void SanitizerPoisonMemoryRegion(const void* m, size_t s) {
-#ifdef ADDRESS_SANITIZER
-    ASAN_POISON_MEMORY_REGION(m, s);
-#endif
-#ifdef MEMORY_SANITIZER
-    __msan_poison(m, s);
-#endif
-    (void)m;
-    (void)s;
-}
-
-inline void SanitizerUnpoisonMemoryRegion(const void* m, size_t s) {
-#ifdef ADDRESS_SANITIZER
-    ASAN_UNPOISON_MEMORY_REGION(m, s);
-#endif
-#ifdef MEMORY_SANITIZER
-    __msan_unpoison(m, s);
-#endif
-    (void)m;
-    (void)s;
-}
-
-template <typename T>
-inline void SanitizerPoisonObject(const T* object) {
-    SanitizerPoisonMemoryRegion(object, sizeof(T));
-}
-
-template <typename T>
-inline void SanitizerUnpoisonObject(const T* object) {
-    SanitizerUnpoisonMemoryRegion(object, sizeof(T));
-}
 
 namespace memory_internal {
 
