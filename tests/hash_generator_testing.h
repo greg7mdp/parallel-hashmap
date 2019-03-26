@@ -26,6 +26,7 @@
 #include <type_traits>
 #include <utility>
 #include <string>
+#include <functional>
 
 #if PHMAP_HAVE_STD_STRING_VIEW
     #include <string_view>
@@ -192,5 +193,23 @@ using GeneratedType = decltype(
 }  // namespace hash_internal
 }  // namespace container_internal
 }  // namespace phmap
+
+namespace std
+{
+    using phmap::container_internal::hash_internal::EnumClass;
+    using phmap::container_internal::hash_internal::Enum;
+
+    template<> 
+    struct hash<EnumClass>
+    {
+        std::size_t operator()(EnumClass const &p) const { return (std::size_t)p; }
+    };
+    template<> 
+    struct hash<Enum>
+    {
+        std::size_t operator()(Enum const &p) const { return (std::size_t)p; }
+    };
+}
+
 
 #endif  // PHMAP_CONTAINER_INTERNAL_HASH_GENERATOR_TESTING_H_
