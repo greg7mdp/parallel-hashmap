@@ -52,6 +52,10 @@
 #include "phmap_base.h"
 #include "phmap_utils.h"
 
+#if PHMAP_HAVE_STD_STRING_VIEW
+    #include <string_view>
+#endif
+
 namespace phmap {
 namespace container_internal {
 
@@ -479,7 +483,7 @@ inline size_t GrowthToLowerboundCapacity(size_t growth)
     return growth + static_cast<size_t>((static_cast<int64_t>(growth) - 1) / 7);
 }
 
-namespace debug {
+namespace hashtable_debug_internal {
 
 // If it is a map, call get<0>().
 using std::get;
@@ -522,7 +526,7 @@ struct HashtableDebugAccess
     }
 };
 
-}  // namespace debug
+}  // namespace hashtable_debug_internal
 
 // ----------------------------------------------------------------------------
 //                    I N F O Z   S T U B S
@@ -565,7 +569,7 @@ public:
 
     using DisposeCallback = void (*)(const HashtablezInfo&);
     DisposeCallback SetDisposeCallback(DisposeCallback f) {}
-    int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) {}
+    int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) { return 0; }
 };
 
 void SetHashtablezEnabled(bool enabled) {}
@@ -1526,7 +1530,7 @@ public:
 
 private:
     template <class Container, typename Enabler>
-    friend struct phmap::container_internal::debug::HashtableDebugAccess;
+    friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
 
     struct FindElement 
     {
@@ -3027,7 +3031,7 @@ public:
 
 private:
     template <class Container, typename Enabler>
-    friend struct phmap::container_internal::debug::HashtableDebugAccess;
+    friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
 
     struct FindElement 
     {
@@ -4092,7 +4096,7 @@ template <class T>
 using hash_default_eq = typename container_internal::HashEq<T>::Eq;
 
 
-namespace debug {
+namespace hashtable_debug_internal {
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
@@ -4155,7 +4159,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
     }
 };
 
-}  // namespace debug
+}  // namespace hashtable_debug_internal
 }  // namespace container_internal
 
 // -----------------------------------------------------------------------------

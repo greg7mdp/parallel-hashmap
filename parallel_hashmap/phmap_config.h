@@ -53,6 +53,10 @@
     #include <TargetConditionals.h>
 #endif
 
+#define PHMAP_XSTR(x) PHMAP_STR(x)
+#define PHMAP_STR(x) #x
+#define PHMAP_VAR_NAME_VALUE(var) #var "="  PHMAP_STR(var)
+
 // -----------------------------------------------------------------------------
 // Some sanity checks
 // -----------------------------------------------------------------------------
@@ -296,6 +300,8 @@
         #define PHMAP_HAVE_STD_STRING_VIEW 1
     #endif
 #endif
+
+// #pragma message(PHMAP_VAR_NAME_VALUE(_MSVC_LANG))
 
 #if defined(_MSC_VER) && _MSC_VER >= 1910 && \
     ((defined(_MSVC_LANG) && _MSVC_LANG > 201402) || __cplusplus > 201402)

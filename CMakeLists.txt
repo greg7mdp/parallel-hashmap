@@ -52,25 +52,44 @@ if (PHMAP_BUILD_TESTS)
     check_target(gtest_main)
     check_target(gmock)
 
-    # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parallel_hashmap)
+    ## ---------------- regular hash maps ----------------------------
+    phmap_cc_test(NAME compressed_tuple SRCS "tests/compressed_tuple_test.cc"
+                  DEPS gmock_main)
 
+    phmap_cc_test(NAME container_memory SRCS "tests/container_memory_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME hash_policy_testing SRCS "tests/hash_policy_testing_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME node_hash_policy SRCS "tests/node_hash_policy_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME raw_hash_set SRCS "tests/raw_hash_set_test.cc"
+                  DEPS gmock_main)
+
+    phmap_cc_test(NAME raw_hash_set_allocator SRCS "tests/raw_hash_set_allocator_test.cc"
+                  DEPS gmock_main)
+
+    ## ---------------- regular hash maps ----------------------------
     phmap_cc_test(NAME flat_hash_set SRCS "tests/flat_hash_set_test.cc"
                   COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
 
     phmap_cc_test(NAME flat_hash_map SRCS "tests/flat_hash_map_test.cc"
                   DEPS gmock_main)
 
-    phmap_cc_test(NAME parallel_flat_hash_map SRCS "tests/parallel_flat_hash_map_test.cc"
-                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
-
-    phmap_cc_test(NAME parallel_flat_hash_set SRCS "tests/parallel_flat_hash_set_test.cc"
-                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
-
     phmap_cc_test(NAME node_hash_map SRCS "tests/node_hash_map_test.cc"
                   DEPS gmock_main)
 
     phmap_cc_test(NAME node_hash_set SRCS "tests/node_hash_set_test.cc"
                   COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
+
+    ## --------------- parallel hash maps -----------------------------------------------
+    phmap_cc_test(NAME parallel_flat_hash_map SRCS "tests/parallel_flat_hash_map_test.cc"
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+
+    phmap_cc_test(NAME parallel_flat_hash_set SRCS "tests/parallel_flat_hash_set_test.cc"
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
 
     phmap_cc_test(NAME parallel_node_hash_map SRCS "tests/parallel_node_hash_map_test.cc"
                   DEPS gmock_main)

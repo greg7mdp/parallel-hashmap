@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ABSL_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_
-#define ABSL_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_
+#ifndef PHMAP_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_
+#define PHMAP_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_
 
 #include <cstdlib>
 #include <ostream>
 
-namespace absl {
+namespace phmap {
 namespace test_internal {
 
 // A type that counts number of occurences of the type, the live occurrences of
@@ -257,6 +257,6 @@ class MovableOnlyInstance : public BaseCountedInstance {
 };
 
 }  // namespace test_internal
-}  // namespace absl
+}  // namespace phmap
 
-#endif  // ABSL_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_
+#endif  // PHMAP_CONTAINER_INTERNAL_TEST_INSTANCE_TRACKER_H_

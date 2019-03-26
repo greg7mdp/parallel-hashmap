@@ -2896,19 +2896,9 @@ struct InsertReturnType
     #include <sanitizer/asan_interface.h>
 #endif
 
-//#include "absl/strings/str_cat.h"
-//#include "absl/types/span.h"
-
 // ---------------------------------------------------------------------------
 //  span.h
 // ---------------------------------------------------------------------------
-
-//#include "absl/algorithm/algorithm.h"
-//#include "absl/base/internal/throw_delegate.h"
-//#include "absl/base/macros.h"
-//#include "absl/base/optimization.h"
-//#include "absl/base/port.h"
-//#include "absl/meta/type_traits.h"
 
 namespace phmap {
 
