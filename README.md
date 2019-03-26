@@ -1,4 +1,4 @@
-# The Parallel Hashmap: Very fast, and memory friendly as well
+# The Parallel Hashmap: very fast, very memory friendly
 
 Click here [For a full writeup explaining the design and benefits of the Parallel Hashmap](https://greg7mdp.github.io/parallel-hashmap/).
 

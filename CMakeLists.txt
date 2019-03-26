@@ -55,6 +55,8 @@ if (PHMAP_BUILD_TESTS)
     check_target(gtest_main)
     check_target(gmock)
 
+    enable_testing()
+
     ## ---------------- regular hash maps ----------------------------
     phmap_cc_test(NAME compressed_tuple SRCS "tests/compressed_tuple_test.cc"
                   DEPS gmock_main)
