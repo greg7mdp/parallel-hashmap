@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/org/greg7mdp/parallel_hashmap)  
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)
+[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/parallel-hashmap)   [![Build Status](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)](https://ci.appveyor.com/project/greg7mdp/parallel-hashmap)
 
 # The Parallel Hashmap: very fast, very memory friendly
 
@@ -24,7 +23,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - support heterogeneous lookup
 
-- Not yet **Tested** ~~on Windows (vs2010-2015, g++), linux (g++, clang++) and MacOS (clang++)~~.
+- **Tested** ~~on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++)~~ (click on travis-ci and appveyor-ci icons above).
 
 ## Installation
 
