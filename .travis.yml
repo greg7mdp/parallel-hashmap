@@ -1,0 +1,14 @@
+language: cpp
+matrix:
+  include:
+
+    - os: linux
+      compiler: gcc
+      env: COMPILER='g++' CXXSTD='c++11'
+
+
+dist: trusty
+sudo: false
+
+script: 
+  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . && make test

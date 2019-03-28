@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/org/greg7mdp/parallel_hashmap)
+
 # The Parallel Hashmap: very fast, very memory friendly
 
 Click here [For a full writeup explaining the design and benefits of the Parallel Hashmap](https://greg7mdp.github.io/parallel-hashmap/).
@@ -75,6 +77,10 @@ Key points:
 - The benefits of the `parallel` hash maps are:  
    a. reduced peak memory usage (when resizing), and  
    b. multithreading support (and inherent internal parallelism)
+
+
+## Memory usage
+
 
 
 
