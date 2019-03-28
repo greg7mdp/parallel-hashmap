@@ -2,101 +2,6 @@ language: cpp
 matrix:
   include:
 
-    - os: osx
-      compiler: gcc
-      env: COMPILER='g++' CXXSTD='c++11'
-
-    - os: osx
-      compiler: clang
-      env: COMPILER='clang++' CXXSTD='c++11'
-
-    - os: linux
-      compiler: gcc
-      env: COMPILER='g++' CXXSTD='c++11'
-
-    - os: linux
-      compiler: clang
-      env: COMPILER='clang++' CXXSTD='c++11'
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: 
-            - ubuntu-toolchain-r-test
-          packages: 
-            - g++-5
-      env: COMPILER='g++-5' CXXSTD='c++11'
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: 
-            - ubuntu-toolchain-r-test
-          packages: 
-            - g++-6
-      env: COMPILER='g++-6' CXXSTD='c++11'
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: 
-            - ubuntu-toolchain-r-test
-          packages: 
-            - g++-7
-      env: COMPILER='g++-7' CXXSTD='c++11'
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: 
-            - ubuntu-toolchain-r-test
-          packages: 
-            - g++-8
-      env: COMPILER='g++-8' CXXSTD='c++14'
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: 
-            - ubuntu-toolchain-r-test
-          packages: 
-            - g++-8
-      env: COMPILER='g++-8' CXXSTD='c++17'
-
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
-          sources: 
-            - llvm-toolchain-trusty-3.9
-          packages:
-            - clang-3.9
-      env: COMPILER='clang++-3.9' CXXSTD='c++11'
-
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
-          sources: 
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - clang-4.0
-      env: COMPILER='clang++-4.0' CXXSTD='c++11'
-
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
-          sources: 
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-      env: COMPILER='clang++-5.0' CXXSTD='c++14'
 
     - os: linux
       compiler: clang
@@ -112,4 +17,4 @@ dist: trusty
 sudo: false
 
 script: 
-  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . && make test
+  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . -- VERBOSE=1 && make test

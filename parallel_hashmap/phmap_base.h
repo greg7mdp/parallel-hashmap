@@ -45,7 +45,7 @@
 #include <functional>
 #include <tuple>
 #include <utility>
-
+#include <memory>
 
 #include "phmap_config.h"
 
