@@ -41,12 +41,15 @@ export(EXPORT ${PROJECT_NAME}-targets
 option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
+if(MSVC)
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+elseif(CXXFLAGS)
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+else()
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
 if (PHMAP_BUILD_TESTS)
-    if(MSVC)
-         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
-    else()
-         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    endif()
 
     include(cmake/DownloadGTest.cmake)
     include_directories(${PROJECT_SOURCE_DIR})
