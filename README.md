@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/org/greg7mdp/parallel_hashmap)
+[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/org/greg7mdp/parallel_hashmap)  
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)
 
 # The Parallel Hashmap: very fast, very memory friendly
 
