@@ -1265,7 +1265,7 @@ struct MakeUniqueResult<T[N]> {
 
 #if (__cplusplus > 201103L || defined(_MSC_VER)) && \
     !(defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ == 8) && \
-    !(defined (__GLIBCXX__) && __GLIBCXX__ <= 20141030)
+    !(defined (__GLIBCXX__) && __GLIBCXX__ <= 20151030)
     using std::make_unique;
 #else
 
