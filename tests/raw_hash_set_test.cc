@@ -1658,7 +1658,7 @@ TEST(Table, HeterogeneousLookupOverloads) {
   using TransparentTable = raw_hash_set<
       StringPolicy,
       phmap::container_internal::hash_default_hash<std::string_view>,
-      phmap::container_internal::hash_default_eq<phmap::string_view>,
+      phmap::container_internal::hash_default_eq<std::string_view>,
       std::allocator<int>>;
 
   EXPECT_TRUE((VerifyResultOf<CallFind, TransparentTable>()));

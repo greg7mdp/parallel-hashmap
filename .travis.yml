@@ -13,10 +13,10 @@ matrix:
           packages:
             - clang-5.0
             - g++-7
-      env: COMPILER='clang++-5.0' CXXSTD='c++17'
+      env: COMPILER='clang++-5.0' CXX_FLAGS='-std=c++17'
 
 dist: trusty
 sudo: false
 
 script: 
-  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . && make test
+  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="${CXX_FLAGS}" .. && cmake --build . && make test
