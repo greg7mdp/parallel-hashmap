@@ -2,21 +2,21 @@ language: cpp
 matrix:
   include:
 
-    - os: linux
-      compiler: gcc
-      env: COMPILER='g++' CXXSTD='c++11'
-
-    - os: linux
-      compiler: clang
-      env: COMPILER='clang++' CXXSTD='c++11'
-
     - os: osx
       compiler: gcc
-      env: COMPILER='g++' CXXSTD='c++11'
+      env: COMPILER='g++' CXX_FLAGS='-std=c++11'
 
     - os: osx
       compiler: clang
-      env: COMPILER='clang++' CXXSTD='c++11'
+      env: COMPILER='clang++' CXX_FLAGS='-std=c++11'
+
+    - os: linux
+      compiler: gcc
+      env: COMPILER='g++' CXX_FLAGS='-std=c++11'
+
+    - os: linux
+      compiler: clang
+      env: COMPILER='clang++' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: gcc
@@ -26,7 +26,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: 
             - g++-5
-      env: COMPILER='g++-5' CXXSTD='c++11'
+      env: COMPILER='g++-5' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: gcc
@@ -36,7 +36,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: 
             - g++-6
-      env: COMPILER='g++-6' CXXSTD='c++11'
+      env: COMPILER='g++-6' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: gcc
@@ -46,7 +46,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: 
             - g++-7
-      env: COMPILER='g++-7' CXXSTD='c++11'
+      env: COMPILER='g++-7' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: gcc
@@ -56,7 +56,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: 
             - g++-8
-      env: COMPILER='g++-8' CXXSTD='c++14'
+      env: COMPILER='g++-8' CXX_FLAGS='-std=c++14'
 
     - os: linux
       compiler: gcc
@@ -66,7 +66,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages: 
             - g++-8
-      env: COMPILER='g++-8' CXXSTD='c++17'
+      env: COMPILER='g++-8' CXX_FLAGS='-std=c++17'
 
     - os: linux
       compiler: clang
@@ -76,7 +76,7 @@ matrix:
             - llvm-toolchain-trusty-3.9
           packages:
             - clang-3.9
-      env: COMPILER='clang++-3.9' CXXSTD='c++11'
+      env: COMPILER='clang++-3.9' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: clang
@@ -86,7 +86,7 @@ matrix:
             - llvm-toolchain-trusty-4.0
           packages:
             - clang-4.0
-      env: COMPILER='clang++-4.0' CXXSTD='c++11'
+      env: COMPILER='clang++-4.0' CXX_FLAGS='-std=c++11'
 
     - os: linux
       compiler: clang
@@ -94,9 +94,11 @@ matrix:
         apt:
           sources: 
             - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
-      env: COMPILER='clang++-5.0' CXXSTD='c++14'
+            - g++-7
+      env: COMPILER='clang++-5.0' CXX_FLAGS='-std=c++14'
 
     - os: linux
       compiler: clang
@@ -104,12 +106,14 @@ matrix:
         apt:
           sources: 
             - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
-      env: COMPILER='clang++-5.0' CXXSTD='c++17'
+            - g++-7
+      env: COMPILER='clang++-5.0' CXX_FLAGS='-std=c++17'
 
 dist: trusty
 sudo: false
 
 script: 
-  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . && make test
+  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="${CXX_FLAGS}" .. && cmake --build . && make test
