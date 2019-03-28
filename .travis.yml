@@ -10,6 +10,7 @@ matrix:
           sources: 
             - llvm-toolchain-trusty-5.0
           packages:
+            - g++-8
             - clang-5.0
       env: COMPILER='clang++-5.0' CXXSTD='c++17'
 
@@ -17,4 +18,4 @@ dist: trusty
 sudo: false
 
 script: 
-  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . -- VERBOSE=1 && make test
+  mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="-std=${CXXSTD}" .. && cmake --build . && make test
