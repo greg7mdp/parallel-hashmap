@@ -9,9 +9,10 @@ matrix:
         apt:
           sources: 
             - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
-            - g++-8
             - clang-5.0
+            - g++-7
       env: COMPILER='clang++-5.0' CXXSTD='c++17'
 
 dist: trusty
