@@ -1,15 +1,12 @@
-[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/parallel-hashmap)   [![Build Status](https://ci.appveyor.com/api/projects/status/github/greg7mdp/parallel_hashmap)](https://ci.appveyor.com/project/greg7mdp/parallel-hashmap)
+[![Build Status](https://travis-ci.org/greg7mdp/parallel_hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/parallel-hashmap)   [![Build Status](https://ci.appveyor.com/api/projects/status/86kc657lp4cja8ju?svg=true)](https://ci.appveyor.com/project/greg7mdp/parallel-hashmap)
 
 # The Parallel Hashmap: very fast, very memory friendly
 
 Click here [For a full writeup explaining the design and benefits of the Parallel Hashmap](https://greg7mdp.github.io/parallel-hashmap/).
 
 
-> **IMPORTANT:** This repository borrowed a lot of code from the [abseil-cpp](https://github.com/abseil/abseil-cpp) repository, notably for the implementations of `phmap::flat_hash_map`, `phmap::flat_hash_set`, `phmap::node_hash_map` and `phmap::node_hash_set`. Please be aware that the code from [abseil-cpp](https://github.com/abseil/abseil-cpp) has been modified, and may behave differently than the original.  
-This repository should be construed as an independent work, with no guarantees of any kind implied or provided by the authors. Please go to [abseil-cpp](https://github.com/abseil/abseil-cpp) for the official Abseil libraries.
+> **IMPORTANT:** This repository borrows code from the [abseil-cpp](https://github.com/abseil/abseil-cpp) repository, with modifications, and may behave differently from the original. This repository is an independent work, with no guarantees implied or provided by the authors. Please go to [abseil-cpp](https://github.com/abseil/abseil-cpp) for the official Abseil libraries.
 
-
-# Work in progress - please do not use yet - should be ready before the end of March 2019
 
 This repository aims to provide an set of excellent hash map implementations, with the following characteristics:
 
@@ -21,15 +18,16 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - **Memory friendly**: low memory usage, although a little higher than [sparsepp](https://github.com/greg7mdp/sparsepp)
 
-- support heterogeneous lookup
+- support **heterogeneous lookup**
 
-- **Tested** ~~on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++)~~ (click on travis-ci and appveyor-ci icons above).
+- **Tested** on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis-ci and appveyor-ci icons above for detailed test status.
+
 
 ## Installation
 
-Copy the parallel_hashmap directory to your project. That's all.
+Copy the parallel_hashmap directory to your project. Update your include path. That's all.
 
-> cmake configuration files (CMakeLists.txt) are provided for building the tests and examples.
+> cmake configuration files (CMakeLists.txt) are provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON .. && cmake --build . && make test`
 
 ## Example
 
