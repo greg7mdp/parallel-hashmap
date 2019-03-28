@@ -568,7 +568,7 @@ public:
     void Unregister(HashtablezInfo* sample) {}
 
     using DisposeCallback = void (*)(const HashtablezInfo&);
-    DisposeCallback SetDisposeCallback(DisposeCallback f) {}
+    DisposeCallback SetDisposeCallback(DisposeCallback f) { return nullptr; }
     int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) { return 0; }
 };
 

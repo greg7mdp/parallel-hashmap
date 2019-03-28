@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PHMAP_CONTAINER_INTERNAL_UNORDERED_SET_CONSTRUCTOR_TEST_H_
-#define PHMAP_CONTAINER_INTERNAL_UNORDERED_SET_CONSTRUCTOR_TEST_H_
+#ifndef PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_CONSTRUCTOR_TEST_H_
+#define PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_CONSTRUCTOR_TEST_H_
 
 #include <algorithm>
-#include <unordered_set>
 #include <vector>
+#include <unordered_map>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -35,13 +35,13 @@ TYPED_TEST_SUITE_P(ConstructorTest);
 TYPED_TEST_P(ConstructorTest, NoArgs) {
   TypeParam m;
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
 }
 
 TYPED_TEST_P(ConstructorTest, BucketCount) {
   TypeParam m(123);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -51,7 +51,7 @@ TYPED_TEST_P(ConstructorTest, BucketCountHash) {
   TypeParam m(123, hasher);
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -64,7 +64,7 @@ TYPED_TEST_P(ConstructorTest, BucketCountHashEqual) {
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.key_eq(), equal);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -80,25 +80,17 @@ TYPED_TEST_P(ConstructorTest, BucketCountHashEqualAlloc) {
   EXPECT_EQ(m.key_eq(), equal);
   EXPECT_EQ(m.get_allocator(), alloc);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
-
-  const auto& cm = m;
-  EXPECT_EQ(cm.hash_function(), hasher);
-  EXPECT_EQ(cm.key_eq(), equal);
-  EXPECT_EQ(cm.get_allocator(), alloc);
-  EXPECT_TRUE(cm.empty());
-  EXPECT_THAT(keys(cm), ::testing::UnorderedElementsAre());
-  EXPECT_GE(cm.bucket_count(), 123);
 }
 
 template <typename T>
-struct is_std_unordered_set : std::false_type {};
+struct is_std_unordered_map : std::false_type {};
 
 template <typename... T>
-struct is_std_unordered_set<std::unordered_set<T...>> : std::true_type {};
+struct is_std_unordered_map<std::unordered_map<T...>> : std::true_type {};
 
-#if defined(UNORDERED_SET_CXX14) || defined(UNORDERED_SET_CXX17)
+#if defined(UNORDERED_MAP_CXX14) || defined(UNORDERED_MAP_CXX17)
 using has_cxx14_std_apis = std::true_type;
 #else
 using has_cxx14_std_apis = std::false_type;
@@ -106,7 +98,7 @@ using has_cxx14_std_apis = std::false_type;
 
 template <typename T>
 using expect_cxx14_apis =
-    phmap::disjunction<phmap::negation<is_std_unordered_set<T>>,
+    phmap::disjunction<phmap::negation<is_std_unordered_map<T>>,
                       has_cxx14_std_apis>;
 
 template <typename TypeParam>
@@ -119,7 +111,7 @@ void BucketCountAllocTest(std::true_type) {
   TypeParam m(123, alloc);
   EXPECT_EQ(m.get_allocator(), alloc);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -140,7 +132,7 @@ void BucketCountHashAllocTest(std::true_type) {
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.get_allocator(), alloc);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -156,7 +148,7 @@ using has_alloc_std_constructors = std::false_type;
 
 template <typename T>
 using expect_alloc_constructors =
-    phmap::disjunction<phmap::negation<is_std_unordered_set<T>>,
+    phmap::disjunction<phmap::negation<is_std_unordered_map<T>>,
                       has_alloc_std_constructors>;
 
 template <typename TypeParam>
@@ -169,7 +161,7 @@ void AllocTest(std::true_type) {
   TypeParam m(alloc);
   EXPECT_EQ(m.get_allocator(), alloc);
   EXPECT_TRUE(m.empty());
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAre());
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre());
 }
 
 TYPED_TEST_P(ConstructorTest, Alloc) {
@@ -185,13 +177,13 @@ TYPED_TEST_P(ConstructorTest, InputIteratorBucketHashEqualAlloc) {
   E equal;
   A alloc(0);
   std::vector<T> values;
-  for (size_t i = 0; i != 10; ++i)
-    values.push_back(hash_internal::Generator<T>()());
+  std::generate_n(std::back_inserter(values), 10,
+                  hash_internal::Generator<T>());
   TypeParam m(values.begin(), values.end(), 123, hasher, equal, alloc);
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.key_eq(), equal);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -204,11 +196,11 @@ void InputIteratorBucketAllocTest(std::true_type) {
   using A = typename TypeParam::allocator_type;
   A alloc(0);
   std::vector<T> values;
-  for (size_t i = 0; i != 10; ++i)
-    values.push_back(hash_internal::Generator<T>()());
+  std::generate_n(std::back_inserter(values), 10,
+                  hash_internal::Generator<T>());
   TypeParam m(values.begin(), values.end(), 123, alloc);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -227,12 +219,12 @@ void InputIteratorBucketHashAllocTest(std::true_type) {
   H hasher;
   A alloc(0);
   std::vector<T> values;
-  for (size_t i = 0; i != 10; ++i)
-    values.push_back(hash_internal::Generator<T>()());
+  std::generate_n(std::back_inserter(values), 10,
+                  hash_internal::Generator<T>());
   TypeParam m(values.begin(), values.end(), 123, hasher, alloc);
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -255,7 +247,6 @@ TYPED_TEST_P(ConstructorTest, CopyConstructor) {
   EXPECT_EQ(m.key_eq(), n.key_eq());
   EXPECT_EQ(m.get_allocator(), n.get_allocator());
   EXPECT_EQ(m, n);
-  EXPECT_NE(TypeParam(0, hasher, equal, alloc), n);
 }
 
 template <typename TypeParam>
@@ -345,7 +336,7 @@ TYPED_TEST_P(ConstructorTest, InitializerListBucketHashEqualAlloc) {
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.key_eq(), equal);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -361,7 +352,7 @@ void InitializerListBucketAllocTest(std::true_type) {
   A alloc(0);
   TypeParam m(values, 123, alloc);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -384,7 +375,7 @@ void InitializerListBucketHashAllocTest(std::true_type) {
   TypeParam m(values, 123, hasher, alloc);
   EXPECT_EQ(m.hash_function(), hasher);
   EXPECT_EQ(m.get_allocator(), alloc);
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
   EXPECT_GE(m.bucket_count(), 123);
 }
 
@@ -392,7 +383,7 @@ TYPED_TEST_P(ConstructorTest, InitializerListBucketHashAlloc) {
   InitializerListBucketHashAllocTest<TypeParam>(expect_cxx14_apis<TypeParam>());
 }
 
-TYPED_TEST_P(ConstructorTest, CopyAssignment) {
+TYPED_TEST_P(ConstructorTest, Assignment) {
   using T = hash_internal::GeneratedType<TypeParam>;
   using H = typename TypeParam::hasher;
   using E = typename TypeParam::key_equal;
@@ -436,7 +427,7 @@ TYPED_TEST_P(ConstructorTest, AssignmentFromInitializerList) {
   std::initializer_list<T> values = {gen(), gen(), gen(), gen(), gen()};
   TypeParam m;
   m = values;
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
 }
 
 TYPED_TEST_P(ConstructorTest, AssignmentOverwritesExisting) {
@@ -464,17 +455,21 @@ TYPED_TEST_P(ConstructorTest, AssignmentFromInitializerListOverwritesExisting) {
   std::initializer_list<T> values = {gen(), gen(), gen(), gen(), gen()};
   TypeParam m;
   m = values;
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
 }
 
-TYPED_TEST_P(ConstructorTest, AssignmentOnSelf) {
+TYPED_TEST_P(CounonstructorTest, AssignmentOnSelf) {
   using T = hash_internal::GeneratedType<TypeParam>;
   hash_internal::Generator<T> gen;
   std::initializer_list<T> values = {gen(), gen(), gen(), gen(), gen()};
   TypeParam m(values);
-  m = *&m;  // Avoid -Wself-assign.
-  EXPECT_THAT(keys(m), ::testing::UnorderedElementsAreArray(values));
+  m = *&m;  // Avoid -Wself-assign
+  EXPECT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
 }
+
+// We cannot test self move as standard states that it leaves standard
+// containers in unspecified state (and in practice in causes memory-leak
+// according to heap-checker!).
 
 REGISTER_TYPED_TEST_SUITE_P(
     ConstructorTest, NoArgs, BucketCount, BucketCountHash, BucketCountHashEqual,
@@ -482,7 +477,7 @@ REGISTER_TYPED_TEST_SUITE_P(
     InputIteratorBucketHashEqualAlloc, InputIteratorBucketAlloc,
     InputIteratorBucketHashAlloc, CopyConstructor, CopyConstructorAlloc,
     MoveConstructor, MoveConstructorAlloc, InitializerListBucketHashEqualAlloc,
-    InitializerListBucketAlloc, InitializerListBucketHashAlloc, CopyAssignment,
+    InitializerListBucketAlloc, InitializerListBucketHashAlloc, Assignment,
     MoveAssignment, AssignmentFromInitializerList, AssignmentOverwritesExisting,
     MoveAssignmentOverwritesExisting,
     AssignmentFromInitializerListOverwritesExisting, AssignmentOnSelf);
@@ -490,4 +485,4 @@ REGISTER_TYPED_TEST_SUITE_P(
 }  // namespace container_internal
 }  // namespace phmap
 
-#endif  // PHMAP_CONTAINER_INTERNAL_UNORDERED_SET_CONSTRUCTOR_TEST_H_
+#endif  // PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_CONSTRUCTOR_TEST_H_

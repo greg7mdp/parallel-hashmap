@@ -262,10 +262,10 @@ TYPED_TEST_P(ModifiersTest, Swap) {
 // TODO(alkis): Write tests for extract.
 // TODO(alkis): Write tests for merge.
 
-REGISTER_TYPED_TEST_CASE_P(ModifiersTest, Clear, Insert, InsertHint,
-                           InsertRange, InsertOrAssign, InsertOrAssignHint,
-                           Emplace, EmplaceHint, TryEmplace, TryEmplaceHint,
-                           Erase, EraseRange, EraseKey, Swap);
+REGISTER_TYPED_TEST_SUITE_P(ModifiersTest, Clear, Insert, InsertHint,
+                            InsertRange, InsertOrAssign, InsertOrAssignHint,
+                            Emplace, EmplaceHint, TryEmplace, TryEmplaceHint,
+                            Erase, EraseRange, EraseKey, Swap);
 
 }  // namespace container_internal
 }  // namespace phmap

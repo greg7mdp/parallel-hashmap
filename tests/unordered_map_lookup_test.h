@@ -106,8 +106,8 @@ TYPED_TEST_P(LookupTest, EqualRange) {
   }
 }
 
-REGISTER_TYPED_TEST_CASE_P(LookupTest, At, OperatorBracket, Count, Find,
-                           EqualRange);
+REGISTER_TYPED_TEST_SUITE_P(LookupTest, At, OperatorBracket, Count, Find,
+                            EqualRange);
 
 }  // namespace container_internal
 }  // namespace phmap
