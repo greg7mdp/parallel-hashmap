@@ -107,7 +107,7 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 - *load_factor()* is the ratio: `size() / bucket_count()`. It varies between 0.4375 (just after the resize) to 0.875 (just before the resize). 
 - the value 9 comes from `sizeof(void *) + 1`, as the *node* hash maps store one pointer plus one byte of metadata for each entry in the bucket array.
 - the additional peak memory usage (when resizing) corresponds the the old bucket array (half the size of the new one, hence the 0.5), which contains the values to be ciopied to the new bucket array, and which is freed when the values are copied.
+- the *parallel* hashmaps, when created with a template parameter N=4, create 16 submaps. When the hash values are well distributed, and in single threaded mode, only one of these 16 submaps resizes at any given time, hence the factor of 0.03 roughly equal to `0.5 / 16`
 
-In addition, during the  resizes, the peak memory usage is an additional 50% of the new size for the *non-parallel* hashmaps, and an additional 3% of the new size for the *parallel* hashmaps (single threaded usage).
 
 
