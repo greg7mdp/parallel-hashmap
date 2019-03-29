@@ -36,7 +36,7 @@
 
 namespace std 
 {
-    template<class T1, class T2> struct pair;
+    //template<class T1, class T2> using Pair = template<class T1, class T2> struct pair;
 }
 
 namespace phmap {
@@ -63,8 +63,9 @@ namespace phmap {
         template <class T>
         using hash_default_eq = typename container_internal::HashEq<T>::Eq;
 
-        template <class T> 
-        using Allocator = typename phmap::Allocator<T>;
+        template <class T>  using Allocator = typename phmap::Allocator<T>;
+
+        template<class T1, class T2> using Pair = typename phmap::Pair<T1, T2>;
 
     }  // namespace container_internal
 
@@ -77,7 +78,8 @@ namespace phmap {
     template <class K, class V,
               class Hash  = phmap::container_internal::hash_default_hash<K>,
               class Eq    = phmap::container_internal::hash_default_eq<K>,
-              class Alloc = phmap::container_internal::Allocator<std::pair<const K, V>>>
+              class Alloc = phmap::container_internal::Allocator<
+                            phmap::container_internal::Pair<const K, V>>>
         class flat_hash_map;
     
     template <class T, 
@@ -89,7 +91,8 @@ namespace phmap {
     template <class Key, class Value,
               class Hash  = phmap::container_internal::hash_default_hash<Key>,
               class Eq    = phmap::container_internal::hash_default_eq<Key>,
-              class Alloc = phmap::container_internal::Allocator<std::pair<const Key, Value>>>
+              class Alloc = phmap::container_internal::Allocator<
+                            phmap::container_internal::Pair<const Key, Value>>>
         class node_hash_map;
 
     template <class T,
@@ -103,7 +106,8 @@ namespace phmap {
     template <class K, class V,
               class Hash  = phmap::container_internal::hash_default_hash<K>,
               class Eq    = phmap::container_internal::hash_default_eq<K>,
-              class Alloc = phmap::container_internal::Allocator<std::pair<const K, V>>,
+              class Alloc = phmap::container_internal::Allocator<
+                            phmap::container_internal::Pair<const K, V>>,
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_flat_hash_map;
@@ -119,7 +123,8 @@ namespace phmap {
     template <class Key, class Value,
               class Hash  = phmap::container_internal::hash_default_hash<Key>,
               class Eq    = phmap::container_internal::hash_default_eq<Key>,
-              class Alloc = phmap::container_internal::Allocator<std::pair<const Key, Value>>,
+              class Alloc = phmap::container_internal::Allocator<
+                            phmap::container_internal::Pair<const Key, Value>>,
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_node_hash_map;
