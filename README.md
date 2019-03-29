@@ -95,13 +95,16 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 
 ## Memory usage
 
-|  type  |    memory usage   |
-|--------|-------------------|
-| flat tables  | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) |
-| node tables  | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) |
+|  type                 |    memory usage   | additional memory usage when resizing  |
+|-----------------------|-------------------|
+| flat tables           | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) | ![flat_peak_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_peak.gif?raw=true) | 
+| node tables           | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) | ![flat_node_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_node.gif?raw=true) | 
+| parallel flat tables  | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) | ![parallel_flat_peak](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/parallel_flat_peak.gif?raw=true) | 
+| parallel node tables  | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) | ![parallel_node_peak](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/parallel_node_peak.gif?raw=true) | 
+
 
 The load factor varies between 0.4375 (just after the resize) and 0.875 (just before the resize). 
 
-In addition, when the table resizes, the peak memory usage is an additional 50% of the new size for the *non-parallel* hashmaps, and an additional 3% of the new size for the *parallel* hashmaps (single threaded usage).
+In addition, during the  resizes, the peak memory usage is an additional 50% of the new size for the *non-parallel* hashmaps, and an additional 3% of the new size for the *parallel* hashmaps (single threaded usage).
 
 
