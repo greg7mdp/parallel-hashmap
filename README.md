@@ -14,7 +14,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - supports **heterogeneous lookup**
 
-- easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. This header is only 130 lines including comments.
+- easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. This header is only 111 lines including comments.
 
 - **Tested** on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 

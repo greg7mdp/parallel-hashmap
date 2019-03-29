@@ -9,35 +9,7 @@
 // You may obtain a copy of the License at
 //
 //      https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// Includes work from abseil-cpp (https://github.com/abseil/abseil-cpp)
-// with modifications.
-// 
-// Copyright 2018 The Abseil Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // ---------------------------------------------------------------------------
-
-namespace std 
-{
-    //template<class T1, class T2> using Pair = template<class T1, class T2> struct pair;
-}
 
 namespace phmap {
 
@@ -63,8 +35,10 @@ namespace phmap {
         template <class T>
         using hash_default_eq = typename container_internal::HashEq<T>::Eq;
 
+        // alias for std::allocator so we can forward declare without including other headers
         template <class T>  using Allocator = typename phmap::Allocator<T>;
 
+        // alias for std::pair so we can forward declare without including other headers
         template<class T1, class T2> using Pair = typename phmap::Pair<T1, T2>;
 
     }  // namespace container_internal
