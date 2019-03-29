@@ -44,6 +44,9 @@ namespace phmap
 template <class T>  T phmap_min(T a, T b) { return a < b  ? a : b; }
 template <class T>  T phmap_max(T a, T b) { return a >= b ? a : b; }
 
+template <class T> 
+using Allocator = typename std::allocator<T>;
+
 template <class T>
 struct EqualTo
 {
