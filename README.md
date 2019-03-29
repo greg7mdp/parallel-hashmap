@@ -68,7 +68,19 @@ int main()
 
 ## Various hash maps and their pros and cons
 
-Key points:
+The header `parallel_hashmap/phmap.h` provides the implementation for the following eight hash tables:
+- phmap::flat_hash_set
+- phmap::flat_hash_map
+- phmap::node_hash_set
+- phmap::node_hash_map
+- phmap::parallel_flat_hash_set
+- phmap::parallel_flat_hash_map
+- phmap::parallel_node_hash_set
+- phmap::parallel_node_hash_map
+
+The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessaary.
+
+**Key points:**
 
 - The `flat` hash maps may move the keys and values in memory. So if you keep a pointer to something inside a `flat` hash map, this pointer may become invalid when the map is mutated. The `node` hash maps don't, and should be used instead if this is a problem.
 
@@ -83,6 +95,13 @@ Key points:
 
 ## Memory usage
 
+|  type  |    memory usage   |
+|--------|-------------------|
+| flat tables  | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) |
+| node tables  |  !node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) |
 
+The load factor varies between 0.4375 (just after the resize) and 0.875 (just before the resize). 
+
+In addition, when the table resizes, the peak memory usage is an additional 50% of the new size for the *non-parallel* hashmaps, and an additional 3% of the new size for the *parallel* hashmaps (single threaded usage).
 
 

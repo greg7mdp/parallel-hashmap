@@ -35,10 +35,10 @@ namespace phmap {
         template <class T>
         using hash_default_eq = typename container_internal::HashEq<T>::Eq;
 
-        // alias for std::allocator so we can forward declare without including other headers
+        // type alias for std::allocator so we can forward declare without including other headers
         template <class T>  using Allocator = typename phmap::Allocator<T>;
 
-        // alias for std::pair so we can forward declare without including other headers
+        // type alias for std::pair so we can forward declare without including other headers
         template<class T1, class T2> using Pair = typename phmap::Pair<T1, T2>;
 
     }  // namespace container_internal
