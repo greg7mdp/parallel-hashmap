@@ -103,7 +103,10 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 | parallel node tables  | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) | ![parallel_node_peak](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/parallel_node_peak.gif?raw=true) | 
 
 
-The load factor varies between 0.4375 (just after the resize) and 0.875 (just before the resize). 
+- *size()* is the number of values in the container, as returned by the size() method
+- *load_factor()* is the ratio: `size() / bucket_count()`. It varies between 0.4375 (just after the resize) to 0.875 (just before the resize). 
+- the value 9 comes from `sizeof(void *) + 1`, as the *node* hash maps store one pointer plus one byte of metadata for each entry in the bucket array.
+- the additional peak memory usage (when resizing) corresponds the the old bucket array (half the size of the new one, hence the 0.5), which contains the values to be ciopied to the new bucket array, and which is freed when the values are copied.
 
 In addition, during the  resizes, the peak memory usage is an additional 50% of the new size for the *non-parallel* hashmaps, and an additional 3% of the new size for the *parallel* hashmaps (single threaded usage).
 
