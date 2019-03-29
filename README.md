@@ -4,19 +4,20 @@
 
 This repository aims to provide an set of excellent hash map implementations, with the following characteristics:
 
-- **header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
+- **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
-- compiler with **C++11 support** required, **C++14 and C++17 APIs are provided**
+- Compiler with **C++11 support** required, **C++14 and C++17 APIs are provided**
 
 - **Very efficient**, significantly faster than your compiler's unordered map/set or Boost's, or than [sparsepp](https://github.com/greg7mdp/sparsepp)
 
 - **Memory friendly**: low memory usage, although a little higher than [sparsepp](https://github.com/greg7mdp/sparsepp)
 
-- supports **heterogeneous lookup**
+- Supports **heterogeneous lookup**
 
-- easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. This header is only 111 lines including comments.
+- Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. This header is only 111 lines including comments.
 
 - **Tested** on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
+
 
 
 ## Fast *and*  memory friendly
@@ -27,11 +28,13 @@ The hashmaps provided here are built upon those open sourced by Google in the Ab
 
 > **IMPORTANT:** This repository borrows code from the [abseil-cpp](https://github.com/abseil/abseil-cpp) repository, with modifications, and may behave differently from the original. This repository is an independent work, with no guarantees implied or provided by the authors. Please visit [abseil-cpp](https://github.com/abseil/abseil-cpp) for the official Abseil libraries.
 
+
 ## Installation
 
 Copy the parallel_hashmap directory to your project. Update your include path. That's all.
 
 > A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON .. && cmake --build . && make test`
+
 
 ## Example
 
@@ -78,7 +81,7 @@ The header `parallel_hashmap/phmap.h` provides the implementation for the follow
 - phmap::parallel_node_hash_set
 - phmap::parallel_node_hash_map
 
-The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessaary.
+The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessary.
 
 **Key points:**
 
@@ -106,8 +109,8 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 - *size()* is the number of values in the container, as returned by the size() method
 - *load_factor()* is the ratio: `size() / bucket_count()`. It varies between 0.4375 (just after the resize) to 0.875 (just before the resize). 
 - the value 9 comes from `sizeof(void *) + 1`, as the *node* hash maps store one pointer plus one byte of metadata for each entry in the bucket array.
-- the additional peak memory usage (when resizing) corresponds the the old bucket array (half the size of the new one, hence the 0.5), which contains the values to be ciopied to the new bucket array, and which is freed when the values are copied.
-- the *parallel* hashmaps, when created with a template parameter N=4, create 16 submaps. When the hash values are well distributed, and in single threaded mode, only one of these 16 submaps resizes at any given time, hence the factor of 0.03 roughly equal to `0.5 / 16`
+- the additional peak memory usage (when resizing) corresponds the the old bucket array (half the size of the new one, hence the 0.5), which contains the values to be copied to the new bucket array, and which is freed when the values have been copied.
+- the *parallel* hashmaps, when created with a template parameter N=4, create 16 submaps. When the hash values are well distributed, and in single threaded mode, only one of these 16 submaps resizes at any given time, hence the factor `0.03` roughly equal to `0.5 / 16`
 
 
 
