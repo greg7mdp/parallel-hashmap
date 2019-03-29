@@ -45,6 +45,15 @@ template <class T>  T phmap_min(T a, T b) { return a < b  ? a : b; }
 template <class T>  T phmap_max(T a, T b) { return a >= b ? a : b; }
 
 template <class T>
+struct EqualTo
+{
+    inline size_t operator()(const T& a, const T& b) const
+    {
+        return std::equal_to<T>()(a, b);
+    }
+};
+
+template <class T>
 struct Hash
 {
     inline size_t operator()(const T& __v) const

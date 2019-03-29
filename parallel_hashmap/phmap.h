@@ -51,6 +51,7 @@
 #include "phmap_bits.h"
 #include "phmap_base.h"
 #include "phmap_utils.h"
+#include "phmap_fwd_decl.h"
 
 #if PHMAP_HAVE_STD_STRING_VIEW
     #include <string_view>
@@ -3994,14 +3995,6 @@ public:
 //  hash_default
 // --------------------------------------------------------------------------
 
-// The hash of an object of type T is computed by using phmap::Hash.
-template <class T, class E = void>
-struct HashEq 
-{
-    using Hash = phmap::Hash<T>;
-    using Eq   = std::equal_to<T>;
-};
-
 #if 0
 
 struct int64_t_hash 
@@ -4090,13 +4083,6 @@ struct HashEq<std::unique_ptr<T, D>> : HashEq<T*> {};
 
 template <class T>
 struct HashEq<std::shared_ptr<T>> : HashEq<T*> {};
-
-template <class T>
-using hash_default_hash = typename container_internal::HashEq<T>::Hash;
-
-template <class T>
-using hash_default_eq = typename container_internal::HashEq<T>::Eq;
-
 
 namespace hashtable_debug_internal {
 
@@ -4199,10 +4185,7 @@ public:
 //   slots (open, deleted, and empty) within the hash set.
 // * Returns `void` from the `erase(iterator)` overload.
 // -----------------------------------------------------------------------------
-template <class T, 
-          class Hash  = phmap::container_internal::hash_default_hash<T>,
-          class Eq    = phmap::container_internal::hash_default_eq<T>,
-          class Alloc = std::allocator<T>>
+template <class T, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class flat_hash_set
     : public phmap::container_internal::raw_hash_set<
           phmap::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Alloc> 
@@ -4262,10 +4245,7 @@ public:
 //   slots (open, deleted, and empty) within the hash map.
 // * Returns `void` from the `erase(iterator)` overload.
 // -----------------------------------------------------------------------------
-template <class K, class V,
-          class Hash  = phmap::container_internal::hash_default_hash<K>,
-          class Eq    = phmap::container_internal::hash_default_eq<K>,
-          class Alloc = std::allocator<std::pair<const K, V>>>
+template <class K, class V, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class flat_hash_map : public phmap::container_internal::raw_hash_map<
                           phmap::container_internal::FlatHashMapPolicy<K, V>,
                           Hash, Eq, Alloc> {
@@ -4323,10 +4303,7 @@ public:
 //   slots (open, deleted, and empty) within the hash set.
 // * Returns `void` from the `erase(iterator)` overload.
 // -----------------------------------------------------------------------------
-template <class T, 
-          class Hash  = phmap::container_internal::hash_default_hash<T>,
-          class Eq    = phmap::container_internal::hash_default_eq<T>,
-          class Alloc = std::allocator<T>>
+template <class T, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class node_hash_set
     : public phmap::container_internal::raw_hash_set<
           phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
@@ -4384,10 +4361,7 @@ public:
 //   slots (open, deleted, and empty) within the hash map.
 // * Returns `void` from the `erase(iterator)` overload.
 // -----------------------------------------------------------------------------
-template <class Key, class Value,
-          class Hash  = phmap::container_internal::hash_default_hash<Key>,
-          class Eq    = phmap::container_internal::hash_default_eq<Key>,
-          class Alloc = std::allocator<std::pair<const Key, Value>>>
+template <class Key, class Value, class Hash, class Eq, class Alloc>  // default values in phmap_fwd_decl.h
 class node_hash_map
     : public phmap::container_internal::raw_hash_map<
           phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
@@ -4437,12 +4411,7 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_flat_hash_set
 // -----------------------------------------------------------------------------
-template <class T,
-          class Hash  = phmap::container_internal::hash_default_hash<T>,
-          class Eq    = phmap::container_internal::hash_default_eq<T>,
-          class Alloc = std::allocator<T>,
-          size_t N    = 4,
-          class Mutex = phmap::NullMutex>
+template <class T, class Hash, class Eq, class Alloc, size_t N, class Mutex> // default values in phmap_fwd_decl.h
 class parallel_flat_hash_set
     : public phmap::container_internal::parallel_hash_set<
          N, phmap::container_internal::raw_hash_set, Mutex,
@@ -4487,14 +4456,9 @@ public:
 };
 
 // -----------------------------------------------------------------------------
-// phmap::parallel_flat_hash_map
+// phmap::parallel_flat_hash_map - default values in phmap_fwd_decl.h
 // -----------------------------------------------------------------------------
-template <class K, class V,
-          class Hash  = phmap::container_internal::hash_default_hash<K>,
-          class Eq    = phmap::container_internal::hash_default_eq<K>,
-          class Alloc = std::allocator<std::pair<const K, V>>,
-          size_t N    = 4,                 // 2**N submaps
-          class Mutex = phmap::NullMutex>   // use phmap::Mutex to enable internal locks
+template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mutex>
 class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_map<
                 N, phmap::container_internal::raw_hash_set, Mutex,
                 phmap::container_internal::FlatHashMapPolicy<K, V>,
@@ -4544,24 +4508,7 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_node_hash_set
 // -----------------------------------------------------------------------------
-// An `phmap::node_hash_set<T>` is an unordered associative container which
-// has been optimized for both speed and memory footprint in most common use
-// cases. Its interface is similar to that of `std::unordered_set<T>` with the
-// following notable differences:
-//
-// * Supports heterogeneous lookup, through `find()`, `operator[]()` and
-//   `insert()`, provided that the map is provided a compatible heterogeneous
-//   hashing function and equality operator.
-// * Contains a `capacity()` member function indicating the number of element
-//   slots (open, deleted, and empty) within the hash set.
-// * Returns `void` from the `erase(iterator)` overload.
-// -----------------------------------------------------------------------------
-template <class T, 
-          class Hash  = phmap::container_internal::hash_default_hash<T>,
-          class Eq    = phmap::container_internal::hash_default_eq<T>,
-          class Alloc = std::allocator<T>,
-          size_t N    = 4,
-          class Mutex = phmap::NullMutex>
+template <class T, class Hash, class Eq, class Alloc, size_t N, class Mutex>
 class parallel_node_hash_set
     : public phmap::container_internal::parallel_hash_set<
              N, phmap::container_internal::raw_hash_set, Mutex,
@@ -4607,25 +4554,7 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_node_hash_map
 // -----------------------------------------------------------------------------
-//
-// An `phmap::node_hash_map<K, V>` is an unordered associative container which
-// has been optimized for both speed and memory footprint in most common use
-// cases. Its interface is similar to that of `std::unordered_map<K, V>` with
-// the following notable differences:
-//
-// * Supports heterogeneous lookup, through `find()`, `operator[]()` and
-//   `insert()`, provided that the map is provided a compatible heterogeneous
-//   hashing function and equality operator.
-// * Contains a `capacity()` member function indicating the number of element
-//   slots (open, deleted, and empty) within the hash map.
-// * Returns `void` from the `erase(iterator)` overload.
-// -----------------------------------------------------------------------------
-template <class Key, class Value,
-          class Hash  = phmap::container_internal::hash_default_hash<Key>,
-          class Eq    = phmap::container_internal::hash_default_eq<Key>,
-          class Alloc = std::allocator<std::pair<const Key, Value>>,
-          size_t N    = 4,
-          class Mutex = phmap::NullMutex>
+template <class Key, class Value, class Hash, class Eq, class Alloc, size_t N, class Mutex>
 class parallel_node_hash_map
     : public phmap::container_internal::parallel_hash_map<
           N, phmap::container_internal::raw_hash_set, Mutex,
