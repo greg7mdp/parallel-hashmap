@@ -98,7 +98,7 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 |  type  |    memory usage   |
 |--------|-------------------|
 | flat tables  | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) |
-| node tables  |  !node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) |
+| node tables  | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) |
 
 The load factor varies between 0.4375 (just after the resize) and 0.875 (just before the resize). 
 
