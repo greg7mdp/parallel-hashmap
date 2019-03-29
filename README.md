@@ -95,8 +95,8 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 
 ## Memory usage
 
-|  type                 |    memory usage   | additional memory usage when resizing  |
-|-----------------------|-------------------|----------------------------------------|
+|  type                 |    memory usage   | additional *peak* memory usage when resizing  |
+|-----------------------|-------------------|-----------------------------------------------|
 | flat tables           | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) | ![flat_peak_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_peak.gif?raw=true) | 
 | node tables           | ![node_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_mem_usage.gif?raw=true) | ![node_peak_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/node_peak.gif?raw=true) | 
 | parallel flat tables  | ![flat_mem_usage](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/flat_mem_usage.gif?raw=true) | ![parallel_flat_peak](https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/parallel_flat_peak.gif?raw=true) | 
