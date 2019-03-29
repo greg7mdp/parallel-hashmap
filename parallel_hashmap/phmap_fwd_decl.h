@@ -36,7 +36,7 @@
 
 namespace std 
 {
-    template<class> class allocator;
+    template<class T> class allocator;
     template<class T1, class T2> struct pair;
 }
 
