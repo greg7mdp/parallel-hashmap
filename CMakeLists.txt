@@ -109,6 +109,8 @@ endif()
 
 if (PHMAP_BUILD_EXAMPLES)
     add_executable(basic examples/basic.cc)
+    add_executable(emplace examples/emplace.cc)
+    add_executable(hash_std examples/hash_std.cc)
 endif()
 
 
