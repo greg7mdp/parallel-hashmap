@@ -1460,6 +1460,7 @@ public:
         PolicyTraits::destroy(&alloc_ref(), it.slot_);
         erase_meta_only(it);
     }
+    void _erase(const_iterator cit) { _erase(cit.inner_); }
 
     // This overload is necessary because otherwise erase<K>(const K&) would be
     // a better match if non-const iterator is passed as an argument.
@@ -2974,6 +2975,7 @@ public:
         assert(it.inner_ != nullptr);
         it.inner_->set_._erase(it.it_);
     }
+    void _erase(const_iterator cit) { _erase(cit.iter_); }
 
     // This overload is necessary because otherwise erase<K>(const K&) would be
     // a better match if non-const iterator is passed as an argument.
