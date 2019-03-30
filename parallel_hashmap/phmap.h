@@ -1440,6 +1440,9 @@ public:
         return 1;
     }
 
+
+    iterator erase(const_iterator cit) { return erase(cit.inner_); }
+    
     // Erases the element pointed to by `it`.  Unlike `std::unordered_set::erase`,
     // this method returns void to reduce algorithmic complexity to O(1).  In
     // order to erase while iterating across a map, use the following idiom (which
@@ -1447,20 +1450,20 @@ public:
     //
     // for (auto it = m.begin(), end = m.end(); it != end;) {
     //   if (<pred>) {
-    //     m.erase(it++);
+    //     m._erase(it++);
     //   } else {
     //     ++it;
     //   }
     // }
-    void erase(const_iterator cit) { erase(cit.inner_); }
-
-    // This overload is necessary because otherwise erase<K>(const K&) would be
-    // a better match if non-const iterator is passed as an argument.
-    void erase(iterator it) {
+    void _erase(iterator it) {
         assert(it != end());
         PolicyTraits::destroy(&alloc_ref(), it.slot_);
         erase_meta_only(it);
     }
+
+    // This overload is necessary because otherwise erase<K>(const K&) would be
+    // a better match if non-const iterator is passed as an argument.
+    iterator erase(iterator it) { _erase(it++); return it; }
 
     iterator erase(const_iterator first, const_iterator last) {
         while (first != last) {
@@ -2951,6 +2954,9 @@ public:
         return 1;
     }
 
+    // --------------------------------------------------------------------
+    iterator erase(const_iterator cit) { return erase(cit.iter_); }
+
     // Erases the element pointed to by `it`.  Unlike `std::unordered_set::erase`,
     // this method returns void to reduce algorithmic complexity to O(1).  In
     // order to erase while iterating across a map, use the following idiom (which
@@ -2958,23 +2964,21 @@ public:
     //
     // for (auto it = m.begin(), end = m.end(); it != end;) {
     //   if (<pred>) {
-    //     m.erase(it++);
+    //     m._erase(it++);
     //   } else {
     //     ++it;
     //   }
     // }
     // --------------------------------------------------------------------
-    void erase(const_iterator cit) { 
-        erase(cit.iter_); 
+    void _erase(iterator it) {
+        assert(it.inner_ != nullptr);
+        it.inner_->set_._erase(it.it_);
     }
 
     // This overload is necessary because otherwise erase<K>(const K&) would be
     // a better match if non-const iterator is passed as an argument.
     // --------------------------------------------------------------------
-    void erase(iterator it) {
-        assert(it.inner_ != nullptr);
-        it.inner_->set_.erase(it.it_);
-    }
+    iterator erase(iterator it) { _erase(it++); return it; }
 
     iterator erase(const_iterator first, const_iterator last) {
         while (first != last) {
