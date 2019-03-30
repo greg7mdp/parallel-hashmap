@@ -96,8 +96,8 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 
 ## Changes to Abseil's hashmaps
 
-- The default hash framework is std::hash, not absl::Hash
-- The `erase(iterator)` and `erase(const_iterator)` both return an iterator to the element following the removed element, as the do the std::unordered_map. A non-standard `void _erase(iterator)` is provided in case the return value is not needed.
+- The default hash framework is std::hash, not absl::Hash. However, if you prefer the default to be the Abseil hash framework, include the Abseil headers before `phmap.h` and define the preprocessor macro `PHMAP_USE_ABSL_HASHEQ`.
+- The `erase(iterator)` and `erase(const_iterator)` both return an iterator to the element following the removed element, as does the std::unordered_map. A non-standard `void _erase(iterator)` is provided in case the return value is not needed.
 - No new types, such as `absl::string_view`, are provided. `std::string_view` is supported by phmap tables when built with a stdlib providing this type.
 
 

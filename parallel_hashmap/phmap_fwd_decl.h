@@ -24,10 +24,14 @@ namespace phmap {
         template <class T, class E = void>
         struct HashEq 
         {
+#ifdef PHMAP_USE_ABSL_HASHEQ
+            using Hash = absl::Hash<T>;
+            using Eq   = absl::EqualTo<T>;
+#else
             using Hash = phmap::Hash<T>;
             using Eq   = phmap::EqualTo<T>;
+#endif
         };
-
 
         template <class T>
         using hash_default_hash = typename container_internal::HashEq<T>::Hash;
@@ -36,10 +40,12 @@ namespace phmap {
         using hash_default_eq = typename container_internal::HashEq<T>::Eq;
 
         // type alias for std::allocator so we can forward declare without including other headers
-        template <class T>  using Allocator = typename phmap::Allocator<T>;
+        template <class T>  
+        using Allocator = typename phmap::Allocator<T>;
 
         // type alias for std::pair so we can forward declare without including other headers
-        template<class T1, class T2> using Pair = typename phmap::Pair<T1, T2>;
+        template<class T1, class T2> 
+        using Pair = typename phmap::Pair<T1, T2>;
 
     }  // namespace container_internal
 
