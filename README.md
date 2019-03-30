@@ -6,7 +6,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
-- *drop-in replacement* for std::unordered_map and std::unordered_set
+- **drop-in replacement** for std::unordered_map and std::unordered_set
 
 - Compiler with **C++11 support** required, **C++14 and C++17 APIs are provided**
 
