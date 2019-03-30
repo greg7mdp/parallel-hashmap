@@ -8,7 +8,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - **drop-in replacement** for std::unordered_map and std::unordered_set
 
-- Compiler with **C++11 support** required, **C++14 and C++17 APIs are provided**
+- Compiler with **C++11 support** required, **C++14 and C++17 APIs are provided (such as `try_emplace`)**
 
 - **Very efficient**, significantly faster than your compiler's unordered map/set or Boost's, or than [sparsepp](https://github.com/greg7mdp/sparsepp)
 

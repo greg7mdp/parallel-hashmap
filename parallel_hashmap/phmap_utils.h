@@ -41,9 +41,6 @@
 namespace phmap
 {
 
-template <class T>  T phmap_min(T a, T b) { return a < b  ? a : b; }
-template <class T>  T phmap_max(T a, T b) { return a >= b ? a : b; }
-
 template <class T> using Allocator = typename std::allocator<T>;
 
 template<class T1, class T2> using Pair = typename std::pair<T1, T2>;
@@ -69,20 +66,9 @@ struct Hash
 template <class T>
 struct Hash<T *>
 {
-    static size_t phmap_log2 (size_t val) noexcept
-    {
-        size_t res = 0;
-        while (val > 1)
-        {
-            val >>= 1;
-            res++;
-        }
-        return res;
-    }
-
     inline size_t operator()(const T *__v) const noexcept
     {
-        static const size_t shift = 3; // phmap_log2(1 + sizeof(T)); // T might be incomplete!
+        static const size_t shift = 3;
         const uintptr_t i = (const uintptr_t)__v;
         return static_cast<size_t>(i >> shift);
     }

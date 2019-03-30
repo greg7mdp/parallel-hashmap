@@ -648,81 +648,16 @@
 // can be used in defining new arrays. If you use this macro on a pointer by
 // mistake, you will get a compile-time error.
 #define PHMAP_ARRAYSIZE(array) \
-  (sizeof(::absl::macros_internal::ArraySizeHelper(array)))
+  (sizeof(::phmap::macros_internal::ArraySizeHelper(array)))
 
-namespace absl {
+namespace phmap {
 namespace macros_internal {
-// Note: this internal template function declaration is used by PHMAP_ARRAYSIZE.
-// The function doesn't need a definition, as we only use its type.
-template <typename T, size_t N>
-auto ArraySizeHelper(const T (&array)[N]) -> char (&)[N];
+    // Note: this internal template function declaration is used by PHMAP_ARRAYSIZE.
+    // The function doesn't need a definition, as we only use its type.
+    template <typename T, size_t N>
+    auto ArraySizeHelper(const T (&array)[N]) -> char (&)[N];
 }  // namespace macros_internal
-}  // namespace absl
-
-// kLinkerInitialized
-//
-// An enum used only as a constructor argument to indicate that a variable has
-// static storage duration, and that the constructor should do nothing to its
-// state. Use of this macro indicates to the reader that it is legal to
-// declare a static instance of the class, provided the constructor is given
-// the absl::base_internal::kLinkerInitialized argument.
-//
-// Normally, it is unsafe to declare a static variable that has a constructor or
-// a destructor because invocation order is undefined. However, if the type can
-// be zero-initialized (which the loader does for static variables) into a valid
-// state and the type's destructor does not affect storage, then a constructor
-// for static initialization can be declared.
-//
-// Example:
-//       // Declaration
-//       explicit MyClass(absl::base_internal:LinkerInitialized x) {}
-//
-//       // Invocation
-//       static MyClass my_global(absl::base_internal::kLinkerInitialized);
-namespace absl {
-namespace base_internal {
-enum LinkerInitialized {
-  kLinkerInitialized = 0,
-};
-}  // namespace base_internal
-}  // namespace absl
-
-// PHMAP_FALLTHROUGH_INTENDED
-//
-// Annotates implicit fall-through between switch labels, allowing a case to
-// indicate intentional fallthrough and turn off warnings about any lack of a
-// `break` statement. The PHMAP_FALLTHROUGH_INTENDED macro should be followed by
-// a semicolon and can be used in most places where `break` can, provided that
-// no statements exist between it and the next switch label.
-//
-// Example:
-//
-//  switch (x) {
-//    case 40:
-//    case 41:
-//      if (truth_is_out_there) {
-//        ++x;
-//        PHMAP_FALLTHROUGH_INTENDED;  // Use instead of/along with annotations
-//                                    // in comments
-//      } else {
-//        return x;
-//      }
-//    case 42:
-//      ...
-//
-// Notes: when compiled with clang in C++11 mode, the PHMAP_FALLTHROUGH_INTENDED
-// macro is expanded to the [[clang::fallthrough]] attribute, which is analysed
-// when  performing switch labels fall-through diagnostic
-// (`-Wimplicit-fallthrough`). See clang documentation on language extensions
-// for details:
-// http://clang.llvm.org/docs/AttributeReference.html#fallthrough-clang-fallthrough
-//
-// When used with unsupported compilers, the PHMAP_FALLTHROUGH_INTENDED macro
-// has no effect on diagnostics. In any case this macro has no effect on runtime
-// behavior and performance of code.
-#ifdef PHMAP_FALLTHROUGH_INTENDED
-    #error "PHMAP_FALLTHROUGH_INTENDED should not be defined."
-#endif
+}  // namespace phmap
 
 // TODO(zhangxy): Use c++17 standard [[fallthrough]] macro, when supported.
 #if defined(__clang__) && defined(__has_warning)

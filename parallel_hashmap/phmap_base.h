@@ -3161,288 +3161,289 @@ using EnableIfConvertibleToSpanConst =
 //   int* my_array = new int[10];
 //   MyRoutine(phmap::Span<const int>(my_array, 10));
 template <typename T>
-class Span {
- private:
-  // Used to determine whether a Span can be constructed from a container of
-  // type C.
-  template <typename C>
-  using EnableIfConvertibleFrom =
-      typename std::enable_if<span_internal::HasData<T, C>::value &&
-                              span_internal::HasSize<C>::value>::type;
+class Span 
+{
+private:
+    // Used to determine whether a Span can be constructed from a container of
+    // type C.
+    template <typename C>
+    using EnableIfConvertibleFrom =
+        typename std::enable_if<span_internal::HasData<T, C>::value &&
+                                span_internal::HasSize<C>::value>::type;
 
-  // Used to SFINAE-enable a function when the slice elements are const.
-  template <typename U>
-  using EnableIfConstView =
-      typename std::enable_if<std::is_const<T>::value, U>::type;
+    // Used to SFINAE-enable a function when the slice elements are const.
+    template <typename U>
+    using EnableIfConstView =
+        typename std::enable_if<std::is_const<T>::value, U>::type;
 
-  // Used to SFINAE-enable a function when the slice elements are mutable.
-  template <typename U>
-  using EnableIfMutableView =
-      typename std::enable_if<!std::is_const<T>::value, U>::type;
+    // Used to SFINAE-enable a function when the slice elements are mutable.
+    template <typename U>
+    using EnableIfMutableView =
+        typename std::enable_if<!std::is_const<T>::value, U>::type;
 
- public:
-  using value_type = phmap::remove_cv_t<T>;
-  using pointer = T*;
-  using const_pointer = const T*;
-  using reference = T&;
-  using const_reference = const T&;
-  using iterator = pointer;
-  using const_iterator = const_pointer;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-  using size_type = size_t;
-  using difference_type = ptrdiff_t;
+public:
+    using value_type = phmap::remove_cv_t<T>;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
 
-  static const size_type npos = ~(size_type(0));
+    static const size_type npos = ~(size_type(0));
 
-  constexpr Span() noexcept : Span(nullptr, 0) {}
-  constexpr Span(pointer array, size_type length) noexcept
-      : ptr_(array), len_(length) {}
+    constexpr Span() noexcept : Span(nullptr, 0) {}
+    constexpr Span(pointer array, size_type length) noexcept
+        : ptr_(array), len_(length) {}
 
-  // Implicit conversion constructors
-  template <size_t N>
-  constexpr Span(T (&a)[N]) noexcept  // NOLINT(runtime/explicit)
-      : Span(a, N) {}
+    // Implicit conversion constructors
+    template <size_t N>
+    constexpr Span(T (&a)[N]) noexcept  // NOLINT(runtime/explicit)
+        : Span(a, N) {}
 
-  // Explicit reference constructor for a mutable `Span<T>` type. Can be
-  // replaced with MakeSpan() to infer the type parameter.
-  template <typename V, typename = EnableIfConvertibleFrom<V>,
-            typename = EnableIfMutableView<V>>
-  explicit Span(V& v) noexcept  // NOLINT(runtime/references)
-      : Span(span_internal::GetData(v), v.size()) {}
+    // Explicit reference constructor for a mutable `Span<T>` type. Can be
+    // replaced with MakeSpan() to infer the type parameter.
+    template <typename V, typename = EnableIfConvertibleFrom<V>,
+              typename = EnableIfMutableView<V>>
+        explicit Span(V& v) noexcept  // NOLINT(runtime/references)
+        : Span(span_internal::GetData(v), v.size()) {}
 
-  // Implicit reference constructor for a read-only `Span<const T>` type
-  template <typename V, typename = EnableIfConvertibleFrom<V>,
-            typename = EnableIfConstView<V>>
-  constexpr Span(const V& v) noexcept  // NOLINT(runtime/explicit)
-      : Span(span_internal::GetData(v), v.size()) {}
+    // Implicit reference constructor for a read-only `Span<const T>` type
+    template <typename V, typename = EnableIfConvertibleFrom<V>,
+              typename = EnableIfConstView<V>>
+        constexpr Span(const V& v) noexcept  // NOLINT(runtime/explicit)
+        : Span(span_internal::GetData(v), v.size()) {}
 
-  // Implicit constructor from an initializer list, making it possible to pass a
-  // brace-enclosed initializer list to a function expecting a `Span`. Such
-  // spans constructed from an initializer list must be of type `Span<const T>`.
-  //
-  //   void Process(phmap::Span<const int> x);
-  //   Process({1, 2, 3});
-  //
-  // Note that as always the array referenced by the span must outlive the span.
-  // Since an initializer list constructor acts as if it is fed a temporary
-  // array (cf. C++ standard [dcl.init.list]/5), it's safe to use this
-  // constructor only when the `std::initializer_list` itself outlives the span.
-  // In order to meet this requirement it's sufficient to ensure that neither
-  // the span nor a copy of it is used outside of the expression in which it's
-  // created:
-  //
-  //   // Assume that this function uses the array directly, not retaining any
-  //   // copy of the span or pointer to any of its elements.
-  //   void Process(phmap::Span<const int> ints);
-  //
-  //   // Okay: the std::initializer_list<int> will reference a temporary array
-  //   // that isn't destroyed until after the call to Process returns.
-  //   Process({ 17, 19 });
-  //
-  //   // Not okay: the storage used by the std::initializer_list<int> is not
-  //   // allowed to be referenced after the first line.
-  //   phmap::Span<const int> ints = { 17, 19 };
-  //   Process(ints);
-  //
-  //   // Not okay for the same reason as above: even when the elements of the
-  //   // initializer list expression are not temporaries the underlying array
-  //   // is, so the initializer list must still outlive the span.
-  //   const int foo = 17;
-  //   phmap::Span<const int> ints = { foo };
-  //   Process(ints);
-  //
-  template <typename LazyT = T,
-            typename = EnableIfConstView<LazyT>>
-  Span(
-      std::initializer_list<value_type> v) noexcept  // NOLINT(runtime/explicit)
-      : Span(v.begin(), v.size()) {}
+    // Implicit constructor from an initializer list, making it possible to pass a
+    // brace-enclosed initializer list to a function expecting a `Span`. Such
+    // spans constructed from an initializer list must be of type `Span<const T>`.
+    //
+    //   void Process(phmap::Span<const int> x);
+    //   Process({1, 2, 3});
+    //
+    // Note that as always the array referenced by the span must outlive the span.
+    // Since an initializer list constructor acts as if it is fed a temporary
+    // array (cf. C++ standard [dcl.init.list]/5), it's safe to use this
+    // constructor only when the `std::initializer_list` itself outlives the span.
+    // In order to meet this requirement it's sufficient to ensure that neither
+    // the span nor a copy of it is used outside of the expression in which it's
+    // created:
+    //
+    //   // Assume that this function uses the array directly, not retaining any
+    //   // copy of the span or pointer to any of its elements.
+    //   void Process(phmap::Span<const int> ints);
+    //
+    //   // Okay: the std::initializer_list<int> will reference a temporary array
+    //   // that isn't destroyed until after the call to Process returns.
+    //   Process({ 17, 19 });
+    //
+    //   // Not okay: the storage used by the std::initializer_list<int> is not
+    //   // allowed to be referenced after the first line.
+    //   phmap::Span<const int> ints = { 17, 19 };
+    //   Process(ints);
+    //
+    //   // Not okay for the same reason as above: even when the elements of the
+    //   // initializer list expression are not temporaries the underlying array
+    //   // is, so the initializer list must still outlive the span.
+    //   const int foo = 17;
+    //   phmap::Span<const int> ints = { foo };
+    //   Process(ints);
+    //
+    template <typename LazyT = T,
+              typename = EnableIfConstView<LazyT>>
+        Span(
+            std::initializer_list<value_type> v) noexcept  // NOLINT(runtime/explicit)
+        : Span(v.begin(), v.size()) {}
 
-  // Accessors
+    // Accessors
 
-  // Span::data()
-  //
-  // Returns a pointer to the span's underlying array of data (which is held
-  // outside the span).
-  constexpr pointer data() const noexcept { return ptr_; }
+    // Span::data()
+    //
+    // Returns a pointer to the span's underlying array of data (which is held
+    // outside the span).
+    constexpr pointer data() const noexcept { return ptr_; }
 
-  // Span::size()
-  //
-  // Returns the size of this span.
-  constexpr size_type size() const noexcept { return len_; }
+    // Span::size()
+    //
+    // Returns the size of this span.
+    constexpr size_type size() const noexcept { return len_; }
 
-  // Span::length()
-  //
-  // Returns the length (size) of this span.
-  constexpr size_type length() const noexcept { return size(); }
+    // Span::length()
+    //
+    // Returns the length (size) of this span.
+    constexpr size_type length() const noexcept { return size(); }
 
-  // Span::empty()
-  //
-  // Returns a boolean indicating whether or not this span is considered empty.
-  constexpr bool empty() const noexcept { return size() == 0; }
+    // Span::empty()
+    //
+    // Returns a boolean indicating whether or not this span is considered empty.
+    constexpr bool empty() const noexcept { return size() == 0; }
 
-  // Span::operator[]
-  //
-  // Returns a reference to the i'th element of this span.
-  constexpr reference operator[](size_type i) const noexcept {
-    // MSVC 2015 accepts this as constexpr, but not ptr_[i]
-    return *(data() + i);
-  }
+    // Span::operator[]
+    //
+    // Returns a reference to the i'th element of this span.
+    constexpr reference operator[](size_type i) const noexcept {
+        // MSVC 2015 accepts this as constexpr, but not ptr_[i]
+        return *(data() + i);
+    }
 
-  // Span::at()
-  //
-  // Returns a reference to the i'th element of this span.
-  constexpr reference at(size_type i) const {
-    return PHMAP_PREDICT_TRUE(i < size())  //
-               ? *(data() + i)
-               : (base_internal::ThrowStdOutOfRange(
-                      "Span::at failed bounds check"),
-                  *(data() + i));
-  }
+    // Span::at()
+    //
+    // Returns a reference to the i'th element of this span.
+    constexpr reference at(size_type i) const {
+        return PHMAP_PREDICT_TRUE(i < size())  //
+            ? *(data() + i)
+            : (base_internal::ThrowStdOutOfRange(
+                   "Span::at failed bounds check"),
+               *(data() + i));
+    }
 
-  // Span::front()
-  //
-  // Returns a reference to the first element of this span.
-  constexpr reference front() const noexcept {
-    return PHMAP_ASSERT(size() > 0), *data();
-  }
+    // Span::front()
+    //
+    // Returns a reference to the first element of this span.
+    constexpr reference front() const noexcept {
+        return PHMAP_ASSERT(size() > 0), *data();
+    }
 
-  // Span::back()
-  //
-  // Returns a reference to the last element of this span.
-  constexpr reference back() const noexcept {
-    return PHMAP_ASSERT(size() > 0), *(data() + size() - 1);
-  }
+    // Span::back()
+    //
+    // Returns a reference to the last element of this span.
+    constexpr reference back() const noexcept {
+        return PHMAP_ASSERT(size() > 0), *(data() + size() - 1);
+    }
 
-  // Span::begin()
-  //
-  // Returns an iterator to the first element of this span.
-  constexpr iterator begin() const noexcept { return data(); }
+    // Span::begin()
+    //
+    // Returns an iterator to the first element of this span.
+    constexpr iterator begin() const noexcept { return data(); }
 
-  // Span::cbegin()
-  //
-  // Returns a const iterator to the first element of this span.
-  constexpr const_iterator cbegin() const noexcept { return begin(); }
+    // Span::cbegin()
+    //
+    // Returns a const iterator to the first element of this span.
+    constexpr const_iterator cbegin() const noexcept { return begin(); }
 
-  // Span::end()
-  //
-  // Returns an iterator to the last element of this span.
-  constexpr iterator end() const noexcept { return data() + size(); }
+    // Span::end()
+    //
+    // Returns an iterator to the last element of this span.
+    constexpr iterator end() const noexcept { return data() + size(); }
 
-  // Span::cend()
-  //
-  // Returns a const iterator to the last element of this span.
-  constexpr const_iterator cend() const noexcept { return end(); }
+    // Span::cend()
+    //
+    // Returns a const iterator to the last element of this span.
+    constexpr const_iterator cend() const noexcept { return end(); }
 
-  // Span::rbegin()
-  //
-  // Returns a reverse iterator starting at the last element of this span.
-  constexpr reverse_iterator rbegin() const noexcept {
-    return reverse_iterator(end());
-  }
+    // Span::rbegin()
+    //
+    // Returns a reverse iterator starting at the last element of this span.
+    constexpr reverse_iterator rbegin() const noexcept {
+        return reverse_iterator(end());
+    }
 
-  // Span::crbegin()
-  //
-  // Returns a reverse const iterator starting at the last element of this span.
-  constexpr const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+    // Span::crbegin()
+    //
+    // Returns a reverse const iterator starting at the last element of this span.
+    constexpr const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
-  // Span::rend()
-  //
-  // Returns a reverse iterator starting at the first element of this span.
-  constexpr reverse_iterator rend() const noexcept {
-    return reverse_iterator(begin());
-  }
+    // Span::rend()
+    //
+    // Returns a reverse iterator starting at the first element of this span.
+    constexpr reverse_iterator rend() const noexcept {
+        return reverse_iterator(begin());
+    }
 
-  // Span::crend()
-  //
-  // Returns a reverse iterator starting at the first element of this span.
-  constexpr const_reverse_iterator crend() const noexcept { return rend(); }
+    // Span::crend()
+    //
+    // Returns a reverse iterator starting at the first element of this span.
+    constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
-  // Span mutations
+    // Span mutations
 
-  // Span::remove_prefix()
-  //
-  // Removes the first `n` elements from the span.
-  void remove_prefix(size_type n) noexcept {
-    assert(size() >= n);
-    ptr_ += n;
-    len_ -= n;
-  }
+    // Span::remove_prefix()
+    //
+    // Removes the first `n` elements from the span.
+    void remove_prefix(size_type n) noexcept {
+        assert(size() >= n);
+        ptr_ += n;
+        len_ -= n;
+    }
 
-  // Span::remove_suffix()
-  //
-  // Removes the last `n` elements from the span.
-  void remove_suffix(size_type n) noexcept {
-    assert(size() >= n);
-    len_ -= n;
-  }
+    // Span::remove_suffix()
+    //
+    // Removes the last `n` elements from the span.
+    void remove_suffix(size_type n) noexcept {
+        assert(size() >= n);
+        len_ -= n;
+    }
 
-  // Span::subspan()
-  //
-  // Returns a `Span` starting at element `pos` and of length `len`. Both `pos`
-  // and `len` are of type `size_type` and thus non-negative. Parameter `pos`
-  // must be <= size(). Any `len` value that points past the end of the span
-  // will be trimmed to at most size() - `pos`. A default `len` value of `npos`
-  // ensures the returned subspan continues until the end of the span.
-  //
-  // Examples:
-  //
-  //   std::vector<int> vec = {10, 11, 12, 13};
-  //   phmap::MakeSpan(vec).subspan(1, 2);  // {11, 12}
-  //   phmap::MakeSpan(vec).subspan(2, 8);  // {12, 13}
-  //   phmap::MakeSpan(vec).subspan(1);     // {11, 12, 13}
-  //   phmap::MakeSpan(vec).subspan(4);     // {}
-  //   phmap::MakeSpan(vec).subspan(5);     // throws std::out_of_range
-  constexpr Span subspan(size_type pos = 0, size_type len = npos) const {
-    return (pos <= size())
-               ? Span(data() + pos, span_internal::Min(size() - pos, len))
-               : (base_internal::ThrowStdOutOfRange("pos > size()"), Span());
-  }
+    // Span::subspan()
+    //
+    // Returns a `Span` starting at element `pos` and of length `len`. Both `pos`
+    // and `len` are of type `size_type` and thus non-negative. Parameter `pos`
+    // must be <= size(). Any `len` value that points past the end of the span
+    // will be trimmed to at most size() - `pos`. A default `len` value of `npos`
+    // ensures the returned subspan continues until the end of the span.
+    //
+    // Examples:
+    //
+    //   std::vector<int> vec = {10, 11, 12, 13};
+    //   phmap::MakeSpan(vec).subspan(1, 2);  // {11, 12}
+    //   phmap::MakeSpan(vec).subspan(2, 8);  // {12, 13}
+    //   phmap::MakeSpan(vec).subspan(1);     // {11, 12, 13}
+    //   phmap::MakeSpan(vec).subspan(4);     // {}
+    //   phmap::MakeSpan(vec).subspan(5);     // throws std::out_of_range
+    constexpr Span subspan(size_type pos = 0, size_type len = npos) const {
+        return (pos <= size())
+            ? Span(data() + pos, span_internal::Min(size() - pos, len))
+            : (base_internal::ThrowStdOutOfRange("pos > size()"), Span());
+    }
 
-  // Span::first()
-  //
-  // Returns a `Span` containing first `len` elements. Parameter `len` is of
-  // type `size_type` and thus non-negative. `len` value must be <= size().
-  //
-  // Examples:
-  //
-  //   std::vector<int> vec = {10, 11, 12, 13};
-  //   phmap::MakeSpan(vec).first(1);  // {10}
-  //   phmap::MakeSpan(vec).first(3);  // {10, 11, 12}
-  //   phmap::MakeSpan(vec).first(5);  // throws std::out_of_range
-  constexpr Span first(size_type len) const {
-    return (len <= size())
-               ? Span(data(), len)
-               : (base_internal::ThrowStdOutOfRange("len > size()"), Span());
-  }
+    // Span::first()
+    //
+    // Returns a `Span` containing first `len` elements. Parameter `len` is of
+    // type `size_type` and thus non-negative. `len` value must be <= size().
+    //
+    // Examples:
+    //
+    //   std::vector<int> vec = {10, 11, 12, 13};
+    //   phmap::MakeSpan(vec).first(1);  // {10}
+    //   phmap::MakeSpan(vec).first(3);  // {10, 11, 12}
+    //   phmap::MakeSpan(vec).first(5);  // throws std::out_of_range
+    constexpr Span first(size_type len) const {
+        return (len <= size())
+            ? Span(data(), len)
+            : (base_internal::ThrowStdOutOfRange("len > size()"), Span());
+    }
 
-  // Span::last()
-  //
-  // Returns a `Span` containing last `len` elements. Parameter `len` is of
-  // type `size_type` and thus non-negative. `len` value must be <= size().
-  //
-  // Examples:
-  //
-  //   std::vector<int> vec = {10, 11, 12, 13};
-  //   phmap::MakeSpan(vec).last(1);  // {13}
-  //   phmap::MakeSpan(vec).last(3);  // {11, 12, 13}
-  //   phmap::MakeSpan(vec).last(5);  // throws std::out_of_range
-  constexpr Span last(size_type len) const {
-    return (len <= size())
-               ? Span(size() - len + data(), len)
-               : (base_internal::ThrowStdOutOfRange("len > size()"), Span());
-  }
+    // Span::last()
+    //
+    // Returns a `Span` containing last `len` elements. Parameter `len` is of
+    // type `size_type` and thus non-negative. `len` value must be <= size().
+    //
+    // Examples:
+    //
+    //   std::vector<int> vec = {10, 11, 12, 13};
+    //   phmap::MakeSpan(vec).last(1);  // {13}
+    //   phmap::MakeSpan(vec).last(3);  // {11, 12, 13}
+    //   phmap::MakeSpan(vec).last(5);  // throws std::out_of_range
+    constexpr Span last(size_type len) const {
+        return (len <= size())
+            ? Span(size() - len + data(), len)
+            : (base_internal::ThrowStdOutOfRange("len > size()"), Span());
+    }
 
-  // Support for phmap::Hash.
-  template <typename H>
-  friend H PhmapHashValue(H h, Span v) {
-    return H::combine(H::combine_contiguous(std::move(h), v.data(), v.size()),
-                      v.size());
-  }
+    // Support for phmap::Hash.
+    template <typename H>
+    friend H AbslHashValue(H h, Span v) {
+        return H::combine(H::combine_contiguous(std::move(h), v.data(), v.size()),
+                          v.size());
+    }
 
- private:
-  pointer ptr_;
-  size_type len_;
+private:
+    pointer ptr_;
+    size_type len_;
 };
 
 template <typename T>
@@ -3467,19 +3468,23 @@ template <typename T>
 bool operator==(Span<T> a, Span<T> b) {
   return span_internal::EqualImpl<const T>(a, b);
 }
+
 template <typename T>
 bool operator==(Span<const T> a, Span<T> b) {
   return span_internal::EqualImpl<const T>(a, b);
 }
+
 template <typename T>
 bool operator==(Span<T> a, Span<const T> b) {
   return span_internal::EqualImpl<const T>(a, b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator==(const U& a, Span<T> b) {
   return span_internal::EqualImpl<const T>(a, b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator==(Span<T> a, const U& b) {
@@ -3491,19 +3496,23 @@ template <typename T>
 bool operator!=(Span<T> a, Span<T> b) {
   return !(a == b);
 }
+
 template <typename T>
 bool operator!=(Span<const T> a, Span<T> b) {
   return !(a == b);
 }
+
 template <typename T>
 bool operator!=(Span<T> a, Span<const T> b) {
   return !(a == b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator!=(const U& a, Span<T> b) {
   return !(a == b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator!=(Span<T> a, const U& b) {
@@ -3515,19 +3524,23 @@ template <typename T>
 bool operator<(Span<T> a, Span<T> b) {
   return span_internal::LessThanImpl<const T>(a, b);
 }
+
 template <typename T>
 bool operator<(Span<const T> a, Span<T> b) {
   return span_internal::LessThanImpl<const T>(a, b);
 }
+
 template <typename T>
 bool operator<(Span<T> a, Span<const T> b) {
   return span_internal::LessThanImpl<const T>(a, b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator<(const U& a, Span<T> b) {
   return span_internal::LessThanImpl<const T>(a, b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator<(Span<T> a, const U& b) {
@@ -3539,19 +3552,23 @@ template <typename T>
 bool operator>(Span<T> a, Span<T> b) {
   return b < a;
 }
+
 template <typename T>
 bool operator>(Span<const T> a, Span<T> b) {
   return b < a;
 }
+
 template <typename T>
 bool operator>(Span<T> a, Span<const T> b) {
   return b < a;
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator>(const U& a, Span<T> b) {
   return b < a;
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator>(Span<T> a, const U& b) {
@@ -3563,19 +3580,23 @@ template <typename T>
 bool operator<=(Span<T> a, Span<T> b) {
   return !(b < a);
 }
+
 template <typename T>
 bool operator<=(Span<const T> a, Span<T> b) {
   return !(b < a);
 }
+
 template <typename T>
 bool operator<=(Span<T> a, Span<const T> b) {
   return !(b < a);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator<=(const U& a, Span<T> b) {
   return !(b < a);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator<=(Span<T> a, const U& b) {
@@ -3587,19 +3608,23 @@ template <typename T>
 bool operator>=(Span<T> a, Span<T> b) {
   return !(a < b);
 }
+
 template <typename T>
 bool operator>=(Span<const T> a, Span<T> b) {
   return !(a < b);
 }
+
 template <typename T>
 bool operator>=(Span<T> a, Span<const T> b) {
   return !(a < b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator>=(const U& a, Span<T> b) {
   return !(a < b);
 }
+
 template <typename T, typename U,
           typename = span_internal::EnableIfConvertibleToSpanConst<U, T>>
 bool operator>=(Span<T> a, const U& b) {

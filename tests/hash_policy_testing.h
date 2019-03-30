@@ -165,7 +165,7 @@ auto keys(const Set& s)
 
 namespace std
 {
-    // inject specialization of std::hash for Person into namespace std
+    // inject specialization of std::hash for NonStandardLayout into namespace std
     // ----------------------------------------------------------------
     template<> 
     struct hash<phmap::container_internal::NonStandardLayout>
