@@ -1,16 +1,11 @@
 #set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(PHMAP_IDE_FOLDER Abseil)
 
-# phmap_cc_test(
-#   NAME
-#     awesome_test
-#   SRCS
-#     "awesome_test.cc"
-#   DEPS
-#     absl::awesome
-#     gmock
-#     gtest_main
-# )
+# -------------------------------------------------------------
+# phmap_cc_test(NAME awesome_test
+#               SRCS "awesome_test.cc"
+#               DEPS phmap::awesome gmock gtest_main)
+# -------------------------------------------------------------
 function(phmap_cc_test)
   cmake_parse_arguments(PHMAP_CC_TEST
     ""
@@ -45,8 +40,7 @@ function(phmap_cc_test)
   add_test(NAME ${_NAME} COMMAND ${_NAME})
 endfunction()
 
-
-
+# -------------------------------------------------------------
 function(check_target my_target)
   if(NOT TARGET ${my_target})
     message(FATAL_ERROR " PHMAP: compiling phmap tests requires a ${my_target} CMake target in your project,
