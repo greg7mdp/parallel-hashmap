@@ -163,7 +163,7 @@ In order to use a flat_hash_set or flat_hash_map, a hash function should be prov
 
 For example:
 
-** file <Person.h> **
+### file "Person.h"
 
 ```c++
 #include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::HashState()
@@ -198,7 +198,7 @@ namespace std
 
 The `std::hash` specialization for `Person` combines the hash values for both first and last name and age, using the convenient phmap::HashState() function, and returns the combined hash value. 
 
-** file <main.cpp> **
+### file "main.cpp"
 
 ```c++
 #include "Person.h"   // defines Person  with std::hash specialization
