@@ -3,6 +3,7 @@
 
 #include <parallel_hashmap/phmap_utils.h>
 
+#include <string>
 using std::string;
 
 struct Person

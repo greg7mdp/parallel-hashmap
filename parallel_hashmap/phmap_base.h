@@ -51,6 +51,19 @@
 
 namespace phmap {
 
+template <class T> using Allocator = typename std::allocator<T>;
+
+template<class T1, class T2> using Pair = typename std::pair<T1, T2>;
+
+template <class T>
+struct EqualTo
+{
+    inline size_t operator()(const T& a, const T& b) const
+    {
+        return std::equal_to<T>()(a, b);
+    }
+};
+
 namespace type_traits_internal {
 
 template <typename... Ts>

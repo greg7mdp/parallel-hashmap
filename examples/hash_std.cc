@@ -1,8 +1,6 @@
-#include <iostream>
-#include <string>
-
 #include "hash_std.h"   // defines Person  with std::hash specialization
 
+#include <iostream>
 #include <parallel_hashmap/phmap.h>
 
 int main()
