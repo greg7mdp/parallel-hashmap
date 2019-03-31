@@ -1,7 +1,7 @@
 #ifndef phmap_example_hash_std_
 #define phmap_example_hash_std_
 
-#include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::hash_combine
+#include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::HashState()
 #include <string>
 using std::string;
 

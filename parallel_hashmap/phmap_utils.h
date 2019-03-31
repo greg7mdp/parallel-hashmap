@@ -19,12 +19,18 @@
 // limitations under the License.
 // ---------------------------------------------------------------------------
 
-#include <cstddef>
+#if defined(__APPLE__)
+    // forward declaration of std::hash does not work on mac. It is not really supposed 
+    // to work, I know, but it is nice to reduce the amount of headers included.
+    #include <functional>
+#else
+    #include <cstddef>  // for size_t
 
-namespace std
-{
-    template<class Key> struct hash;
-} // namespace std
+    namespace std
+    {
+        template<class Key> struct hash;
+    } 
+#endif
 
 namespace phmap
 {
