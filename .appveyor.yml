@@ -39,7 +39,7 @@ matrix:
   fast_finish: false
 
 before_build:
-  # see https://www.appveyor.com/docs/lang/cpp/#visual-studio-2017
+  # see https://www.appveyor.com/docs/lang/cpp/#visual-studio-2017 
   - if "%VS%"=="2017" call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
   - if "%VS%"=="2017" set CMAKE_GENERATOR="Visual Studio 15 2017 Win64"
   # see https://www.appveyor.com/docs/lang/cpp/#visual-studio-2015
