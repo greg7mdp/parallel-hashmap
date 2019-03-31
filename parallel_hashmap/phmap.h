@@ -60,28 +60,6 @@
 namespace phmap {
 
 // ---------------------------------------------------------------
-//               phmap::Hash
-// ---------------------------------------------------------------
-template <class T>
-struct Hash
-{
-    inline size_t operator()(const T& __v) const
-    {
-        return std::hash<T>()(__v);
-    }
-};
-
-template <class T>
-struct Hash<T *>
-{
-    inline size_t operator()(const T *__v) const noexcept
-    {
-        static const size_t shift = 3;
-        const uintptr_t i = (const uintptr_t)__v;
-        return static_cast<size_t>(i >> shift);
-    }
-};
-
 // from http://burtleburtle.net/bob/hash/integer.html
 // fast and efficient for power of two table sizes where we always
 // consider the last bits.
@@ -94,20 +72,36 @@ inline size_t phmap_mix_32(uint32_t a)
     return static_cast<size_t>(a);
 }
 
-// More thorough scrambling as described in
-// https://gist.github.com/badboy/6267743
-// ----------------------------------------
+// Very fast mixing: https://godbolt.org/z/3F709Y
+// ----------------------------------------------
 inline size_t phmap_mix_64(uint64_t a)
 {
-    a = (~a) + (a << 21); // a = (a << 21) - a - 1;
-    a = a ^ (a >> 24);
-    a = (a + (a << 3)) + (a << 8); // a * 265
-    a = a ^ (a >> 14);
-    a = (a + (a << 2)) + (a << 4); // a * 21
-    a = a ^ (a >> 28);
-    a = a + (a << 31);
-    return static_cast<size_t>(a);
+    static constexpr uint64_t k = UINT64_C(0xde5fb9d2630458e9);
+    uint64_t h;
+    uint64_t l = umul128(a, k, &h);
+    return static_cast<size_t>(h + l);
 }
+// ---------------------------------------------------------------
+//               phmap::Hash
+// ---------------------------------------------------------------
+template <class T>
+struct Hash
+{
+    inline size_t operator()(const T& __v) const
+    {
+        // we mix for safety in case std::hash broken.
+        return phmap_mix_64(std::hash<T>()(__v));
+    }
+};
+
+template <class T>
+struct Hash<T *>
+{
+    inline size_t operator()(const T *__v) const noexcept
+    {
+        return phmap_mix_64(static_cast<const uintptr_t>(__v)); 
+    }
+};
 
 template<class ArgumentType, class ResultType>
 struct phmap_unary_function
@@ -155,28 +149,28 @@ template <>
 struct Hash<int16_t> : public phmap_unary_function<int16_t, size_t>
 {
     inline size_t operator()(int16_t __v) const noexcept
-    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
 };
 
 template <>
 struct Hash<uint16_t> : public phmap_unary_function<uint16_t, size_t>
 {
     inline size_t operator()(uint16_t __v) const noexcept
-    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
 };
 
 template <>
 struct Hash<int32_t> : public phmap_unary_function<int32_t, size_t>
 {
     inline size_t operator()(int32_t __v) const noexcept
-    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
 };
 
 template <>
 struct Hash<uint32_t> : public phmap_unary_function<uint32_t, size_t>
 {
     inline size_t operator()(uint32_t __v) const noexcept
-    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
 };
 
 template <>
@@ -200,7 +194,7 @@ struct Hash<float> : public phmap_unary_function<float, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint32_t *as_int = reinterpret_cast<uint32_t *>(&__v);
-        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_32(*as_int);
+        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
     }
 };
 

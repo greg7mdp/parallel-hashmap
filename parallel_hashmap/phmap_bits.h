@@ -467,6 +467,21 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
     #define PHMAP_BLOCK_TAIL_CALL_OPTIMIZATION() if (volatile int x = 0) { (void)x; }
 #endif
 
+#ifdef PHMAP_HAVE_INTRINSIC_INT128
+    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
+    {
+        auto result = static_cast<unsigned __int128>(a) * static_cast<unsigned __int128>(b);
+        *high = static_cast<uint64_t>(result >> 64);
+        return static_cast<uint64_t>(result);
+    }
+#elif (defined(_MSC_VER))
+    #pragma intrinsic(_umul128)
+    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
+    {
+        return _umul128(a, b, high);
+    }
+#endif
+
 #if defined(__GNUC__)
     // Cache line alignment
     #if defined(__i386__) || defined(__x86_64__)
