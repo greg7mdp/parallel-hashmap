@@ -460,8 +460,7 @@ namespace type_traits_internal {
     struct IsHashable : std::false_type {};
 
     template <typename Key>
-    struct IsHashable<
-        Key,
+    struct IsHashable<Key,
         phmap::enable_if_t<std::is_convertible<
             decltype(std::declval<std::hash<Key>&>()(std::declval<Key const&>())),
             std::size_t>::value>> : std::true_type {};

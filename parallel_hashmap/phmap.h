@@ -3221,14 +3221,6 @@ private:
         }
     }
 
-    void rehash_and_grow_if_necessary() {
-        for (auto& inner : sets_)
-        {
-            MutexLock_ m(&inner);
-            inner.set_.rehash_and_grow_if_necessary();
-        }
-    }
-
     bool has_element(const value_type& elem) const {
         size_t hash  = PolicyTraits::apply(HashElement{hash_ref()}, elem);
         Inner& inner = sets_[subidx(hash)];
@@ -4059,7 +4051,6 @@ struct HashEq<T*>
         template <class U>
         size_t operator()(const U& ptr) const {
             return phmap::Hash<const T*>{}(HashEq::ToPtr(ptr));
-            //return std::hash<const T*>{}(HashEq::ToPtr(ptr));
         }
     };
 
