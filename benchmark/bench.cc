@@ -201,7 +201,7 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
     std::unique_ptr<std::thread> threads[num_threads];
 
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
-#ifdef MT_SUPPORT
+#if MT_SUPPORT
         typename HT::hasher hasher;                         // get hasher object from the hash table
         size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
@@ -265,7 +265,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
 
     for (loop_idx=0; loop_idx<num_loops; ++loop_idx)
     {
-#ifdef MT_SUPPORT
+#if MT_SUPPORT
         // multithreaded insert
         _fill_random_inner_mt(inner_cnt, hash, rsu);
 #else
