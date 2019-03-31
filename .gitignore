@@ -2,4 +2,7 @@ benchmark/build
 benchmark/output
 benchmark/charts.html
 build
-tests
+build_linux
+.vagrant
+VagrantFile
+TAGS
