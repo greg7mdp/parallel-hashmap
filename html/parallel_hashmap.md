@@ -54,14 +54,15 @@ providing an index between 0 and 15.
 The benefit of this approach would be that the internal tables would each resize on its own when they reach 87.5% capacity, and since each table contains approximately one sixteenth of the values, the memory usage peak would be only one sixteenth of the size we saw for the single *flat_hash_map*.
 
 The rest of this article describes my implementation of this concept that I have done in my [parallel hashmap](https://github.com/greg7mdp/parallel-hashmap) repository. This is a header only library, which provides the following eight hashmaps:
-  - phmap::flat_hash_set
-  - phmap::flat_hash_map
-  - phmap::node_hash_set
-  - phmap::node_hash_map
-  - phmap::parallel_flat_hash_set
-  - phmap::parallel_flat_hash_map
-  - phmap::parallel_node_hash_set
-  - phmap::parallel_node_hash_map
+
+- phmap::flat_hash_set
+- phmap::flat_hash_map
+- phmap::node_hash_set
+- phmap::node_hash_map
+- phmap::parallel_flat_hash_set
+- phmap::parallel_flat_hash_map
+- phmap::parallel_node_hash_set
+- phmap::parallel_node_hash_map
 
 This implementation requires a C++11 compatible compiler, and provides full compatibility with the std::unordered_map (with the exception of *pointer stability* for the `flat` versions. C++14 and C++17 methods, like `try-emplace`, are provided as well.
 The names for it are  *parallel_flat_hash_map* or *parallel_flat_hash_set*, and the *node* equivalents. These hashmaps provide the same external API as the *flat_hash_map*, and internally use a std::array of 2**N *flat_hash_maps*.
