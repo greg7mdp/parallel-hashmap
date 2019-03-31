@@ -137,7 +137,17 @@
 </blockquote>
 <p><img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/index_computation.png?raw=true" alt="index_computation" /></p>
 <p>The benefit of this approach would be that the internal tables would each resize on its own when they reach 87.5% capacity, and since each table contains approximately one sixteenth of the values, the memory usage peak would be only one sixteenth of the size we saw for the single <em>flat_hash_map</em>.</p>
-<p>The rest of this article describes my implementation of this concept that I have done in my <a href="https://github.com/greg7mdp/parallel-hashmap">parallel hashmap</a> repository. This is a header only library, which provides the following eight hashmaps: - phmap::flat_hash_set - phmap::flat_hash_map - phmap::node_hash_set - phmap::node_hash_map - phmap::parallel_flat_hash_set - phmap::parallel_flat_hash_map - phmap::parallel_node_hash_set - phmap::parallel_node_hash_map</p>
+<p>The rest of this article describes my implementation of this concept that I have done in my <a href="https://github.com/greg7mdp/parallel-hashmap">parallel hashmap</a> repository. This is a header only library, which provides the following eight hashmaps:</p>
+<ul>
+<li>phmap::flat_hash_set</li>
+<li>phmap::flat_hash_map</li>
+<li>phmap::node_hash_set</li>
+<li>phmap::node_hash_map</li>
+<li>phmap::parallel_flat_hash_set</li>
+<li>phmap::parallel_flat_hash_map</li>
+<li>phmap::parallel_node_hash_set</li>
+<li>phmap::parallel_node_hash_map</li>
+</ul>
 <p>This implementation requires a C++11 compatible compiler, and provides full compatibility with the std::unordered_map (with the exception of <em>pointer stability</em> for the <code>flat</code> versions. C++14 and C++17 methods, like <code>try-emplace</code>, are provided as well. The names for it are <em>parallel_flat_hash_map</em> or <em>parallel_flat_hash_set</em>, and the <em>node</em> equivalents. These hashmaps provide the same external API as the <em>flat_hash_map</em>, and internally use a std::array of 2**N <em>flat_hash_maps</em>.</p>
 <p>I was delighted to find out that not only the <em>parallel_flat_hash_map</em> has significant memory usage benefits compared to the <em>flat_hash_map</em>, but it also has significant advantages for concurrent programming as I will show later. In the rest of this article, we will focus on the <em>parallel_flat_hash_map</em>, but similar results are seen for the <em>parallel_node_hash_map</em>, and the <em>set</em> versions of course.</p>
 <h3 id="the-parallel-hashmap-memory-usage">The Parallel Hashmap: memory usage</h3>
