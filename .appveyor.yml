@@ -49,7 +49,7 @@ before_build:
 
 build_script:
   - cmake --version
-  - cmake -H. -Bbuild -DPHMAP_BUILD_TESTS=%TEST% -G %CMAKE_GENERATOR%
+  - cmake -H. -Bbuild -DPHMAP_BUILD_TESTS=%TEST% -DPHMAP_BUILD_EXAMPLES=%TEST% -G %CMAKE_GENERATOR%
   - cmake --build build --config %CONFIG% --target ALL_BUILD -- /maxcpucount
 
 test_script:

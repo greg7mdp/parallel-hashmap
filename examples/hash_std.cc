@@ -9,11 +9,12 @@ int main()
     // we can now create sparse_hash_set or sparse_hash_map of Persons
     // ----------------------------------------------------------------
     phmap::flat_hash_set<Person> persons = 
-        { { "John", "Galt" },
-          { "Jane", "Doe" }
+        { { "John", "Mitchell", 35 },
+          { "Jane", "Smith",    32 },
+          { "Jane", "Smith",    30 },
         };
 
     for (auto& p: persons)
-        std::cout << p._first << ' ' << p._last << '\n';
+        std::cout << p._first << ' ' << p._last << " (" << p._age << ")" << '\n';
 
 }

@@ -46,11 +46,11 @@
 #include <utility>
 #include <mutex>
 #include <array>
+#include <functional>
 #include <cassert>
 
 #include "phmap_bits.h"
 #include "phmap_base.h"
-#include "phmap_utils.h"
 #include "phmap_fwd_decl.h"
 
 #if PHMAP_HAVE_STD_STRING_VIEW
@@ -58,6 +58,164 @@
 #endif
 
 namespace phmap {
+
+// ---------------------------------------------------------------
+//               phmap::Hash
+// ---------------------------------------------------------------
+template <class T>
+struct Hash
+{
+    inline size_t operator()(const T& __v) const
+    {
+        return std::hash<T>()(__v);
+    }
+};
+
+template <class T>
+struct Hash<T *>
+{
+    inline size_t operator()(const T *__v) const noexcept
+    {
+        static const size_t shift = 3;
+        const uintptr_t i = (const uintptr_t)__v;
+        return static_cast<size_t>(i >> shift);
+    }
+};
+
+// from http://burtleburtle.net/bob/hash/integer.html
+// fast and efficient for power of two table sizes where we always
+// consider the last bits.
+// ---------------------------------------------------------------
+inline size_t phmap_mix_32(uint32_t a)
+{
+    a = a ^ (a >> 4);
+    a = (a ^ 0xdeadbeef) + (a << 5);
+    a = a ^ (a >> 11);
+    return static_cast<size_t>(a);
+}
+
+// More thorough scrambling as described in
+// https://gist.github.com/badboy/6267743
+// ----------------------------------------
+inline size_t phmap_mix_64(uint64_t a)
+{
+    a = (~a) + (a << 21); // a = (a << 21) - a - 1;
+    a = a ^ (a >> 24);
+    a = (a + (a << 3)) + (a << 8); // a * 265
+    a = a ^ (a >> 14);
+    a = (a + (a << 2)) + (a << 4); // a * 21
+    a = a ^ (a >> 28);
+    a = a + (a << 31);
+    return static_cast<size_t>(a);
+}
+
+template<class ArgumentType, class ResultType>
+struct phmap_unary_function
+{
+    typedef ArgumentType argument_type;
+    typedef ResultType result_type;
+};
+
+template <>
+struct Hash<bool> : public phmap_unary_function<bool, size_t>
+{
+    inline size_t operator()(bool __v) const noexcept
+    { return static_cast<size_t>(__v); }
+};
+
+template <>
+struct Hash<char> : public phmap_unary_function<char, size_t>
+{
+    inline size_t operator()(char __v) const noexcept
+    { return static_cast<size_t>(__v); }
+};
+
+template <>
+struct Hash<signed char> : public phmap_unary_function<signed char, size_t>
+{
+    inline size_t operator()(signed char __v) const noexcept
+    { return static_cast<size_t>(__v); }
+};
+
+template <>
+struct Hash<unsigned char> : public phmap_unary_function<unsigned char, size_t>
+{
+    inline size_t operator()(unsigned char __v) const noexcept
+    { return static_cast<size_t>(__v); }
+};
+
+template <>
+struct Hash<wchar_t> : public phmap_unary_function<wchar_t, size_t>
+{
+    inline size_t operator()(wchar_t __v) const noexcept
+    { return static_cast<size_t>(__v); }
+};
+
+template <>
+struct Hash<int16_t> : public phmap_unary_function<int16_t, size_t>
+{
+    inline size_t operator()(int16_t __v) const noexcept
+    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+};
+
+template <>
+struct Hash<uint16_t> : public phmap_unary_function<uint16_t, size_t>
+{
+    inline size_t operator()(uint16_t __v) const noexcept
+    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+};
+
+template <>
+struct Hash<int32_t> : public phmap_unary_function<int32_t, size_t>
+{
+    inline size_t operator()(int32_t __v) const noexcept
+    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+};
+
+template <>
+struct Hash<uint32_t> : public phmap_unary_function<uint32_t, size_t>
+{
+    inline size_t operator()(uint32_t __v) const noexcept
+    { return phmap_mix_32(static_cast<uint32_t>(__v)); }
+};
+
+template <>
+struct Hash<int64_t> : public phmap_unary_function<int64_t, size_t>
+{
+    inline size_t operator()(int64_t __v) const noexcept
+    { return phmap_mix_64(static_cast<uint64_t>(__v)); }
+};
+
+template <>
+struct Hash<uint64_t> : public phmap_unary_function<uint64_t, size_t>
+{
+    inline size_t operator()(uint64_t __v) const noexcept
+    { return phmap_mix_64(static_cast<uint64_t>(__v)); }
+};
+
+template <>
+struct Hash<float> : public phmap_unary_function<float, size_t>
+{
+    inline size_t operator()(float __v) const noexcept
+    {
+        // -0.0 and 0.0 should return same hash
+        uint32_t *as_int = reinterpret_cast<uint32_t *>(&__v);
+        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_32(*as_int);
+    }
+};
+
+template <>
+struct Hash<double> : public phmap_unary_function<double, size_t>
+{
+    inline size_t operator()(double __v) const noexcept
+    {
+        // -0.0 and 0.0 should return same hash
+        uint64_t *as_int = reinterpret_cast<uint64_t *>(&__v);
+        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
+    }
+};
+
+
 namespace container_internal {
 
 // --------------------------------------------------------------------------

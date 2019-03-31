@@ -159,67 +159,20 @@ The rules are the same as for std::unordered_map, and are valid for all the phma
 
 ## Example 2 - providing a hash function for a user-defined class
 
-In order to use a flat_hash_set or flat_hash_map, a hash function should be provided. Even though a the hash function can be provided via the HashFcn template parameter, we recommend injecting a specialization of `std::hash` for the class into the "std" namespace. For example:
+In order to use a flat_hash_set or flat_hash_map, a hash function should be provided. Even though a the hash function can be provided via the HashFcn template parameter, we recommend injecting a specialization of `std::hash` for the class into the "std" namespace. We provide a convenient and small header `phmap_utils.h` which allows to easily add such specializations.
+
+For example:
+
+** file <Person.h> **
 
 ```c++
-#include <iostream>
-#include <functional>
+#include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::HashState()
 #include <string>
-#include <parallel_hashmap/phmap.h>
-
 using std::string;
 
-struct Person 
+struct Person
 {
-    bool operator==(const Person &o) const 
-    { return _first == o._first && _last == o._last; }
-
-    string _first;
-    string _last;
-};
-
-namespace std
-{
-    // inject specialization of std::hash for Person into namespace std
-    // ----------------------------------------------------------------
-    template<> 
-    struct hash<Person>
-    {
-        std::size_t operator()(Person const &p) const
-        {
-            std::size_t seed = 0;
-            phmap::hash_combine(seed, p._first);
-            phmap::hash_combine(seed, p._last);
-            return seed;
-        }
-    };
-}
- 
-int main()
-{
-    // As we have defined a specialization of std::hash() for Person, 
-    // we can now create flat_hash_set or flat_hash_map of Persons
-    // ----------------------------------------------------------------
-    phmap::flat_hash_set<Person> persons = { { "John", "Galt" }, 
-                                             { "Jane", "Doe" } };
-    for (auto& p: persons)
-        std::cout << p._first << ' ' << p._last << '\n';
-}
-```
-
-The `std::hash` specialization for `Person` combines the hash values for both first and last name using the convenient phmap::hash_combine function, and returns the combined hash value. 
-
-phmap::hash_combine is provided by the header `parallel_hashmap/phmap.h`. However, class definitions often appear in header files, and it is desirable to limit the size of headers included in such header files, so we provide the very small header `parallel_hashmap/phmap_utils.h` for that purpose:
-
-```c++
-#include <string>
-#include <parallel_hashmap/phmap_utils.h>
-
-using std::string;
- 
-struct Person 
-{
-    bool operator==(const Person &o) const 
+    bool operator==(const Person &o) const
     { 
         return _first == o._first && _last == o._last && _age == o._age; 
     }
@@ -233,18 +186,40 @@ namespace std
 {
     // inject specialization of std::hash for Person into namespace std
     // ----------------------------------------------------------------
-    template<> 
-    struct hash<Person>
+    template<> struct hash<Person>
     {
         std::size_t operator()(Person const &p) const
         {
-            std::size_t seed = 0;
-            phmap::hash_combine(seed, p._first);
-            phmap::hash_combine(seed, p._last);
-            phmap::hash_combine(seed, p._age);
-            return seed;
+            return phmap::HashState().combine(0, p._first, p._last, p._age);
         }
     };
+}
+```
+
+The `std::hash` specialization for `Person` combines the hash values for both first and last name and age, using the convenient phmap::HashState() function, and returns the combined hash value. 
+
+** file <main.cpp> **
+
+```c++
+#include "Person.h"   // defines Person  with std::hash specialization
+
+#include <iostream>
+#include <parallel_hashmap/phmap.h>
+
+int main()
+{
+    // As we have defined a specialization of std::hash() for Person,
+    // we can now create sparse_hash_set or sparse_hash_map of Persons
+    // ----------------------------------------------------------------
+    phmap::flat_hash_set<Person> persons = 
+        { { "John", "Mitchell", 35 },
+          { "Jane", "Smith",    32 },
+          { "Jane", "Smith",    30 },
+        };
+
+    for (auto& p: persons)
+        std::cout << p._first << ' ' << p._last << " (" << p._age << ")" << '\n';
+
 }
 ```
 
