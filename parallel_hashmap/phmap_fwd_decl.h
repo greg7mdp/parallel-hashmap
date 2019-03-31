@@ -52,33 +52,33 @@ namespace phmap {
     template <class T, 
               class Hash  = phmap::container_internal::hash_default_hash<T>,
               class Eq    = phmap::container_internal::hash_default_eq<T>,
-              class Alloc = phmap::container_internal::Allocator<T>>
+              class Alloc = phmap::container_internal::Allocator<T>>  // alias for std::allocator
         class flat_hash_set;
 
     template <class K, class V,
               class Hash  = phmap::container_internal::hash_default_hash<K>,
               class Eq    = phmap::container_internal::hash_default_eq<K>,
               class Alloc = phmap::container_internal::Allocator<
-                            phmap::container_internal::Pair<const K, V>>>
+                            phmap::container_internal::Pair<const K, V>>> // alias for std::allocator
         class flat_hash_map;
     
     template <class T, 
               class Hash  = phmap::container_internal::hash_default_hash<T>,
               class Eq    = phmap::container_internal::hash_default_eq<T>,
-              class Alloc = phmap::container_internal::Allocator<T>>
+              class Alloc = phmap::container_internal::Allocator<T>> // alias for std::allocator
         class node_hash_set;
 
     template <class Key, class Value,
               class Hash  = phmap::container_internal::hash_default_hash<Key>,
               class Eq    = phmap::container_internal::hash_default_eq<Key>,
               class Alloc = phmap::container_internal::Allocator<
-                            phmap::container_internal::Pair<const Key, Value>>>
+                            phmap::container_internal::Pair<const Key, Value>>> // alias for std::allocator
         class node_hash_map;
 
     template <class T,
               class Hash  = phmap::container_internal::hash_default_hash<T>,
               class Eq    = phmap::container_internal::hash_default_eq<T>,
-              class Alloc = phmap::container_internal::Allocator<T>,
+              class Alloc = phmap::container_internal::Allocator<T>, // alias for std::allocator
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_flat_hash_set;
@@ -87,7 +87,7 @@ namespace phmap {
               class Hash  = phmap::container_internal::hash_default_hash<K>,
               class Eq    = phmap::container_internal::hash_default_eq<K>,
               class Alloc = phmap::container_internal::Allocator<
-                            phmap::container_internal::Pair<const K, V>>,
+                            phmap::container_internal::Pair<const K, V>>, // alias for std::allocator
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_flat_hash_map;
@@ -95,7 +95,7 @@ namespace phmap {
     template <class T, 
               class Hash  = phmap::container_internal::hash_default_hash<T>,
               class Eq    = phmap::container_internal::hash_default_eq<T>,
-              class Alloc = phmap::container_internal::Allocator<T>,
+              class Alloc = phmap::container_internal::Allocator<T>, // alias for std::allocator
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_node_hash_set;
@@ -104,7 +104,7 @@ namespace phmap {
               class Hash  = phmap::container_internal::hash_default_hash<Key>,
               class Eq    = phmap::container_internal::hash_default_eq<Key>,
               class Alloc = phmap::container_internal::Allocator<
-                            phmap::container_internal::Pair<const Key, Value>>,
+                            phmap::container_internal::Pair<const Key, Value>>, // alias for std::allocator
               size_t N    = 4,                  // 2**N submaps
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_node_hash_map;
