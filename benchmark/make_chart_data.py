@@ -49,9 +49,9 @@ proper_names = {
     'phmap::parallel_flat_hash_map_mt':   'phmap::parallel_flat_hash_map (8 thread8)',
     'absl::parallel_flat_hash_map':   'absl::parallel_flat_hash_map (1 thread)',
     'absl::parallel_flat_hash_map_mt':  'absl::parallel_flat_hash_map (8 threads)',
-    'absl::parallel_flat_hash_map_4':  'absl::parallel_flat_hash_map (N=4, 8 threads)',
-    'absl::parallel_flat_hash_map_5':  'absl::parallel_flat_hash_map (64b aligned, 8 threads)',
-    'absl::parallel_flat_hash_map_6':  'absl::parallel_flat_hash_map (N=6, 8 threads)'
+    'phmap::parallel_flat_hash_map_4':  'phmap::parallel_flat_hash_map (N=4, 8 threads)',
+    'phmap::parallel_flat_hash_map_5':  'phmap::parallel_flat_hash_map (N=5, 8 threads)',
+    'phmap::parallel_flat_hash_map_6':  'phmap::parallel_flat_hash_map (N=6, 8 threads)'
 }
 
 proper_color = {
@@ -63,9 +63,9 @@ proper_color = {
     'phmap::parallel_flat_hash_map_mt': 2,
     'absl::parallel_flat_hash_map':     3,
     'absl::parallel_flat_hash_map_mt':  3,
-    'absl::parallel_flat_hash_map_4':   3,
-    'absl::parallel_flat_hash_map_5':   4,
-    'absl::parallel_flat_hash_map_6':   5
+    'phmap::parallel_flat_hash_map_4':   3,
+    'phmap::parallel_flat_hash_map_5':   4,
+    'phmap::parallel_flat_hash_map_6':   5
 }
 
 bench_titles = {
@@ -89,9 +89,9 @@ program_slugs = [
     'phmap::parallel_flat_hash_map',
     'phmap::parallel_flat_hash_map_mt',
     'absl::parallel_flat_hash_map_mt',
-    'absl::parallel_flat_hash_map_4',
-    'absl::parallel_flat_hash_map_5',
-    'absl::parallel_flat_hash_map_6'
+    'phmap::parallel_flat_hash_map_4',
+    'phmap::parallel_flat_hash_map_5',
+    'phmap::parallel_flat_hash_map_6'
 ]
 
 chart_data = {}
