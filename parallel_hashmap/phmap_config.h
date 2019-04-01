@@ -60,9 +60,9 @@
 // -----------------------------------------------------------------------------
 // Some sanity checks
 // -----------------------------------------------------------------------------
-#if defined(__CYGWIN__)
-    #error "Cygwin is not supported."
-#endif
+//#if defined(__CYGWIN__)
+//    #error "Cygwin is not supported."
+//#endif
 
 #if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 190023918 && !defined(__clang__)
     #error "phmap requires Visual Studio 2015 Update 2 or higher."

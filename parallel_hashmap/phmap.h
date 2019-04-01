@@ -400,7 +400,7 @@ inline ctrl_t* EmptyGroup() {
 // Mixes a randomly generated per-process seed with `hash` and `ctrl` to
 // randomize insertion order within groups.
 // --------------------------------------------------------------------------
-bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl);
+static inline bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl);
 
 // --------------------------------------------------------------------------
 // Returns a hash seed.
@@ -450,7 +450,7 @@ inline __m128i _mm_cmpgt_epi8_fixed(__m128i a, __m128i b) {
 // --------------------------------------------------------------------------
 struct GroupSse2Impl 
 {
-    static constexpr size_t kWidth = 16;  // the number of slots per group
+    enum { kWidth = 16 };  // the number of slots per group
 
     explicit GroupSse2Impl(const ctrl_t* pos) {
         ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
@@ -514,7 +514,7 @@ struct GroupSse2Impl
 // --------------------------------------------------------------------------
 struct GroupPortableImpl 
 {
-    static constexpr size_t kWidth = 8;
+    enum { kWidth = 8 };
 
     explicit GroupPortableImpl(const ctrl_t* pos)
         : ctrl(little_endian::Load64(pos)) {}
@@ -691,13 +691,13 @@ struct HashtablezInfo
 
 inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {}
 
-void RecordInsertSlow(HashtablezInfo* info, size_t hash,
-                      size_t distance_from_desired) {}
+static inline void RecordInsertSlow(HashtablezInfo* info, size_t hash,
+                                    size_t distance_from_desired) {}
 
-inline void RecordEraseSlow(HashtablezInfo* info) {}
+static inline void RecordEraseSlow(HashtablezInfo* info) {}
 
-HashtablezInfo* SampleSlow(int64_t* next_sample) { return nullptr; }
-void UnsampleSlow(HashtablezInfo* info) {}
+static inline HashtablezInfo* SampleSlow(int64_t* next_sample) { return nullptr; }
+static inline void UnsampleSlow(HashtablezInfo* info) {}
 
 class HashtablezInfoHandle 
 {
@@ -710,7 +710,7 @@ public:
                             HashtablezInfoHandle& rhs) {}
 };
 
-inline HashtablezInfoHandle Sample() { return HashtablezInfoHandle(); }
+static inline HashtablezInfoHandle Sample() { return HashtablezInfoHandle(); }
 
 class HashtablezSampler 
 {
@@ -725,9 +725,9 @@ public:
     int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) { return 0; }
 };
 
-void SetHashtablezEnabled(bool enabled) {}
-void SetHashtablezSampleParameter(int32_t rate) {}
-void SetHashtablezMaxSamples(int32_t max) {}
+static inline void SetHashtablezEnabled(bool enabled) {}
+static inline void SetHashtablezSampleParameter(int32_t rate) {}
+static inline void SetHashtablezMaxSamples(int32_t max) {}
 
 
 namespace memory_internal {
@@ -2447,8 +2447,6 @@ private:
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-constexpr size_t Group::kWidth;
-
 // Returns "random" seed.
 inline size_t RandomSeed() 
 {
@@ -2462,7 +2460,7 @@ inline size_t RandomSeed()
     return value ^ static_cast<size_t>(reinterpret_cast<uintptr_t>(&counter));
 }
 
-bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl) 
+static inline bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl) 
 {
     // To avoid problems with weak hashes and single bit tests, we use % 13.
     // TODO(kfm,sbenza): revisit after we do unconditional mixing
