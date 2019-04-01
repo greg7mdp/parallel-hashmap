@@ -87,19 +87,19 @@ inline size_t phmap_mix_64(uint64_t a)
 template <class T>
 struct Hash
 {
-    inline size_t operator()(const T& __v) const
+    inline size_t operator()(const T& val) const
     {
         // we mix for safety in case std::hash broken.
-        return phmap_mix_64(std::hash<T>()(__v));
+        return phmap_mix_64(std::hash<T>()(val));
     }
 };
 
 template <class T>
 struct Hash<T *>
 {
-    inline size_t operator()(const T *__v) const noexcept
+    inline size_t operator()(const T *val) const noexcept
     {
-        return phmap_mix_64(static_cast<const uintptr_t>(__v)); 
+        return phmap_mix_64(static_cast<const uintptr_t>(val)); 
     }
 };
 
@@ -113,99 +113,99 @@ struct phmap_unary_function
 template <>
 struct Hash<bool> : public phmap_unary_function<bool, size_t>
 {
-    inline size_t operator()(bool __v) const noexcept
-    { return static_cast<size_t>(__v); }
+    inline size_t operator()(bool val) const noexcept
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<char> : public phmap_unary_function<char, size_t>
 {
-    inline size_t operator()(char __v) const noexcept
-    { return static_cast<size_t>(__v); }
+    inline size_t operator()(char val) const noexcept
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<signed char> : public phmap_unary_function<signed char, size_t>
 {
-    inline size_t operator()(signed char __v) const noexcept
-    { return static_cast<size_t>(__v); }
+    inline size_t operator()(signed char val) const noexcept
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<unsigned char> : public phmap_unary_function<unsigned char, size_t>
 {
-    inline size_t operator()(unsigned char __v) const noexcept
-    { return static_cast<size_t>(__v); }
+    inline size_t operator()(unsigned char val) const noexcept
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<wchar_t> : public phmap_unary_function<wchar_t, size_t>
 {
-    inline size_t operator()(wchar_t __v) const noexcept
-    { return static_cast<size_t>(__v); }
+    inline size_t operator()(wchar_t val) const noexcept
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<int16_t> : public phmap_unary_function<int16_t, size_t>
 {
-    inline size_t operator()(int16_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
+    inline size_t operator()(int16_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint32_t>(val)); }
 };
 
 template <>
 struct Hash<uint16_t> : public phmap_unary_function<uint16_t, size_t>
 {
-    inline size_t operator()(uint16_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
+    inline size_t operator()(uint16_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint32_t>(val)); }
 };
 
 template <>
 struct Hash<int32_t> : public phmap_unary_function<int32_t, size_t>
 {
-    inline size_t operator()(int32_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
+    inline size_t operator()(int32_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint32_t>(val)); }
 };
 
 template <>
 struct Hash<uint32_t> : public phmap_unary_function<uint32_t, size_t>
 {
-    inline size_t operator()(uint32_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(__v)); }
+    inline size_t operator()(uint32_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint32_t>(val)); }
 };
 
 template <>
 struct Hash<int64_t> : public phmap_unary_function<int64_t, size_t>
 {
-    inline size_t operator()(int64_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint64_t>(__v)); }
+    inline size_t operator()(int64_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint64_t>(val)); }
 };
 
 template <>
 struct Hash<uint64_t> : public phmap_unary_function<uint64_t, size_t>
 {
-    inline size_t operator()(uint64_t __v) const noexcept
-    { return phmap_mix_64(static_cast<uint64_t>(__v)); }
+    inline size_t operator()(uint64_t val) const noexcept
+    { return phmap_mix_64(static_cast<uint64_t>(val)); }
 };
 
 template <>
 struct Hash<float> : public phmap_unary_function<float, size_t>
 {
-    inline size_t operator()(float __v) const noexcept
+    inline size_t operator()(float val) const noexcept
     {
         // -0.0 and 0.0 should return same hash
-        uint32_t *as_int = reinterpret_cast<uint32_t *>(&__v);
-        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
+        uint32_t *as_int = reinterpret_cast<uint32_t *>(&val);
+        return (val == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
     }
 };
 
 template <>
 struct Hash<double> : public phmap_unary_function<double, size_t>
 {
-    inline size_t operator()(double __v) const noexcept
+    inline size_t operator()(double val) const noexcept
     {
         // -0.0 and 0.0 should return same hash
-        uint64_t *as_int = reinterpret_cast<uint64_t *>(&__v);
-        return (__v == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
+        uint64_t *as_int = reinterpret_cast<uint64_t *>(&val);
+        return (val == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
     }
 };
 
