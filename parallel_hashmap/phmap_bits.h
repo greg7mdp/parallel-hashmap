@@ -325,10 +325,10 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros64(uint64_t n) {
 #elif defined(_MSC_VER)
     // MSVC does not have __buitin_clzll. Compose two calls to _BitScanReverse
     unsigned long result = 0;  // NOLINT(runtime/int)
-    if ((n >> 32) && _BitScanReverse(&result, n >> 32)) {
+    if ((n >> 32) && _BitScanReverse(&result, (unsigned long)(n >> 32))) {
         return 31 - result;
     }
-    if (_BitScanReverse(&result, n)) {
+    if (_BitScanReverse(&result, (unsigned long)n)) {
         return 63 - result;
     }
     return 64;
@@ -403,10 +403,10 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64(uint64_t n) {
 #elif defined(_MSC_VER)
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (static_cast<uint32_t>(n) == 0) {
-        _BitScanForward(&result, n >> 32);
+        _BitScanForward(&result, (unsigned long)(n >> 32));
         return result + 32;
     }
-    _BitScanForward(&result, n);
+    _BitScanForward(&result, (unsigned long)n);
     return result;
 #elif defined(__GNUC__)
     static_assert(sizeof(unsigned long long) == sizeof(n),  // NOLINT(runtime/int)
@@ -475,11 +475,36 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
         return static_cast<uint64_t>(result);
     }
 #elif (defined(_MSC_VER))
-    #pragma intrinsic(_umul128)
-    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
-    {
-        return _umul128(a, b, high);
-    }
+    #if defined(_WIN64)
+        #pragma intrinsic(_umul128)
+        inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
+        {
+            return _umul128(a, b, high);
+        }
+    #else
+        #pragma intrinsic(__emulu)
+        inline uint64_t umul128(uint64_t multiplier, uint64_t multiplicand, uint64_t *product_hi)
+        {
+            uint64_t a = multiplier >> 32;
+            uint64_t b = (uint32_t)multiplier; // & 0xFFFFFFFF;
+            uint64_t c = multiplicand >> 32;
+            uint64_t d = (uint32_t)multiplicand; // & 0xFFFFFFFF;
+
+            uint64_t ad = __emulu(a, d);
+            uint64_t bd = __emulu(b, d);
+
+            uint64_t adbc = ad + __emulu(b, c);
+            uint64_t adbc_carry = (adbc < ad); // ? 1 : 0;
+            // MSVC gets confused by the ternary and makes worse code than using a boolean in an integer context for 1 : 0
+
+            // multiplier * multiplicand = product_hi * 2^64 + product_lo
+            uint64_t product_lo = bd + (adbc << 32);
+            uint64_t product_lo_carry = (product_lo < bd); // ? 1 : 0;
+            *product_hi = __emulu(a, c) + (adbc >> 32) + (adbc_carry << 32) + product_lo_carry;
+
+            return product_lo;
+        }
+    #endif
 #endif
 
 #if defined(__GNUC__)
