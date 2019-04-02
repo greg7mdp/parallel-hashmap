@@ -143,6 +143,14 @@ struct Eq {
   }
 };
 
+TEST(THIS_TEST_NAME, PtrKet) {
+    using H = THIS_HASH_MAP<void *, bool>;
+    H hash;
+    int a, b;
+    hash.insert(H::value_type(&a, true));
+    hash.insert(H::value_type(&b, false));
+};
+
 TEST(THIS_TEST_NAME, LazyKeyPattern) {
   // hashes are only guaranteed in opt mode, we use assertions to track internal
   // state that can cause extra calls to hash.

@@ -99,7 +99,7 @@ struct Hash<T *>
 {
     inline size_t operator()(const T *val) const noexcept
     {
-        return phmap_mix_64(static_cast<const uintptr_t>(val)); 
+        return phmap_mix_64((const uintptr_t)val); 
     }
 };
 
@@ -2547,7 +2547,7 @@ protected:
         bool operator==(const Inner& o) const
         {
             MutexLock_ m1(const_cast<Inner *>(this));
-            MutexLock_ m2(const_cast<Inner *>(&o));
+            MutexLock_ m2(const_cast<Inner *>(&o)); // deadlock - use std::lock
             return set_ == o.set_;
         }
 
