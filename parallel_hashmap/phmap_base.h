@@ -773,7 +773,6 @@ template <typename T>
 #ifdef PHMAP_HAVE_EXCEPTIONS
   throw error;
 #else
-  PHMAP_RAW_LOG(FATAL, "%s", error.what());
   std::abort();
 #endif
 }
