@@ -42,11 +42,15 @@ option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
 if(MSVC)
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+       set(CMAKE_GENERATOR_PLATFORM "x64")
+    endif()
+
 elseif(CXXFLAGS)
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
 else()
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 if (PHMAP_BUILD_TESTS)
@@ -112,6 +116,7 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_emplace examples/emplace.cc)
     add_executable(ex_hash_std examples/hash_std.cc)
     add_executable(ex_two_files examples/f1.cc examples/f2.cc)
+    add_executable(ex_insert_bench examples/insert_bench.cc)
 endif()
 
 
