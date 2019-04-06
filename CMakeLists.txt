@@ -108,9 +108,10 @@ if (PHMAP_BUILD_TESTS)
 endif()
 
 if (PHMAP_BUILD_EXAMPLES)
-    add_executable(basic examples/basic.cc)
-    add_executable(emplace examples/emplace.cc)
-    add_executable(hash_std examples/hash_std.cc)
+    add_executable(ex_basic examples/basic.cc)
+    add_executable(ex_emplace examples/emplace.cc)
+    add_executable(ex_hash_std examples/hash_std.cc)
+    add_executable(ex_two_files examples/f1.cc examples/f2.cc)
 endif()
 
 
