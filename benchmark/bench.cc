@@ -13,6 +13,11 @@
     #include "absl/container/flat_hash_map.h"
     #define MAPNAME absl::flat_hash_map
     #define EXTRAARGS
+#elif defined(PHMAP_FLAT)
+    #include "parallel_hashmap/phmap.h"
+    #define MAPNAME phmap::flat_hash_map
+    #define NMSP phmap
+    #define EXTRAARGS
 #elif defined(ABSEIL_PARALLEL_FLAT) || defined(PHMAP)
     #if defined(ABSEIL_PARALLEL_FLAT)
         #include "absl/container/parallel_flat_hash_map.h"
@@ -24,7 +29,7 @@
         #define NMSP phmap
     #endif
 
-    #define MT_SUPPORT 1
+    #define MT_SUPPORT 0
     #if MT_SUPPORT == 1
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
@@ -202,7 +207,7 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
 #if MT_SUPPORT
-        typename HT::hasher hasher;                         // get hasher object from the hash table
+        typename HT::hasher hasher;                         // get hasher object from the hash table [greg] todo provide hash fn
         size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
@@ -359,7 +364,7 @@ int main(int argc, char ** argv)
     srand(1); // for a fair/deterministic comparison 
     Timer timer(true);
     
-#ifdef MT_SUPPORT
+#if MT_SUPPORT
     if (!strcmp(program_slug,"absl::parallel_flat_hash_map") || 
         !strcmp(program_slug,"phmap::parallel_flat_hash_map"))
         program_slug = xstr(MAPNAME) "_mt";

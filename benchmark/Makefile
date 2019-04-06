@@ -4,7 +4,7 @@ CXX=CL -EHsc -DNDEBUG -Fo$@ -O2
 
 ABSEIL_LIBS=absl_bad_optional_access.lib absl_bad_variant_access.lib absl_base.lib absl_demangle_internal.lib absl_hash.lib absl_int128.lib absl_internal_bad_any_cast_impl.lib absl_internal_city.lib absl_internal_civil_time.lib absl_internal_debugging_internal.lib absl_internal_graphcycles_internal.lib absl_internal_hashtablez_sampler.lib absl_internal_malloc_internal.lib absl_internal_spinlock_wait.lib absl_internal_strings_internal.lib absl_internal_throw_delegate.lib absl_internal_time_zone.lib absl_optional.lib absl_raw_hash_set.lib absl_stacktrace.lib absl_strings.lib absl_symbolize.lib absl_synchronization.lib absl_time.lib
 
-PROGS       = stl_unordered_map sparsepp phmap abseil_flat abseil_parallel_flat
+PROGS       = stl_unordered_map sparsepp phmap abseil_flat abseil_parallel_flat phmap_flat
 BUILD_PROGS = $(addprefix build/,$(PROGS))
 SIZE        = 100000000
 ABSEIL      = ../../abseil-cpp
@@ -24,6 +24,9 @@ build/sparsepp: bench.cc Makefile
 build/phmap: bench.cc Makefile $(PHMAP_SRC)/phmap.h
 	$(CXX) -DPHMAP -I.. bench.cc /MD -o $@ 
 
+build/phmap_flat: bench.cc Makefile $(PHMAP_SRC)/phmap.h
+	$(CXX) -DPHMAP_FLAT -I.. bench.cc /MD -o $@ 
+
 build/abseil_flat: bench.cc Makefile
 	$(CXX) -DABSEIL_FLAT -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
@@ -35,9 +38,10 @@ progs:	$(BUILD_PROGS)
 test: builddir progs
 	-rm -f output
 	#./build/stl_unordered_map $(SIZE) random >> output
-	#./build/abseil_flat  $(SIZE) random >> output
-	./build/phmap        $(SIZE) random >> output
 	#./build/sparsepp    $(SIZE) random >> output
+	#./build/abseil_flat  $(SIZE) random >> output
+	#./build/phmap_flat   $(SIZE) random >> output
+	./build/phmap        $(SIZE) random >> output
 	./build/abseil_parallel_flat $(SIZE) random >> output
 	python make_chart_data.py < output
 
