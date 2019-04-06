@@ -43,10 +43,6 @@ option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-       set(CMAKE_GENERATOR_PLATFORM "x64")
-    endif()
-
 elseif(CXXFLAGS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
 else()
