@@ -72,7 +72,8 @@ struct phmap_mix<4>
 {
     inline size_t operator()(size_t a) const
     {
-        static constexpr uint64_t kmul = 0xcc9e2d51;
+        static constexpr uint64_t kmul = 0xcc9e2d51UL;
+        // static constexpr uint64_t kmul = 0x3B9ACB93UL; // [greg] my own random prime
         uint64_t l = a * kmul;
         return static_cast<size_t>(l ^ (l >> 32));
     }
@@ -85,7 +86,8 @@ struct phmap_mix<4>
         // Very fast mixing (similar to Abseil)
         inline size_t operator()(size_t a) const
         {
-            static constexpr uint64_t k = UINT64_C(0xde5fb9d2630458e9);
+            static constexpr uint64_t k = 0xde5fb9d2630458e9ULL;
+            // static constexpr uint64_t k = 0x7C9D0BF0567102A5ULL; // [greg] my own random prime
             uint64_t h;
             uint64_t l = umul128(a, k, &h);
             return static_cast<size_t>(h + l);
@@ -2028,14 +2030,12 @@ private:
         capacity_ = new_capacity;
         initialize_slots();
 
-        size_t total_probe_length = 0;
         for (size_t i = 0; i != old_capacity; ++i) {
             if (IsFull(old_ctrl[i])) {
                 size_t hash = PolicyTraits::apply(HashElement{hash_ref()},
                                                   PolicyTraits::element(old_slots + i));
                 auto target = find_first_non_full(hash);
                 size_t new_i = target.offset;
-                total_probe_length += target.probe_length;
                 set_ctrl(new_i, H2(hash));
                 PolicyTraits::transfer(&alloc_ref(), slots_ + new_i, old_slots + i);
             }
@@ -2047,7 +2047,6 @@ private:
             Deallocate<Layout::Alignment()>(&alloc_ref(), old_ctrl,
                                             layout.AllocSize());
         }
-        infoz_.RecordRehash(total_probe_length);
     }
 
     void drop_deletes_without_resize() PHMAP_ATTRIBUTE_NOINLINE {
@@ -2072,7 +2071,6 @@ private:
         ConvertDeletedToEmptyAndFullToDeleted(ctrl_, capacity_);
         typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
             raw;
-        size_t total_probe_length = 0;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
         for (size_t i = 0; i != capacity_; ++i) {
             if (!IsDeleted(ctrl_[i])) continue;
@@ -2080,7 +2078,6 @@ private:
                                               PolicyTraits::element(slots_ + i));
             auto target = find_first_non_full(hash);
             size_t new_i = target.offset;
-            total_probe_length += target.probe_length;
 
             // Verify if the old and new i fall within the same group wrt the hash.
             // If they do, we don't need to move the object as it falls already in the
@@ -2113,7 +2110,6 @@ private:
             }
         }
         reset_growth_left();
-        infoz_.RecordRehash(total_probe_length);
     }
 
     void rehash_and_grow_if_necessary() {
@@ -2751,7 +2747,9 @@ public:
     // ------------------------- c o n s t r u c t o r s ------------------
 
     parallel_hash_set() noexcept(
-        std::is_nothrow_default_constructible<EmbeddedSet>::value) {}
+        std::is_nothrow_default_constructible<hasher>::value&&
+        std::is_nothrow_default_constructible<key_equal>::value&&
+        std::is_nothrow_default_constructible<allocator_type>::value) {}
 
     explicit parallel_hash_set(size_t bucket_count, 
                                const hasher& hash          = hasher(),
@@ -2864,7 +2862,9 @@ public:
     }
   
     parallel_hash_set(parallel_hash_set&& that) noexcept(
-        std::is_nothrow_copy_constructible<EmbeddedSet>::value)
+        std::is_nothrow_copy_constructible<hasher>::value&&
+        std::is_nothrow_copy_constructible<key_equal>::value&&
+        std::is_nothrow_copy_constructible<allocator_type>::value)
         : parallel_hash_set(std::move(that), that.alloc_ref()) {
     }
 
@@ -2882,7 +2882,8 @@ public:
 
     parallel_hash_set& operator=(parallel_hash_set&& that) noexcept(
         phmap::allocator_traits<allocator_type>::is_always_equal::value &&
-        std::is_nothrow_move_assignable<EmbeddedSet>::value) {
+        std::is_nothrow_move_assignable<hasher>::value &&
+        std::is_nothrow_move_assignable<key_equal>::value) {
         for (size_t i=0; i<num_tables; ++i)
             sets_[i].set_ = std::move(that.sets_[i].set_);
         return *this;
