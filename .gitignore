@@ -1,8 +1,8 @@
+VagrantFile
 benchmark/build
 benchmark/output
 benchmark/charts.html
 build
 build_linux
 .vagrant
-VagrantFile
 TAGS
