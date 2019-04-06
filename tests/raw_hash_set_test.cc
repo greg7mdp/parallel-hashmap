@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// define this so that the "IterationOrderChanges" tests pass
+#define PHMAP_NON_DETERMINISTIC 1
+
 #include "parallel_hashmap/phmap.h"
 //#include "container_memory.h"
 //#include "hash_function_defaults.h"
@@ -347,6 +350,25 @@ struct IntTable
   using Base = typename IntTable::raw_hash_set;
   IntTable() {}
   using Base::Base;
+};
+
+template <typename T>
+struct CustomAlloc : std::allocator<T> {
+    CustomAlloc() {}
+
+    template <typename U>
+    CustomAlloc(const CustomAlloc<U>& other) {}
+
+    template<class U> struct rebind {
+        using other = CustomAlloc<U>;
+    };
+};
+
+struct CustomAllocIntTable
+    : raw_hash_set<IntPolicy, container_internal::hash_default_hash<int64_t>,
+                   std::equal_to<int64_t>, CustomAlloc<int64_t>> {
+    using Base = typename CustomAllocIntTable::raw_hash_set;
+    using Base::Base;	
 };
 
 struct BadFastHash {
@@ -853,6 +875,25 @@ TEST(Table, Erase) {
   t.erase(res.first);
   EXPECT_EQ(0, t.size());
   EXPECT_TRUE(t.find(0) == t.end());
+}
+
+TEST(Table, EraseMaintainsValidIterator) {
+  IntTable t;
+  const int kNumElements = 100;
+  for (int i = 0; i < kNumElements; i ++) {
+    EXPECT_TRUE(t.emplace(i).second);
+  }
+  EXPECT_EQ(t.size(), kNumElements);
+
+   int num_erase_calls = 0;
+  auto it = t.begin();
+  while (it != t.end()) {
+    t.erase(it++);
+    num_erase_calls++;
+  }
+
+   EXPECT_TRUE(t.empty());
+  EXPECT_EQ(num_erase_calls, kNumElements);
 }
 
 // Collect N bad keys by following algorithm:
@@ -1581,7 +1622,7 @@ TEST(Table, HeterogeneousLookup) {
     size_t operator()(int64_t i) const { return i; }
     size_t operator()(double i) const {
       ADD_FAILURE();
-      return i;
+      return (size_t)i;
     }
   };
   struct Eq {
@@ -1603,7 +1644,7 @@ TEST(Table, HeterogeneousLookup) {
   struct THash {
     using is_transparent = void;
     size_t operator()(int64_t i) const { return i; }
-    size_t operator()(double i) const { return i; }
+    size_t operator()(double i) const { return (size_t)i; }
   };
   struct TEq {
     using is_transparent = void;
@@ -1615,7 +1656,7 @@ TEST(Table, HeterogeneousLookup) {
 
   raw_hash_set<IntPolicy, Hash, Eq, Alloc<int64_t>> s{0, 1, 2};
   // It will convert to int64_t before the query.
-  EXPECT_EQ(1, *s.find(double{1.1}));
+  EXPECT_EQ(1, *s.find((int)double{1.1}));
 
   raw_hash_set<IntPolicy, THash, TEq, Alloc<int64_t>> ts{0, 1, 2};
   // It will try to use the double, and fail to find the object.
@@ -1778,6 +1819,7 @@ std::vector<int> OrderOfIteration(const IntTable& t) {
 // we are touching different memory pages to cause the ordering to change.
 // We also need to keep the old tables around to avoid getting the same memory
 // blocks over and over.
+// not randomizing in phmap
 TEST(Table, IterationOrderChangesByInstance) {
   for (size_t size : {2, 6, 12, 20}) {
     const auto reference_table = MakeSimpleTable(size);
@@ -1785,7 +1827,7 @@ TEST(Table, IterationOrderChangesByInstance) {
 
     std::vector<IntTable> tables;
     bool found_difference = false;
-    for (int i = 0; !found_difference && i < 500; ++i) {
+    for (int i = 0; !found_difference && i < 5000; ++i) {
       tables.push_back(MakeSimpleTable(size));
       found_difference = OrderOfIteration(tables.back()) != reference;
     }
@@ -1797,9 +1839,10 @@ TEST(Table, IterationOrderChangesByInstance) {
   }
 }
 
+// not randomizing in phmap
 TEST(Table, IterationOrderChangesOnRehash) {
   std::vector<IntTable> garbage;
-  for (int i = 0; i < 500; ++i) {
+  for (int i = 0; i < 5000; ++i) {
     auto t = MakeSimpleTable(20);
     const auto reference = OrderOfIteration(t);
     // Force rehash to the same size.
@@ -1868,6 +1911,27 @@ TEST(RawHashSamplerTest, DISABLED_Sample) {
 
   EXPECT_NEAR((end_size - start_size) / static_cast<double>(tables.size()),
               0.01, 0.005);
+}
+
+TEST(RawHashSamplerTest, DoNotSampleCustomAllocators) {
+  // Enable the feature even if the prod default is off.
+  SetHashtablezEnabled(true);
+  SetHashtablezSampleParameter(100);
+
+   auto& sampler = HashtablezSampler::Global();
+  size_t start_size = 0;
+  start_size += sampler.Iterate([&](const HashtablezInfo&) { ++start_size; });
+
+   std::vector<CustomAllocIntTable> tables;
+  for (int i = 0; i < 1000000; ++i) {
+    tables.emplace_back();
+    tables.back().insert(1);
+  }
+  size_t end_size = 0;
+  end_size += sampler.Iterate([&](const HashtablezInfo&) { ++end_size; });
+
+   EXPECT_NEAR((end_size - start_size) / static_cast<double>(tables.size()),
+              0.00, 0.001);
 }
 
 #ifdef ADDRESS_SANITIZER

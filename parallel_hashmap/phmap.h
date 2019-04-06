@@ -60,27 +60,81 @@
 namespace phmap {
 
 // ---------------------------------------------------------------
-// from http://burtleburtle.net/bob/hash/integer.html
-// fast and efficient for power of two table sizes where we always
-// consider the last bits.
 // ---------------------------------------------------------------
-inline size_t phmap_mix_32(uint32_t a)
+template<int n> 
+struct phmap_mix
 {
-    a = a ^ (a >> 4);
-    a = (a ^ 0xdeadbeef) + (a << 5);
-    a = a ^ (a >> 11);
-    return static_cast<size_t>(a);
-}
+    inline size_t operator()(size_t) const;
+};
 
-// Very fast mixing: https://godbolt.org/z/3F709Y
-// ----------------------------------------------
-inline size_t phmap_mix_64(uint64_t a)
+template<>
+struct phmap_mix<4>
 {
-    static constexpr uint64_t k = UINT64_C(0xde5fb9d2630458e9);
-    uint64_t h;
-    uint64_t l = umul128(a, k, &h);
-    return static_cast<size_t>(h + l);
-}
+    inline size_t operator()(size_t a) const
+    {
+        static constexpr uint64_t kmul = 0xcc9e2d51;
+        uint64_t l = a * kmul;
+        return static_cast<size_t>(l ^ (l >> 32));
+    }
+};
+
+#ifdef PHMAP_HAS_UMUL128
+    template<>
+    struct phmap_mix<8>
+    {
+        // Very fast mixing (similar to Abseil)
+        inline size_t operator()(size_t a) const
+        {
+            static constexpr uint64_t k = UINT64_C(0xde5fb9d2630458e9);
+            uint64_t h;
+            uint64_t l = umul128(a, k, &h);
+            return static_cast<size_t>(h + l);
+        }
+    };
+#else
+    template<>
+    struct phmap_mix<8>
+    {
+        inline size_t operator()(size_t a) const
+        {
+            a = (~a) + (a << 21); // a = (a << 21) - a - 1;
+            a = a ^ (a >> 24);
+            a = (a + (a << 3)) + (a << 8); // a * 265
+            a = a ^ (a >> 14);
+            a = (a + (a << 2)) + (a << 4); // a * 21
+            a = a ^ (a >> 28);
+            a = a + (a << 31);
+            return static_cast<size_t>(a);
+        }
+    };
+#endif
+
+// --------------------------------------------
+template<int n> 
+struct fold_if_needed
+{
+    inline size_t operator()(uint64_t) const;
+};
+
+template<>
+struct fold_if_needed<4>
+{
+    inline size_t operator()(uint64_t a) const
+    {
+        return static_cast<size_t>(a ^ (a >> 32));
+    }
+};
+
+template<>
+struct fold_if_needed<8>
+{
+    inline size_t operator()(uint64_t a) const
+    {
+        return static_cast<size_t>(a);
+    }
+};
+
+
 // ---------------------------------------------------------------
 //               phmap::Hash
 // ---------------------------------------------------------------
@@ -89,8 +143,7 @@ struct Hash
 {
     inline size_t operator()(const T& val) const
     {
-        // we mix for safety in case std::hash broken.
-        return phmap_mix_64(std::hash<T>()(val));
+        return std::hash<T>()(val);
     }
 };
 
@@ -99,7 +152,7 @@ struct Hash<T *>
 {
     inline size_t operator()(const T *val) const noexcept
     {
-        return phmap_mix_64((const uintptr_t)val); 
+        return (size_t)(const uintptr_t)val; 
     }
 };
 
@@ -149,42 +202,42 @@ template <>
 struct Hash<int16_t> : public phmap_unary_function<int16_t, size_t>
 {
     inline size_t operator()(int16_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(val)); }
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<uint16_t> : public phmap_unary_function<uint16_t, size_t>
 {
     inline size_t operator()(uint16_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(val)); }
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<int32_t> : public phmap_unary_function<int32_t, size_t>
 {
     inline size_t operator()(int32_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(val)); }
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<uint32_t> : public phmap_unary_function<uint32_t, size_t>
 {
     inline size_t operator()(uint32_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint32_t>(val)); }
+    { return static_cast<size_t>(val); }
 };
 
 template <>
 struct Hash<int64_t> : public phmap_unary_function<int64_t, size_t>
 {
     inline size_t operator()(int64_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint64_t>(val)); }
+    { return fold_if_needed<sizeof(size_t)>()(static_cast<uint64_t>(val)); }
 };
 
 template <>
 struct Hash<uint64_t> : public phmap_unary_function<uint64_t, size_t>
 {
     inline size_t operator()(uint64_t val) const noexcept
-    { return phmap_mix_64(static_cast<uint64_t>(val)); }
+    { return fold_if_needed<sizeof(size_t)>()(val); }
 };
 
 template <>
@@ -194,7 +247,8 @@ struct Hash<float> : public phmap_unary_function<float, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint32_t *as_int = reinterpret_cast<uint32_t *>(&val);
-        return (val == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
+        return (val == 0) ? static_cast<size_t>(0) : 
+                            static_cast<size_t>(*as_int);
     }
 };
 
@@ -205,7 +259,8 @@ struct Hash<double> : public phmap_unary_function<double, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint64_t *as_int = reinterpret_cast<uint64_t *>(&val);
-        return (val == 0) ? static_cast<size_t>(0) : phmap_mix_64(*as_int);
+        return (val == 0) ? static_cast<size_t>(0) : 
+                            fold_if_needed<sizeof(size_t)>()(*as_int);
     }
 };
 
@@ -397,17 +452,6 @@ inline ctrl_t* EmptyGroup() {
 }
 
 // --------------------------------------------------------------------------
-// Mixes a randomly generated per-process seed with `hash` and `ctrl` to
-// randomize insertion order within groups.
-// --------------------------------------------------------------------------
-static inline bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl);
-
-// --------------------------------------------------------------------------
-// Returns a hash seed.
-//
-// The seed consists of the ctrl_ pointer, which adds enough entropy to ensure
-// non-determinism of iteration order in most cases.
-// --------------------------------------------------------------------------
 inline size_t HashSeed(const ctrl_t* ctrl) {
   // The low bits of the pointer have little or no entropy because of
   // alignment. We shift the pointer to try to use higher entropy bits. A
@@ -416,14 +460,20 @@ inline size_t HashSeed(const ctrl_t* ctrl) {
 }
 
 inline size_t H1(size_t hash, const ctrl_t* ctrl) {
-  return (hash >> 7) ^ HashSeed(ctrl);
+  return (hash >> 7) 
+#if PHMAP_NON_DETERMINISTIC
+      // use ctrl_ pointer to add entropy to ensure
+      // non-deterministic iteration order.
+                 ^ HashSeed(ctrl)
+#endif
+      ; // last seven bits stored in the control bytes
 }
 
-inline ctrl_t H2(size_t hash) { return hash & 0x7F; }
+inline ctrl_t H2(size_t hash)          { return hash & 0x7F; }
 
-inline bool IsEmpty(ctrl_t c) { return c == kEmpty; }
-inline bool IsFull(ctrl_t c) { return c >= 0; }
-inline bool IsDeleted(ctrl_t c) { return c == kDeleted; }
+inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
+inline bool IsFull(ctrl_t c)           { return c >= 0; }
+inline bool IsDeleted(ctrl_t c)        { return c == kDeleted; }
 inline bool IsEmptyOrDeleted(ctrl_t c) { return c < kSentinel; }
 
 #if PHMAP_HAVE_SSE2
@@ -1728,7 +1778,7 @@ public:
 
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
-        prefetch_hash(hash_ref()(key));
+        prefetch_hash(HashElement{hash_ref()}(key));
     }
 
     // The API of find() has two extensions.
@@ -1749,13 +1799,14 @@ public:
                                           PolicyTraits::element(slots_ + seq.offset(i)))))
                     return iterator_at(seq.offset(i));
             }
-            if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) return end();
+            if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) 
+                return end();
             seq.next();
         }
     }
     template <class K = key_type>
     iterator find(const key_arg<K>& key) {
-        return find(key, hash_ref()(key));
+        return find(key, HashElement{hash_ref()}(key));
     }
 
     template <class K = key_type>
@@ -1764,7 +1815,7 @@ public:
     }
     template <class K = key_type>
     const_iterator find(const key_arg<K>& key) const {
-        return find(key, hash_ref()(key));
+        return find(key, HashElement{hash_ref()}(key));
     }
 
     template <class K = key_type>
@@ -1835,7 +1886,7 @@ private:
     {
         template <class K, class... Args>
         size_t operator()(const K& key, Args&&...) const {
-            return h(key);
+            return phmap_mix<sizeof(size_t)>()(h(key));
         }
         const hasher& h;
     };
@@ -1866,7 +1917,7 @@ private:
     {
         template <class K, class... Args>
         std::pair<iterator, bool> operator()(const K& key, Args&&... args) const {
-            return s.emplace_decomposable(key, s.hash_ref()(key),
+            return s.emplace_decomposable(key, typename raw_hash_set::HashElement{s.hash_ref()}(key),
                                           std::forward<Args>(args)...);
         }
         raw_hash_set& s;
@@ -1936,7 +1987,8 @@ private:
 
     void initialize_slots() {
         assert(capacity_);
-        if (slots_ == nullptr) {
+        if (std::is_same<SlotAlloc, std::allocator<slot_type>>::value && 
+            slots_ == nullptr) {
             infoz_ = Sample();
         }
 
@@ -2117,15 +2169,6 @@ private:
             Group g{ctrl_ + seq.offset()};
             auto mask = g.MatchEmptyOrDeleted();
             if (mask) {
-#if !defined(NDEBUG)
-                // We want to add entropy even when ASLR is not enabled.
-                // In debug build we will randomly insert in either the front or back of
-                // the group.
-                // TODO(kfm,sbenza): revisit after we do unconditional mixing
-                if (!is_small() && ShouldInsertBackwards(hash, ctrl_)) {
-                    return {seq.offset(mask.HighestBitSet()), seq.index()};
-                }
-#endif
                 return {seq.offset(mask.LowestBitSet()), seq.index()};
             }
             assert(seq.index() < capacity_ && "full table!");
@@ -2165,7 +2208,7 @@ protected:
 
     template <class K>
     std::pair<size_t, bool> find_or_prepare_insert(const K& key) {
-        return find_or_prepare_insert(key, hash_ref()(key));
+        return find_or_prepare_insert(key, HashElement{hash_ref()}(key));
     }
 
     size_t prepare_insert(size_t hash) PHMAP_ATTRIBUTE_NOINLINE {
@@ -2458,13 +2501,6 @@ inline size_t RandomSeed()
     size_t value = counter.fetch_add(1, std::memory_order_relaxed);
 #endif  // PHMAP_HAVE_THREAD_LOCAL
     return value ^ static_cast<size_t>(reinterpret_cast<uintptr_t>(&counter));
-}
-
-static inline bool ShouldInsertBackwards(size_t hash, ctrl_t* ctrl) 
-{
-    // To avoid problems with weak hashes and single bit tests, we use % 13.
-    // TODO(kfm,sbenza): revisit after we do unconditional mixing
-    return (H1(hash, ctrl) ^ RandomSeed()) % 13 > 6;
 }
 
 // ----------------------------------------------------------------------------
@@ -2973,8 +3009,8 @@ public:
     insert_return_type insert(node_type&& node) {
         if (!node) 
             return {end(), false, node_type()};
-        auto& k = node.key();
-        size_t hash  = hash_ref()(k);
+        auto& key    = node.key();
+        size_t hash  = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
 
@@ -3000,7 +3036,7 @@ public:
     template <class K, class... Args>
     std::pair<iterator, bool> emplace_decomposable(const K& key, Args&&... args)
     {
-        size_t hash  = hash_ref()(key);
+        size_t hash  = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
         MutexLock_ m(&inner);
@@ -3046,7 +3082,7 @@ public:
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
         const auto& elem = PolicyTraits::element(slot);
-        size_t hash  = hash_ref()(PolicyTraits::key(slot));
+        size_t hash  = HashElement{hash_ref()}(PolicyTraits::key(slot));
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
         MutexLock_ m(&inner);
@@ -3075,7 +3111,7 @@ public:
 
     template <class K = key_type, class F>
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
-        auto hash = hash_ref()(key);
+        auto hash    = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
         MutexLock_ m(&inner);
@@ -3094,7 +3130,7 @@ public:
     // --------------------------------------------------------------------
     template <class K = key_type>
     size_type erase(const key_arg<K>& key) {
-        auto hash = hash_ref()(key);
+        auto hash = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
         MutexLock_ m(&inner);
@@ -3222,7 +3258,7 @@ public:
     void prefetch(const key_arg<K>& key) const {
         (void)key;
 #if defined(__GNUC__)
-        size_t hash = hash_ref()(key);
+        size_t hash        = HashElement{hash_ref()}(key);
         const Inner& inner = sets_[subidx(hash)];
         const auto&  set   = inner.set_;
         MutexLock_ m(const_cast<Inner *>(&inner));
@@ -3249,7 +3285,7 @@ public:
 
     template <class K = key_type>
     iterator find(const key_arg<K>& key) {
-        return find(key, hash_ref()(key));
+        return find(key, HashElement{hash_ref()}(key));
     }
 
     template <class K = key_type>
@@ -3259,7 +3295,7 @@ public:
 
     template <class K = key_type>
     const_iterator find(const key_arg<K>& key) const {
-        return find(key, hash_ref()(key));
+        return find(key, HashElement{hash_ref()}(key));
     }
 
     template <class K = key_type>
@@ -3336,7 +3372,7 @@ private:
     {
         template <class K, class... Args>
         size_t operator()(const K& key, Args&&...) const {
-            return h(key);
+            return phmap_mix<sizeof(size_t)>()(h(key));
         }
         const hasher& h;
     };
@@ -3397,7 +3433,7 @@ protected:
     template <class K>
     std::tuple<Inner*, size_t, bool> 
     find_or_prepare_insert(const K& key, MutexLock_ &mutexlock) {
-        auto hash    = hash_ref()(key);
+        auto hash    = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
         mutexlock.set_mutex(&inner);
@@ -4244,7 +4280,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
     static size_t GetNumProbes(const Set& set,
                                const typename Set::key_type& key) {
         size_t num_probes = 0;
-        size_t hash = set.hash_ref()(key);
+        size_t hash = typename Set::HashElement{set.hash_ref()}(key); 
         auto seq = set.probe(hash);
         while (true) {
             container_internal::Group g{set.ctrl_ + seq.offset()};

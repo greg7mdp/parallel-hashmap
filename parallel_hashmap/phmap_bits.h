@@ -474,6 +474,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
         *high = static_cast<uint64_t>(result >> 64);
         return static_cast<uint64_t>(result);
     }
+    #define PHMAP_HAS_UMUL128 1
 #elif (defined(_MSC_VER))
     #if defined(_WIN64)
         #pragma intrinsic(_umul128)
@@ -481,29 +482,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
         {
             return _umul128(a, b, high);
         }
-    #else
-        #pragma intrinsic(__emulu)
-        inline uint64_t umul128(uint64_t multiplier, uint64_t multiplicand, uint64_t *product_hi)
-        {
-            uint64_t a = multiplier >> 32;
-            uint64_t b = (uint32_t)multiplier; // & 0xFFFFFFFF;
-            uint64_t c = multiplicand >> 32;
-            uint64_t d = (uint32_t)multiplicand; // & 0xFFFFFFFF;
-
-            uint64_t ad = __emulu(a, d);
-            uint64_t bd = __emulu(b, d);
-
-            uint64_t adbc = ad + __emulu(b, c);
-            uint64_t adbc_carry = (adbc < ad); // ? 1 : 0;
-            // MSVC gets confused by the ternary and makes worse code than using a boolean in an integer context for 1 : 0
-
-            // multiplier * multiplicand = product_hi * 2^64 + product_lo
-            uint64_t product_lo = bd + (adbc << 32);
-            uint64_t product_lo_carry = (product_lo < bd); // ? 1 : 0;
-            *product_hi = __emulu(a, c) + (adbc >> 32) + (adbc_carry << 32) + product_lo_carry;
-
-            return product_lo;
-        }
+        #define PHMAP_HAS_UMUL128 1
     #endif
 #endif
 
