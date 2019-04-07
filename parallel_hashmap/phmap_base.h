@@ -4585,7 +4585,7 @@ public:
             m_(&m), locked_(false) 
         { try_lock(m); }
 
-        ~ScopedLock() { if (locked__) m_->unlock(); }
+        ~ScopedLock() { if (locked_) m_->unlock(); }
 
         void lock() 
         { if (!locked_) { m_->lock(); locked_ = true; } }
@@ -4624,9 +4624,10 @@ template <class Mutex>
 class Lockable : public Mutex, public LockableBase<Mutex>
 {
 public:
-    using SharedLock      = LockableBase::ScopedLock;
-    using UniqueLock      = LockableBase::ScopedLock;
-    using UpgradeToUnique = LockableBase::DoNothing;        // we already have unique ownership
+    using Base            = LockableBase<Mutex>;
+    using SharedLock      = Base::ScopedLock;
+    using UniqueLock      = Base::ScopedLock;
+    using UpgradeToUnique = Base::DoNothing;        // we already have unique ownership
 };
 
 #if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)
