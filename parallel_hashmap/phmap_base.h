@@ -4503,4 +4503,147 @@ inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
 }  // namespace thread_safety_analysis
 }  // phmap
 
+
+namespace phmap {
+
+struct adopt_lock_t  { explicit adopt_lock_t() = default; };
+struct defer_lock_t  { explicit defer_lock_t() = default; };
+struct try_to_lock_t { explicit try_to_lock_t() = default; };
+
+// --------------------------- simplified scoped_lock ------------------------------
+template <class MutexType>
+class scoped_lock
+{
+public:
+    using mutex_type = MutexType;  // If MutexTypes... consists of the single type Mutex
+
+    explicit scoped_lock(mutex_type& m1, mutex_type& m2) : 
+        _m1(m1), _m2(m2)
+    { 
+        std::lock(m1, m2); 
+    }
+
+    scoped_lock(adopt_lock_t, mutex_type& m1, mutex_type& m2) :
+         _m1(m1), _m2(m2)
+    { // adopt means we already own the mutexes
+    }
+
+    ~scoped_lock()
+    {
+        _m1.unlock();
+        _m2.unlock();
+    }
+
+    scoped_lock(scoped_lock const&) = delete;
+    scoped_lock& operator=(scoped_lock const&) = delete;
+private:
+    mutex_type& _m1;
+    mutex_type& _m2;
+};
+
+// ------------------------ lockable object used internally -------------------------
+template <class Mutex>
+class LockableBase 
+{
+public:
+    struct DoNothing
+    {
+        DoNothing() {}
+        explicit DoNothing(Mutex& ) noexcept {}
+        DoNothing(Mutex&, adopt_lock_t) noexcept {}
+        DoNothing(Mutex&, defer_lock_t) noexcept {}
+        DoNothing(Mutex&, try_to_lock_t) {}
+        void lock() {}
+        void unlock() {} 
+        bool try_lock() { return true; }
+        void swap(DoNothing &) {}
+        bool owns_lock() const noexcept { return true; }
+    };
+
+    class ScopedLock
+    {
+    public:
+        typedef Mutex mutex_type;
+
+        ScopedLock() : 
+            m_(nullptr), locked_(false) 
+        {}
+
+        explicit ScopedLock(Mutex &m) :
+            m_(&m), locked_(false) 
+        { lock(m); }
+
+        ScopedLock(Mutex& m, adopt_lock_t) noexcept :
+            m_(&m), locked_(true) 
+        {}
+
+        ScopedLock(Mutex& m, defer_lock_t) noexcept :
+            m_(&m), locked_(false) 
+        {}
+
+        ScopedLock(Mutex& m, try_to_lock_t)  :
+            m_(&m), locked_(false) 
+        { try_lock(m); }
+
+        ~ScopedLock() { if (locked__) m_->unlock(); }
+
+        void lock() 
+        { if (!locked_) { m_->lock(); locked_ = true; } }
+
+        void unlock() 
+        { if (locked_) { m_->unlock(); locked_ = false; } } 
+
+        bool try_lock() 
+        { 
+            if (locked_)
+                return true;
+            locked_ = m_->try_lock(); 
+            return locked_;
+        }
+        
+        bool owns_lock() const noexcept { return locked_; }
+
+        void swap(ScopedLock &o) noexcept
+        { 
+            std::swap(m_, o.m_);
+            std::swap(locked_, o.locked_);
+        }
+
+        Mutex *mutex() const noexcept { return m_; }
+
+    private:
+        Mutex *m_;
+        bool  locked_;
+    };
+};
+
+// ------------------------ holds a mutex
+// Default implementation for Lockable, should work fine for std::mutex 
+// ---------------------------------------------------------------------------
+template <class Mutex>
+class Lockable : public Mutex, public LockableBase<Mutex>
+{
+public:
+    using SharedLock      = LockableBase::ScopedLock;
+    using UniqueLock      = LockableBase::ScopedLock;
+    using UpgradeToUnique = LockableBase::DoNothing;        // we already have unique ownership
+};
+
+#if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)
+
+template <>
+class  Lockable<boost::shared_mutex>  : public boost::shared_mutex
+{
+public:
+    using mutex_type      = boost::shared_mutex;
+    using UniqueLock      = boost::unique_lock<mutex_type>;
+    using SharedLock      = boost::upgrade_lock<mutex_type>;
+    using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
+};
+
+#endif
+
+
+}  // phmap
+
 #endif // phmap_base_h_guard_
