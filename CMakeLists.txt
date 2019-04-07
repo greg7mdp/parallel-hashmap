@@ -116,6 +116,6 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_hash_std examples/hash_std.cc)
     add_executable(ex_two_files examples/f1.cc examples/f2.cc)
     add_executable(ex_insert_bench examples/insert_bench.cc)
+    add_executable(ex_knucleotide examples/knucleotide.cc)
 endif()
-
 

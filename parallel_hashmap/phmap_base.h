@@ -4580,8 +4580,8 @@ public:
         DoNothing(Mutex&, phmap::adopt_lock_t) noexcept {}
         DoNothing(Mutex&, phmap::defer_lock_t) noexcept {}
         DoNothing(Mutex&, phmap::try_to_lock_t) {}
-        template<class T> explicit DoNothing(T&) {}
         template<class T> explicit DoNothing(T&&) {}
+        DoNothing& operator=(const DoNothing&) { return *this; }
         DoNothing& operator=(DoNothing&&) { return *this; }
         void swap(DoNothing &) {}
         bool owns_lock() const noexcept { return true; }
