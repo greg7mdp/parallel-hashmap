@@ -17,6 +17,10 @@
     #define THIS_TEST_NAME  FlatHashMap
 #endif
 
+#ifndef THIS_EXTRA_TPL_PARAMS
+    #define THIS_EXTRA_TPL_PARAMS 
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #if defined(PHMAP_HAVE_STD_ANY)
@@ -40,7 +44,14 @@ using ::testing::UnorderedElementsAre;
 
 template <class K, class V>
 using Map = THIS_HASH_MAP<K, V, StatefulTestingHash, StatefulTestingEqual,
-                          Alloc<std::pair<const K, V>>>;
+                          Alloc<std::pair<const K, V>> THIS_EXTRA_TPL_PARAMS>;
+
+
+template <class K, class V, class H = phmap::container_internal::hash_default_hash<K>,
+          class Eq = phmap::container_internal::hash_default_eq<K>,
+          class Alloc =  phmap::container_internal::Allocator<
+              phmap::container_internal::Pair<const K, V>>>
+using ThisMap = THIS_HASH_MAP<K, V, H, Eq, Alloc THIS_EXTRA_TPL_PARAMS>;
 
 static_assert(!std::is_standard_layout<NonStandardLayout>(), "");
 
@@ -53,6 +64,8 @@ INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ConstructorTest, MapTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, LookupTest, MapTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, MembersTest, MapTypes);
 INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, MapTypes);
+
+
 
 TEST(THIS_TEST_NAME, StandardLayout) {
   struct Int {
@@ -72,14 +85,14 @@ TEST(THIS_TEST_NAME, StandardLayout) {
   // Verify that neither the key nor the value get default-constructed or
   // copy-constructed.
   {
-    THIS_HASH_MAP<Int, Int, Hash> m;
+    ThisMap<Int, Int, Hash> m;
     m.try_emplace(Int(1), Int(2));
     m.try_emplace(Int(3), Int(4));
     m.erase(Int(1));
     m.rehash(2 * m.bucket_count());
   }
   {
-    THIS_HASH_MAP<Int, Int, Hash> m;
+    ThisMap<Int, Int, Hash> m;
     m.try_emplace(Int(1), Int(2));
     m.try_emplace(Int(3), Int(4));
     m.erase(Int(1));
@@ -93,9 +106,9 @@ struct balast {};
 TEST(THIS_TEST_NAME, IteratesMsan) {
   // Because SwissTable randomizes on pointer addresses, we keep old tables
   // around to ensure we don't reuse old memory.
-  std::vector<phmap::THIS_HASH_MAP<int, balast>> garbage;
+  std::vector<ThisMap<int, balast>> garbage;
   for (int i = 0; i < 100; ++i) {
-    phmap::THIS_HASH_MAP<int, balast> t;
+    ThisMap<int, balast> t;
     for (int j = 0; j < 100; ++j) {
       t[j];
       for (const auto& p : t) EXPECT_THAT(p, Pair(_, _));
@@ -144,7 +157,7 @@ struct Eq {
 };
 
 TEST(THIS_TEST_NAME, PtrKet) {
-    using H = THIS_HASH_MAP<void *, bool>;
+    using H = ThisMap<void *, bool>;
     H hash;
     int a, b;
     hash.insert(H::value_type(&a, true));
@@ -156,7 +169,7 @@ TEST(THIS_TEST_NAME, LazyKeyPattern) {
   // state that can cause extra calls to hash.
   int conversions = 0;
   int hashes = 0;
-  THIS_HASH_MAP<size_t, size_t, Hash, Eq> m(0, Hash{&hashes});
+  ThisMap<size_t, size_t, Hash, Eq> m(0, Hash{&hashes});
   m.reserve(3);
 
   m[LazyInt(1, &conversions)] = 1;
@@ -193,7 +206,7 @@ TEST(THIS_TEST_NAME, BitfieldArgument) {
     int n : 1;
   };
   n = 0;
-  THIS_HASH_MAP<int, int> m;
+  ThisMap<int, int> m;
   m.erase(n);
   m.count(n);
   m.prefetch(n);
@@ -209,9 +222,9 @@ TEST(THIS_TEST_NAME, BitfieldArgument) {
 }
 
 TEST(THIS_TEST_NAME, MergeExtractInsert) {
-  // We can't test mutable keys, or non-copyable keys with THIS_HASH_MAP.
+  // We can't test mutable keys, or non-copyable keys with ThisMap.
   // Test that the nodes have the proper API.
-  phmap::THIS_HASH_MAP<int, int> m = {{1, 7}, {2, 9}};
+  ThisMap<int, int> m = {{1, 7}, {2, 9}};
   auto node = m.extract(1);
   EXPECT_TRUE(node);
   EXPECT_EQ(node.key(), 1);
@@ -224,7 +237,7 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
 }
 #if !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__) && defined(PHMAP_HAVE_STD_ANY)
 TEST(THIS_TEST_NAME, Any) {
-  phmap::THIS_HASH_MAP<int, std::any> m;
+  phmap::ThisMap<int, std::any> m;
   m.emplace(1, 7);
   auto it = m.find(1);
   ASSERT_NE(it, m.end());
@@ -247,7 +260,7 @@ TEST(THIS_TEST_NAME, Any) {
   struct E {
     bool operator()(const std::any&, const std::any&) const { return true; }
   };
-  phmap::THIS_HASH_MAP<std::any, int, H, E> m2;
+  phmap::ThisMap<std::any, int, H, E> m2;
   m2.emplace(1, 7);
   auto it2 = m2.find(1);
   ASSERT_NE(it2, m2.end());
