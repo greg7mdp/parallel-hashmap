@@ -4506,6 +4506,22 @@ inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
 
 namespace phmap {
 
+// -----------------------------------------------------------------------------
+// NullMutex
+// -----------------------------------------------------------------------------
+// A class that implements the Mutex interface, but does nothing. This is to be 
+// used as a default template parameters for classes who provide optional 
+// internal locking (like phmap::parallel_flat_hash_map).
+// -----------------------------------------------------------------------------
+class NullMutex {
+public:
+    NullMutex() {}
+    ~NullMutex() {}
+    void lock() {}
+    void unlock() {}
+    bool try_lock() { return true; }
+};
+
 struct adopt_lock_t  { explicit adopt_lock_t() = default; };
 struct defer_lock_t  { explicit defer_lock_t() = default; };
 struct try_to_lock_t { explicit try_to_lock_t() = default; };
@@ -4543,16 +4559,16 @@ private:
 
 // ------------------------ lockable object used internally -------------------------
 template <class Mutex>
-class LockableBase 
+class LockableBaseImpl 
 {
 public:
     struct DoNothing
     {
         DoNothing() {}
         explicit DoNothing(Mutex& ) noexcept {}
-        DoNothing(Mutex&, adopt_lock_t) noexcept {}
-        DoNothing(Mutex&, defer_lock_t) noexcept {}
-        DoNothing(Mutex&, try_to_lock_t) {}
+        DoNothing(Mutex&, phmap::adopt_lock_t) noexcept {}
+        DoNothing(Mutex&, phmap::defer_lock_t) noexcept {}
+        DoNothing(Mutex&, phmap::try_to_lock_t) {}
         void lock() {}
         void unlock() {} 
         bool try_lock() { return true; }
@@ -4617,28 +4633,69 @@ public:
     };
 };
 
-// ------------------------ holds a mutex
+// ------------------------ holds a mutex ------------------------------------
 // Default implementation for Lockable, should work fine for std::mutex 
+// -----------------------------------
+// use as:
+//    using Lockable = phmap::LockableImpl<mutex_type>;
+//    Lockable m;
+//  
+//    Lockable::UpgradeLock read_lock(m); // take a upgradable lock
+//
+//    {
+//        Lockable::UpgradeToUnique unique_lock(read_lock);
+//        // now locked for write
+//    }
+//
 // ---------------------------------------------------------------------------
 template <class Mutex>
-class Lockable : public Mutex, public LockableBase<Mutex>
+class LockableImpl : public Mutex, public LockableBaseImpl<Mutex>
 {
 public:
-    using Base            = LockableBase<Mutex>;
+    using mutex_type      = Mutex;
+    using Base            = LockableBaseImpl<Mutex>;
     using SharedLock      = typename Base::ScopedLock;
+    using UpgradeLock     = typename Base::ScopedLock;
     using UniqueLock      = typename Base::ScopedLock;
     using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
 
+// ---------------------------------------------------------------------------
+template <>
+class  LockableImpl<phmap::NullMutex>: public LockableBaseImpl<phmap::NullMutex>
+{
+public:
+    using mutex_type      = phmap::NullMutex;
+    using Base            = LockableBaseImpl<phmap::NullMutex>;
+    using SharedLock      = typename Base::DoNothing; 
+    using UpgradeLock     = typename Base::DoNothing; 
+    using UniqueLock      = typename Base::DoNothing; 
+    using UpgradeToUnique = typename Base::DoNothing; 
+};
+
 #if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)
 
+// ---------------------------------------------------------------------------
 template <>
-class  Lockable<boost::shared_mutex>  : public boost::shared_mutex
+class  LockableImpl<boost::shared_mutex> : public boost::shared_mutex
 {
 public:
     using mutex_type      = boost::shared_mutex;
+    using SharedLock      = boost::shared_lock<mutex_type>;
+    using UpgradeLock     = boost::unique_lock<mutex_type>;  // we assume that shared can't upgrade
     using UniqueLock      = boost::unique_lock<mutex_type>;
-    using SharedLock      = boost::upgrade_lock<mutex_type>;
+    using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
+};
+
+// ---------------------------------------------------------------------------
+template <>
+class  LockableImpl<boost::upgrade_mutex> : public boost::upgrade_mutex
+{
+public:
+    using mutex_type      = boost::upgrade_mutex;
+    using UniqueLock      = boost::unique_lock<mutex_type>;
+    using SharedLock      = boost::shared_lock<mutex_type>;
+    using UpgradeLock     = boost::upgrade_lock<mutex_type>;
     using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
 };
 

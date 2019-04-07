@@ -4334,23 +4334,6 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 }  // namespace container_internal
 
 // -----------------------------------------------------------------------------
-// NullMutex
-// -----------------------------------------------------------------------------
-// A class that implements the Mutex interface, but does nothing. This is to be 
-// used as a default template parameters for classes who provide optional 
-// internal locking (like phmap::parallel_flat_hash_map).
-// -----------------------------------------------------------------------------
-class PHMAP_LOCKABLE NullMutex {
-public:
-    NullMutex() {}
-    ~NullMutex() {}
-    void lock()     PHMAP_EXCLUSIVE_LOCK_FUNCTION() {}
-    void unlock()   PHMAP_UNLOCK_FUNCTION() {}
-    bool try_lock() PHMAP_EXCLUSIVE_TRYLOCK_FUNCTION(true) { return true; }
-};
-
-
-// -----------------------------------------------------------------------------
 // phmap::flat_hash_set
 // -----------------------------------------------------------------------------
 // An `phmap::flat_hash_set<T>` is an unordered associative container which has
