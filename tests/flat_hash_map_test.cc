@@ -237,7 +237,7 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
 }
 #if !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__) && defined(PHMAP_HAVE_STD_ANY)
 TEST(THIS_TEST_NAME, Any) {
-  phmap::ThisMap<int, std::any> m;
+  ThisMap<int, std::any> m;
   m.emplace(1, 7);
   auto it = m.find(1);
   ASSERT_NE(it, m.end());
@@ -260,7 +260,7 @@ TEST(THIS_TEST_NAME, Any) {
   struct E {
     bool operator()(const std::any&, const std::any&) const { return true; }
   };
-  phmap::ThisMap<std::any, int, H, E> m2;
+  ThisMap<std::any, int, H, E> m2;
   m2.emplace(1, 7);
   auto it2 = m2.find(1);
   ASSERT_NE(it2, m2.end());
