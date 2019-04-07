@@ -2578,8 +2578,7 @@ protected:
     {
         bool operator==(const Inner& o) const
         {
-            MutexLock_ m1(const_cast<Inner *>(this));
-            MutexLock_ m2(const_cast<Inner *>(&o)); // deadlock - use std::lock
+            phmap::scoped_lock<Mutex> l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
             return set_ == o.set_;
         }
 
