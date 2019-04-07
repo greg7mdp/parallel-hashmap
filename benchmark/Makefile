@@ -22,7 +22,7 @@ build/sparsepp: bench.cc Makefile
 	$(CXX) -DSPARSEPP -I../../sparsepp bench.cc -o $@
 
 build/phmap: bench.cc Makefile $(PHMAP_SRC)/phmap.h
-	$(CXX) -DPHMAP -I.. bench.cc /MD -o $@ 
+	$(CXX) -DPHMAP -I.. -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
 build/phmap_flat: bench.cc Makefile $(PHMAP_SRC)/phmap.h
 	$(CXX) -DPHMAP_FLAT -I.. bench.cc /MD -o $@ 
@@ -39,7 +39,7 @@ test: builddir progs
 	-rm -f output
 	#./build/stl_unordered_map $(SIZE) random >> output
 	#./build/sparsepp    $(SIZE) random >> output
-	#./build/abseil_flat  $(SIZE) random >> output
+	./build/abseil_flat  $(SIZE) random >> output
 	#./build/phmap_flat   $(SIZE) random >> output
 	./build/phmap        $(SIZE) random >> output
 	./build/abseil_parallel_flat $(SIZE) random >> output

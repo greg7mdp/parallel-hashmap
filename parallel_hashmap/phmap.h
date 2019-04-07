@@ -44,7 +44,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <mutex>
 #include <array>
 #include <functional>
 #include <cassert>
@@ -2503,7 +2502,7 @@ inline size_t RandomSeed()
 // ----------------------------------------------------------------------------
 template <size_t N,
           template <class, class, class, class> class RefSet,
-          class Mutex,
+          class Mtx_,
           class Policy, class Hash, class Eq, class Alloc>
 class parallel_hash_set 
 {
@@ -2545,40 +2544,14 @@ public:
     using key_arg         = typename KeyArgImpl::template type<K, key_type>;
 
 protected:
-    // --------------------------------------------------------------------
-    // MutexLock with the additional set_mutex function, otherwise we could 
-    // make the MutexLock from mutex.h a template and use that one.
-    // --------------------------------------------------------------------
-    class PHMAP_SCOPED_LOCKABLE MutexLock_ {
-    public:
-        explicit MutexLock_(Mutex *mu) PHMAP_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
-            if (this->mu_)
-                this->mu_->lock();
-        }
-
-        void set_mutex(Mutex *mu) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
-            assert(mu && this->mu_ == nullptr);
-            this->mu_ = mu;
-            this->mu_->lock();
-        }
-
-        MutexLock_(const MutexLock_ &)           = delete;  // NOLINT(runtime/mutex)
-        MutexLock_(MutexLock_&&)                 = delete;  // NOLINT(runtime/mutex)
-        MutexLock_& operator=(const MutexLock_&) = delete;
-        MutexLock_& operator=(MutexLock_&&)      = delete;
-
-        ~MutexLock_() PHMAP_UNLOCK_FUNCTION() { if (this->mu_) this->mu_->unlock(); }
-
-    private:
-        Mutex *mu_;
-    };
+    using Lockable = phmap::LockableImpl<Mtx_>;
 
     // --------------------------------------------------------------------
-    struct alignas(64) Inner : public Mutex
+    struct alignas(64) Inner : public Lockable
     {
         bool operator==(const Inner& o) const
         {
-            phmap::scoped_lock<Mutex> l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
+            phmap::scoped_lock<Lockable> l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
             return set_ == o.set_;
         }
 
@@ -3014,7 +2987,7 @@ public:
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
 
-        MutexLock_ m(&inner);
+        typename Lockable::UniqueLock m(inner);
         auto   res  = set.insert(std::move(node), hash);
         return { make_iterator(&inner, res.position),
                 res.inserted,
@@ -3039,7 +3012,7 @@ public:
         size_t hash  = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(&inner);
+        typename Lockable::UniqueLock m(inner);
         return make_rv(&inner, set.emplace_decomposable(key, hash, std::forward<Args>(args)...));
     }
 
@@ -3085,7 +3058,7 @@ public:
         size_t hash  = HashElement{hash_ref()}(PolicyTraits::key(slot));
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(&inner);
+        typename Lockable::UniqueLock m(inner);
         typename EmbeddedSet::template InsertSlotWithHash<true> f {
             inner, std::move(*slot), hash};
         return make_rv(PolicyTraits::apply(f, elem));
@@ -3114,7 +3087,7 @@ public:
         auto hash    = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(&inner);
+        typename Lockable::UniqueLock m(inner);
         return make_iterator(&inner, set.lazy_emplace(key, hash, std::forward<F>(f)));
     }
 
@@ -3133,10 +3106,12 @@ public:
         auto hash = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(&inner);
+        typename Lockable::UpgradeLock m(inner);
         auto it   = set.find(key, hash);
         if (it == set.end()) 
             return 0;
+
+        typename Lockable::UpgradeToUnique unique(m);
         set.erase(it);
         return 1;
     }
@@ -3179,21 +3154,20 @@ public:
     // If the element already exists in `this`, it is left unmodified in `src`.
     // --------------------------------------------------------------------
     template <typename E = Eq>
-    void merge(parallel_hash_set<N, RefSet, Mutex, Policy, Hash, E, Alloc>& src) {  // NOLINT
+    void merge(parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, E, Alloc>& src) {  // NOLINT
         assert(this != &src);
         if (this != &src)
         {
             for (size_t i=0; i<num_tables; ++i)
             {
-                MutexLock_ m1(&sets_[i]);
-                MutexLock_ m2(&src.sets_[i]);
+                phmap::scoped_lock<Lockable> l(sets_[i], src.sets_[i]);
                 sets_[i].set_.merge(src.sets_[i].set_);
             }
         }
     }
 
     template <typename E = Eq>
-    void merge(parallel_hash_set<N, RefSet, Mutex, Policy, Hash, E, Alloc>&& src) {
+    void merge(parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, E, Alloc>&& src) {
         merge(src);
     }
 
@@ -3216,8 +3190,7 @@ public:
         using std::swap;
         for (size_t i=0; i<num_tables; ++i)
         {
-            MutexLock_ m1(&sets_[i]);
-            MutexLock_ m2(&that.sets_[i]);
+            phmap::scoped_lock<Lockable> l(sets_[i], that.sets_[i]);
             swap(sets_[i].set_, that.sets_[i].set_);
         }
     }
@@ -3226,7 +3199,7 @@ public:
         size_t nn = n / num_tables;
         for (auto& inner : sets_)
         {
-            MutexLock_ m(&inner);
+            typename Lockable::UniqueLock m(inner);
             inner.set_.rehash(nn);
         }
     }
@@ -3257,11 +3230,11 @@ public:
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
         (void)key;
-#if defined(__GNUC__)
+#if 0 && defined(__GNUC__)
         size_t hash        = HashElement{hash_ref()}(key);
         const Inner& inner = sets_[subidx(hash)];
         const auto&  set   = inner.set_;
-        MutexLock_ m(const_cast<Inner *>(&inner));
+        typename Lockable::UniqueLock m(inner);
         set.prefetch_hash(hash);
 #endif  // __GNUC__
     }
@@ -3278,7 +3251,7 @@ public:
     iterator find(const key_arg<K>& key, size_t hash) {
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(&inner);
+        typename Lockable::SharedLock m(inner);
         auto  it = set.find(key, hash);
         return make_iterator(&inner, it);
     }
@@ -3322,7 +3295,7 @@ public:
         size_t sz = 0;
         for (const auto& inner : sets_)
         {
-            MutexLock_ m(const_cast<Inner *>(&inner));
+            typename Lockable::SharedLock m(const_cast<Inner&>(inner));
             sz += inner.set_.bucket_count();
         }
         return sz; 
@@ -3402,7 +3375,7 @@ private:
     void drop_deletes_without_resize() PHMAP_ATTRIBUTE_NOINLINE {
         for (auto& inner : sets_)
         {
-            MutexLock_ m(&inner);
+            typename Lockable::UniqueLock m(inner);
             inner.set_.drop_deletes_without_resize();
         }
     }
@@ -3411,7 +3384,7 @@ private:
         size_t hash  = PolicyTraits::apply(HashElement{hash_ref()}, elem);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        MutexLock_ m(const_cast<Inner *>(&inner));
+        typename Lockable::SharedLock m(const_cast<Inner&>(inner));
         return set.has_element(elem, hash);
     }
 
@@ -3432,11 +3405,11 @@ private:
 protected:
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert(const K& key, MutexLock_ &mutexlock) {
+    find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
         auto hash    = HashElement{hash_ref()}(key);
         Inner& inner = sets_[subidx(hash)];
         auto&  set   = inner.set_;
-        mutexlock.set_mutex(&inner);
+        mutexlock    = std::move(typename Lockable::UniqueLock(inner));
         auto  p   = set.find_or_prepare_insert(key, hash); // std::pair<size_t, bool>
         return std::make_tuple(&inner, p.first, p.second);
     }
@@ -3452,6 +3425,11 @@ protected:
 
     static size_t subidx(size_t hashval) {
         return (hashval ^ (hashval >> N)) & mask;
+    }
+
+    template <class K>
+    size_t hash(const K& key) {
+        return HashElement{hash_ref()}(key);
     }
 
     static size_t subcnt() {
@@ -3484,9 +3462,9 @@ private:
 // --------------------------------------------------------------------------
 template <size_t N,
           template <class, class, class, class> class RefSet,
-          class Mutex,
+          class Mtx_,
           class Policy, class Hash, class Eq, class Alloc>
-class parallel_hash_map : public parallel_hash_set<N, RefSet, Mutex, Policy, Hash, Eq, Alloc> 
+class parallel_hash_map : public parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc> 
 {
     // P is Policy. It's passed as a template argument to support maps that have
     // incomplete types as values, as in unordered_map<K, IncompleteType>.
@@ -3504,6 +3482,7 @@ class parallel_hash_map : public parallel_hash_set<N, RefSet, Mutex, Policy, Has
         KeyArg<IsTransparent<Eq>::value && IsTransparent<Hash>::value>;
 
     using Base = typename parallel_hash_map::parallel_hash_set;
+    using Lockable = phmap::LockableImpl<Mtx_>;
 
 public:
     using key_type = typename Policy::key_type;
@@ -3623,8 +3602,8 @@ public:
 private:
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
-        typename Base::MutexLock_ mutexlock(nullptr);
-        auto res = this->find_or_prepare_insert(k, mutexlock);
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert(k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res))
             inner->set_.emplace_at(std::get<1>(res), std::forward<K>(k), std::forward<V>(v));
@@ -3636,8 +3615,8 @@ private:
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl(K&& k, Args&&... args) {
-        typename Base::MutexLock_ mutexlock(nullptr);
-        auto res = this->find_or_prepare_insert(k, mutexlock);
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert(k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res))
             inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
@@ -4577,10 +4556,10 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_flat_hash_set
 // -----------------------------------------------------------------------------
-template <class T, class Hash, class Eq, class Alloc, size_t N, class Mutex> // default values in phmap_fwd_decl.h
+template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_> // default values in phmap_fwd_decl.h
 class parallel_flat_hash_set
     : public phmap::container_internal::parallel_hash_set<
-         N, phmap::container_internal::raw_hash_set, Mutex,
+         N, phmap::container_internal::raw_hash_set, Mtx_,
          phmap::container_internal::FlatHashSetPolicy<T>, 
          Hash, Eq, Alloc> 
 {
@@ -4589,6 +4568,7 @@ class parallel_flat_hash_set
 public:
     parallel_flat_hash_set() {}
     using Base::Base;
+    using Base::hash;
     using Base::subidx;
     using Base::subcnt;
     using Base::begin;
@@ -4624,9 +4604,9 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_flat_hash_map - default values in phmap_fwd_decl.h
 // -----------------------------------------------------------------------------
-template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mutex>
+template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
 class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_map<
-                N, phmap::container_internal::raw_hash_set, Mutex,
+                N, phmap::container_internal::raw_hash_set, Mtx_,
                 phmap::container_internal::FlatHashMapPolicy<K, V>,
                 Hash, Eq, Alloc> 
 {
@@ -4635,6 +4615,7 @@ class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_m
 public:
     parallel_flat_hash_map() {}
     using Base::Base;
+    using Base::hash;
     using Base::subidx;
     using Base::subcnt;
     using Base::begin;
@@ -4674,10 +4655,10 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_node_hash_set
 // -----------------------------------------------------------------------------
-template <class T, class Hash, class Eq, class Alloc, size_t N, class Mutex>
+template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
 class parallel_node_hash_set
     : public phmap::container_internal::parallel_hash_set<
-             N, phmap::container_internal::raw_hash_set, Mutex,
+             N, phmap::container_internal::raw_hash_set, Mtx_,
              phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
     using Base = typename parallel_node_hash_set::parallel_hash_set;
@@ -4685,6 +4666,9 @@ class parallel_node_hash_set
 public:
     parallel_node_hash_set() {}
     using Base::Base;
+    using Base::hash;
+    using Base::subidx;
+    using Base::subcnt;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4720,10 +4704,10 @@ public:
 // -----------------------------------------------------------------------------
 // phmap::parallel_node_hash_map
 // -----------------------------------------------------------------------------
-template <class Key, class Value, class Hash, class Eq, class Alloc, size_t N, class Mutex>
+template <class Key, class Value, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
 class parallel_node_hash_map
     : public phmap::container_internal::parallel_hash_map<
-          N, phmap::container_internal::raw_hash_set, Mutex,
+          N, phmap::container_internal::raw_hash_set, Mtx_,
           phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
           Alloc> 
 {
@@ -4732,6 +4716,9 @@ class parallel_node_hash_map
 public:
     parallel_node_hash_map() {}
     using Base::Base;
+    using Base::hash;
+    using Base::subidx;
+    using Base::subcnt;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;

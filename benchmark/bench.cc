@@ -23,13 +23,28 @@
         #include "absl/container/parallel_flat_hash_map.h"
         #define MAPNAME absl::parallel_flat_hash_map
         #define NMSP absl
+        #define MTX absl::Mutex
     #else
+        #if 1
+            // use Abseil's mutex... faster
+            #include "absl/synchronization/mutex.h"
+            struct AbslMutex : protected absl::Mutex
+            {
+                void lock()   { this->Lock(); }
+                void unlock()   { this->Unlock(); }
+            };
+            #define MTX AbslMutex //std::mutex
+        #else
+            #include <mutex>
+            #define MTX std::mutex
+        #endif
+
         #include "parallel_hashmap/phmap.h"
         #define MAPNAME phmap::parallel_flat_hash_map
         #define NMSP phmap
     #endif
 
-    #define MT_SUPPORT 0
+    #define MT_SUPPORT 2
     #if MT_SUPPORT == 1
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
@@ -44,7 +59,7 @@
         // --------------------------------------------------------------------------
         #define EXTRAARGS , NMSP::container_internal::hash_default_hash<K>, \
                             NMSP::container_internal::hash_default_eq<K>, \
-                            std::allocator<std::pair<const K, V>>, 4, NMSP::Mutex
+                            std::allocator<std::pair<const K, V>>, 4, MTX
     #else
         #define EXTRAARGS
     #endif
@@ -207,14 +222,13 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
 #if MT_SUPPORT
-        typename HT::hasher hasher;                         // get hasher object from the hash table [greg] todo provide hash fn
         size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
             unsigned int key = rsu.next();                  // get next key to insert
 #if MT_SUPPORT == 1
-            size_t hashval = hasher(key);                   // compute its hash
+            size_t hashval = hash.hash(key);                   // compute its hash
             size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
             if (idx / modulo == thread_idx)                 // if the submap is suitable for this thread
 #elif MT_SUPPORT == 2
@@ -270,7 +284,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
 
     for (loop_idx=0; loop_idx<num_loops; ++loop_idx)
     {
-#if MT_SUPPORT
+#if 1 && MT_SUPPORT
         // multithreaded insert
         _fill_random_inner_mt(inner_cnt, hash, rsu);
 #else

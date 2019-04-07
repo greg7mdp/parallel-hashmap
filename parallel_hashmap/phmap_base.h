@@ -46,6 +46,7 @@
 #include <tuple>
 #include <utility>
 #include <memory>
+#include <mutex> // for std::lock
 
 #include "phmap_config.h"
 
@@ -4506,6 +4507,20 @@ inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
 
 namespace phmap {
 
+#if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)
+    #define PHMAP_HAS_BOOST_THREAD_MUTEXES
+#endif
+
+#ifdef PHMAP_HAS_BOOST_THREAD_MUTEXES
+    using defer_lock_t  = boost::defer_lock_t;
+    using try_to_lock_t = boost::try_to_lock_t;
+    using adopt_lock_t  = boost::adopt_lock_t;
+#else
+    struct adopt_lock_t  { explicit adopt_lock_t() = default; };
+    struct defer_lock_t  { explicit defer_lock_t() = default; };
+    struct try_to_lock_t { explicit try_to_lock_t() = default; };
+#endif
+
 // -----------------------------------------------------------------------------
 // NullMutex
 // -----------------------------------------------------------------------------
@@ -4522,16 +4537,12 @@ public:
     bool try_lock() { return true; }
 };
 
-struct adopt_lock_t  { explicit adopt_lock_t() = default; };
-struct defer_lock_t  { explicit defer_lock_t() = default; };
-struct try_to_lock_t { explicit try_to_lock_t() = default; };
-
 // --------------------------- simplified scoped_lock ------------------------------
 template <class MutexType>
 class scoped_lock
 {
 public:
-    using mutex_type = MutexType;  // If MutexTypes... consists of the single type Mutex
+    using mutex_type = MutexType;  
 
     explicit scoped_lock(mutex_type& m1, mutex_type& m2) : 
         _m1(m1), _m2(m2)
@@ -4564,14 +4575,14 @@ class LockableBaseImpl
 public:
     struct DoNothing
     {
-        DoNothing() {}
+        DoNothing() noexcept {}
         explicit DoNothing(Mutex& ) noexcept {}
         DoNothing(Mutex&, phmap::adopt_lock_t) noexcept {}
         DoNothing(Mutex&, phmap::defer_lock_t) noexcept {}
         DoNothing(Mutex&, phmap::try_to_lock_t) {}
-        void lock() {}
-        void unlock() {} 
-        bool try_lock() { return true; }
+        template<class T> explicit DoNothing(T&) {}
+        template<class T> explicit DoNothing(T&&) {}
+        DoNothing& operator=(DoNothing&&) { return *this; }
         void swap(DoNothing &) {}
         bool owns_lock() const noexcept { return true; }
     };
@@ -4586,8 +4597,11 @@ public:
         {}
 
         explicit ScopedLock(Mutex &m) :
-            m_(&m), locked_(false) 
-        { lock(m); }
+            m_(&m) 
+        { 
+            m_->lock(); 
+            locked_ = true; 
+        }
 
         ScopedLock(Mutex& m, adopt_lock_t) noexcept :
             m_(&m), locked_(true) 
@@ -4599,15 +4613,45 @@ public:
 
         ScopedLock(Mutex& m, try_to_lock_t)  :
             m_(&m), locked_(false) 
-        { try_lock(m); }
+        { 
+            try_lock(); 
+        }
 
-        ~ScopedLock() { if (locked_) m_->unlock(); }
+        ScopedLock(ScopedLock &&o) :
+            m_(std::move(o.m_)), locked_(std::move(o.locked_))
+        {
+            o.locked_ = false;
+            o.m_      = nullptr;
+        }
+
+        ScopedLock& operator=(ScopedLock&& other) 
+        {
+            ScopedLock temp(std::move(other));
+            swap(temp);
+            return *this;
+        }
+
+        ~ScopedLock() 
+        {
+            if (locked_) 
+                m_->unlock(); 
+        }
 
         void lock() 
-        { if (!locked_) { m_->lock(); locked_ = true; } }
+        { 
+            if (!locked_) { 
+                m_->lock(); 
+                locked_ = true; 
+            }
+        }
 
         void unlock() 
-        { if (locked_) { m_->unlock(); locked_ = false; } } 
+        { 
+            if (locked_) {
+                m_->unlock(); 
+                locked_ = false;
+            }
+        } 
 
         bool try_lock() 
         { 
@@ -4648,12 +4692,12 @@ public:
 //    }
 //
 // ---------------------------------------------------------------------------
-template <class Mutex>
-class LockableImpl : public Mutex, public LockableBaseImpl<Mutex>
+template <class Mtx_>
+class LockableImpl : public Mtx_, public LockableBaseImpl<Mtx_>
 {
 public:
-    using mutex_type      = Mutex;
-    using Base            = LockableBaseImpl<Mutex>;
+    using mutex_type      = Mtx_;
+    using Base            = LockableBaseImpl<Mtx_>;
     using SharedLock      = typename Base::ScopedLock;
     using UpgradeLock     = typename Base::ScopedLock;
     using UniqueLock      = typename Base::ScopedLock;
@@ -4662,7 +4706,7 @@ public:
 
 // ---------------------------------------------------------------------------
 template <>
-class  LockableImpl<phmap::NullMutex>: public LockableBaseImpl<phmap::NullMutex>
+class  LockableImpl<phmap::NullMutex>: public phmap::NullMutex, public LockableBaseImpl<phmap::NullMutex>
 {
 public:
     using mutex_type      = phmap::NullMutex;
@@ -4673,7 +4717,7 @@ public:
     using UpgradeToUnique = typename Base::DoNothing; 
 };
 
-#if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)
+#ifdef PHMAP_HAS_BOOST_THREAD_MUTEXES
 
 // ---------------------------------------------------------------------------
 template <>
@@ -4682,7 +4726,7 @@ class  LockableImpl<boost::shared_mutex> : public boost::shared_mutex
 public:
     using mutex_type      = boost::shared_mutex;
     using SharedLock      = boost::shared_lock<mutex_type>;
-    using UpgradeLock     = boost::unique_lock<mutex_type>;  // we assume that shared can't upgrade
+    using UpgradeLock     = boost::unique_lock<mutex_type>;  // we assume that boost::shared_mutex can't upgrade
     using UniqueLock      = boost::unique_lock<mutex_type>;
     using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
@@ -4693,9 +4737,9 @@ class  LockableImpl<boost::upgrade_mutex> : public boost::upgrade_mutex
 {
 public:
     using mutex_type      = boost::upgrade_mutex;
-    using UniqueLock      = boost::unique_lock<mutex_type>;
     using SharedLock      = boost::shared_lock<mutex_type>;
     using UpgradeLock     = boost::upgrade_lock<mutex_type>;
+    using UniqueLock      = boost::unique_lock<mutex_type>;
     using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
 };
 
