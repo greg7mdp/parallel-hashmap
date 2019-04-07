@@ -4625,9 +4625,9 @@ class Lockable : public Mutex, public LockableBase<Mutex>
 {
 public:
     using Base            = LockableBase<Mutex>;
-    using SharedLock      = Base::ScopedLock;
-    using UniqueLock      = Base::ScopedLock;
-    using UpgradeToUnique = Base::DoNothing;        // we already have unique ownership
+    using SharedLock      = typename Base::ScopedLock;
+    using UniqueLock      = typename Base::ScopedLock;
+    using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
 
 #if defined(BOOST_THREAD_SHARED_MUTEX_HPP) && defined(BOOST_THREAD_LOCK_TYPES_HPP)

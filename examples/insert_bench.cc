@@ -137,5 +137,5 @@ int main()
             checksum += ++map[static_cast<int>(rng())];
         }
     }
-    printf("%d\n", checksum);
+    printf("%zu\n", checksum);
 }
