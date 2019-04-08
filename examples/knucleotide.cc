@@ -44,7 +44,7 @@
 #include <array>
 #include <vector>
 #include <cassert>
-#include <unordered_map>
+#include <parallel_hashmap/phmap.h>
 
 // ------------------------------------------------------------------
 struct Cfg {
@@ -123,7 +123,7 @@ private:
 
 // ------------------------------------------------------------------
 template <size_t size, typename K = Key<size> >
-using HashTable = std::unordered_map<K, unsigned, typename K::Hash>;
+using HashTable = phmap::flat_hash_map<K, unsigned, typename K::Hash>;
 
 // ------------------------------------------------------------------
 template <size_t size>
@@ -156,7 +156,7 @@ void Calculate(const Cfg::Data& input, size_t begin, HashTable<size>& table)
 
 // ------------------------------------------------------------------
 template <size_t size>
-auto CalculateInThreads(const Cfg::Data& input)
+HashTable<size> CalculateInThreads(const Cfg::Data& input)
 {
     HashTable<size> hash_tables[cfg.thread_count];
     std::thread threads[cfg.thread_count];
@@ -175,6 +175,7 @@ auto CalculateInThreads(const Cfg::Data& input)
     for(unsigned i = 1 ; i < cfg.thread_count; ++i)
         for(auto& j : hash_tables[i])
             frequencies[j.first] += j.second;
+
     // return the 'frequency' by move instead of copy.
     return std::move(frequencies);
 }
