@@ -47,13 +47,16 @@
 #include <parallel_hashmap/phmap.h>
 
 // ------------------------------------------------------------------
+constexpr size_t thread_count = 4;
+
 struct Cfg {
-    static constexpr size_t thread_count = 4;
-    static constexpr unsigned to_char[4] = {'A', 'C', 'T', 'G'};
+    unsigned char *to_char;
     unsigned char to_num[128];
     using Data = std::vector<unsigned char>;
 
     Cfg() {
+        static unsigned char __tochar[] =  {'A', 'C', 'T', 'G'};
+        to_char = __tochar;
         to_num['A'] = to_num['a'] = 0;
         to_num['C'] = to_num['c'] = 1;
         to_num['T'] = to_num['t'] = 2;
@@ -138,11 +141,11 @@ void Calculate(const Cfg::Data& input, size_t begin, HashTable<size>& table)
     // use key to increment value
     ++table[key];
 
-    auto itr_begin = input.data() + begin + cfg.thread_count;
+    auto itr_begin = input.data() + begin + thread_count;
     auto itr_end = (input.data() + input.size() + 1) - size;
-    for(;itr_begin < itr_end; itr_begin += cfg.thread_count) {
+    size_t nsize = std::min(size, thread_count);
+    for(;itr_begin < itr_end; itr_begin += thread_count) {
         // update the key 1 byte at a time
-        constexpr size_t nsize = std::min(size, cfg.thread_count);
         for(unsigned i = 0; i < nsize; ++i)
             key.UpdateKey( itr_begin[i] );
 
@@ -158,21 +161,21 @@ void Calculate(const Cfg::Data& input, size_t begin, HashTable<size>& table)
 template <size_t size>
 HashTable<size> CalculateInThreads(const Cfg::Data& input)
 {
-    HashTable<size> hash_tables[cfg.thread_count];
-    std::thread threads[cfg.thread_count];
+    HashTable<size> hash_tables[thread_count];
+    std::thread threads[thread_count];
 
     auto invoke = [&](unsigned begin) {
         Calculate<size>(input, begin, hash_tables[begin]);
     };
 
-    for(unsigned i = 0; i < cfg.thread_count; ++i)
+    for(unsigned i = 0; i < thread_count; ++i)
         threads[i] = std::thread(invoke, i);
 
     for(auto& i : threads)
         i.join();
 
     auto& frequencies = hash_tables[0];
-    for(unsigned i = 1 ; i < cfg.thread_count; ++i)
+    for(unsigned i = 1 ; i < thread_count; ++i)
         for(auto& j : hash_tables[i])
             frequencies[j.first] += j.second;
 
@@ -217,7 +220,7 @@ int main()
             data.insert(data.end(), buf.begin(), i);
         }
     }
-    std::transform(data.begin(), data.end(), data.begin(), [](auto c){
+    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c){
         return cfg.to_num[c];
     });
     std::cout << std::setprecision(3) << std::setiosflags(std::ios::fixed);
@@ -229,5 +232,5 @@ int main()
     WriteCount<4>(data, "GGTA");
     WriteCount<6>(data, "GGTATT");
     WriteCount<12>(data, "GGTATTTTAATT");
-    WriteCount<18>(data, "GGTATTTTAATTTATAGT");
+     WriteCount<18>(data, "GGTATTTTAATTTATAGT");
 }
