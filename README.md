@@ -33,7 +33,7 @@ The hashmaps provided here are built upon those open sourced by Google in the Ab
 
 Copy the parallel_hashmap directory to your project. Update your include path. That's all.
 
-> A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON .. && cmake --build . && make test`
+> A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON .. && cmake --build . && make test`
 
 ## Example
 
