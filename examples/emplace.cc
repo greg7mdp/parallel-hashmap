@@ -8,19 +8,11 @@
 
 #include <sstream>
 
-namespace patch
-{
-    template <typename T> std::string to_string(const T& n)
-    {
-        std::ostringstream stm;
-        stm << n;
-        return stm.str();
-    }
-}
-
 template <typename T>
 using milliseconds = std::chrono::duration<T, std::milli>;
 
+// type containing std::string. Seems to take a long time to construct (and maybe move)
+// ------------------------------------------------------------------------------------
 class custom_type
 {
     std::string one = "one";
@@ -40,6 +32,8 @@ public:
     //custom_type& operator=(custom_type const&) = delete;
 };
 
+// type containing only integrals. should be faster to create.
+// -----------------------------------------------------------
 class custom_type_2
 {
     std::uint32_t three = 3;
@@ -58,64 +52,65 @@ public:
     //custom_type_2& operator=(custom_type_2 const&) = delete;
 };
 
-// emplace string + large struct
-// -----------------------------
-template <class Map, class V, class T> struct _emplace
+// convert std::size_t to appropriate key
+// --------------------------------------
+template <class K>
+struct GenKey
+{
+    K operator()(std::size_t j);
+};
+
+template <>
+struct GenKey<std::string>
+{
+    std::string operator()(std::size_t j) {
+        std::ostringstream stm;
+        stm << j;
+        return stm.str();
+    }
+};
+
+template <>
+struct GenKey<int>
+{
+    int operator()(std::size_t j) {
+        return (int)j;
+    }
+};
+
+// emplace key + large struct
+// --------------------------
+template <class Map, class K, class V, class T> struct _emplace
 {
     void operator()(Map &m, std::size_t j);
 };
 
 // "void" template parameter -> use emplace
-template <class Map, class V> struct _emplace<Map, V, void>
+template <class Map, class K, class V> struct _emplace<Map, K, V, void>
 {
     void operator()(Map &m, std::size_t j)
     {
-        m.emplace(patch::to_string(j), V());
+        m.emplace(GenKey<K>()(j), V());
     }
 };
 
 // "int" template parameter -> use emplace_back for std::vector
-template <class Map, class V> struct _emplace<Map, V, int>
+template <class Map, class K, class V> struct _emplace<Map, K, V, int>
 {
     void operator()(Map &m, std::size_t j)
     {
-        m.emplace_back(patch::to_string(j), V());
-    }
-};
-
-// insert <int, custom_type_2>
-// ---------------------------
-template <class Map, class V, class T> struct emplace_2_ints
-{
-    void operator()(Map &m, std::size_t j);
-};
-
-// "void" template parameter -> use emplace
-template <class Map, class V> struct emplace_2_ints<Map, V, void>
-{
-    void operator()(Map &m, std::size_t j)
-    {
-        m.emplace(j, V());
-    }
-};
-
-// "int" template parameter -> use emplace_back for std::vector
-template <class Map, class V> struct emplace_2_ints<Map, V, int> 
-{
-    void operator()(Map &m, std::size_t j)
-    {
-        m.emplace_back(j, V());
+        m.emplace_back(GenKey<K>()(j), V());
     }
 };
 
 // The test itself
 // ---------------
-template <class Map, class V, class T, template <class, class, class> class INSERT>
+template <class Map, class K, class V, class T, template <class, class, class, class> class INSERT>
 void _test(std::size_t iterations, std::size_t container_size, const char *map_name)
 {
     std::size_t count = 0;
     auto t1 = std::chrono::high_resolution_clock::now();
-    INSERT<Map, V, T> insert;
+    INSERT<Map, K, V, T> insert;
     for (std::size_t i=0; i<iterations; ++i)
     {
         Map m;
@@ -131,15 +126,15 @@ void _test(std::size_t iterations, std::size_t container_size, const char *map_n
 }
 
 
-template <class K, class V, template <class, class, class> class INSERT>
+template <class K, class V, template <class, class, class, class> class INSERT>
 void test(std::size_t iterations, std::size_t container_size)
 {
     std::clog << "bench: iterations: " << iterations <<  " / container_size: "  << container_size << "\n";
 
-    _test<std::map<K, V>,               V, void, INSERT>(iterations, container_size, "  std::map:               ");
-    _test<std::unordered_map<K, V>,     V, void, INSERT>(iterations, container_size, "  std::unordered_map:     ");
-    _test<phmap::flat_hash_map<K, V>,   V, void, INSERT>(iterations, container_size, "  phmap::flat_hash_map:   ");
-    _test<std::vector<std::pair<K, V>>, V, int, INSERT> (iterations, container_size, "  std::vector<std::pair>: ");
+    _test<std::map<K, V>,               K, V, void, INSERT>(iterations, container_size, "  std::map:               ");
+    _test<std::unordered_map<K, V>,     K, V, void, INSERT>(iterations, container_size, "  std::unordered_map:     ");
+    _test<phmap::flat_hash_map<K, V>,   K, V, void, INSERT>(iterations, container_size, "  phmap::flat_hash_map:   ");
+    _test<std::vector<std::pair<K, V>>, K, V, int, INSERT> (iterations, container_size, "  std::vector<std::pair>: ");
     std::clog << "\n";
     
 }
@@ -153,9 +148,9 @@ int main()
     // -------------------------------------------------------------------------
     std::clog << "\n\n" << "testing with <int, custom_type_2>"   "\n";
     std::clog << "---------------------------------"   "\n";
-    test<int, custom_type_2, emplace_2_ints>(iterations,10);
-    test<int, custom_type_2, emplace_2_ints>(iterations,100);
-    test<int, custom_type_2, emplace_2_ints>(iterations,500);
+    test<int, custom_type_2, _emplace>(iterations,10);
+    test<int, custom_type_2, _emplace>(iterations,100);
+    test<int, custom_type_2, _emplace>(iterations,500);
 
     // test with custom_type, which contains two std::string values, and use 
     // a generated string key. This is not very indicative of the speed of the 
