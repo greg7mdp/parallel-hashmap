@@ -97,9 +97,14 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 ## Changes to Abseil's hashmaps
 
 - The default hash framework is std::hash, not absl::Hash. However, if you prefer the default to be the Abseil hash framework, include the Abseil headers before `phmap.h` and define the preprocessor macro `PHMAP_USE_ABSL_HASHEQ`.
+
 - The `erase(iterator)` and `erase(const_iterator)` both return an iterator to the element following the removed element, as does the std::unordered_map. A non-standard `void _erase(iterator)` is provided in case the return value is not needed.
+
 - No new types, such as `absl::string_view`, are provided. All types with a `std::hash<>` implementation are supported by phmap tables (including `std::string_view` of course if your compiler provides it).
+
 - The Abseil hash tables internally randomize a hash seed, so that the table iteration order is non-deterministic. This can be useful to pervent *Denial Of Service*  attacks when a hash table is used for a customer facing web service, but it can make debugging more difficult. The *phmap* hashmaps by default do **not** implement this randomization, but it can be enabled by adding `#define PHMAP_NON_DETERMINISTIC 1` before including the header `phmap.h` (as is done in raw_hash_set_test.cc).
+
+- Unlike the Abseil hash maps, we do an internal mixing of the hash value provided. This prevents serious degradation of the hash table performance when the hash function provided by the user has poor entropy distribution. The cost in performance is very minimal, and this helps provide reliable performance even with *not so good* hash functions. 
 
 
 ## Memory usage
