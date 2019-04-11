@@ -16,10 +16,10 @@ builddir:
 	@if [ ! -d build ]; then mkdir build; fi
 
 build/stl_unordered_map: bench.cc Makefile
-	$(CXX) -DSTL_UNORDERED bench.cc -o $@
+	$(CXX) -DSTL_UNORDERED -I.. bench.cc -o $@
 
 build/sparsepp: bench.cc Makefile
-	$(CXX) -DSPARSEPP -I../../sparsepp bench.cc -o $@
+	$(CXX) -DSPARSEPP -I.. -I../../sparsepp bench.cc -o $@
 
 build/phmap: bench.cc Makefile $(PHMAP_SRC)/phmap.h
 	$(CXX) -DPHMAP -I.. -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
@@ -28,10 +28,13 @@ build/phmap_flat: bench.cc Makefile $(PHMAP_SRC)/phmap.h
 	$(CXX) -DPHMAP_FLAT -I.. bench.cc /MD -o $@ 
 
 build/abseil_flat: bench.cc Makefile
-	$(CXX) -DABSEIL_FLAT -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
+	$(CXX) -DABSEIL_FLAT -I.. -I$(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
 build/abseil_parallel_flat: bench.cc Makefile
-	$(CXX) -DABSEIL_PARALLEL_FLAT -I $(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
+	$(CXX) -DABSEIL_PARALLEL_FLAT -I.. -I $(ABSEIL) bench.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
+
+build/emplace: emplace.cc Makefile $(PHMAP_SRC)/phmap.h
+	$(CXX) -DABSEIL_FLAT -I.. -I$(ABSEIL) emplace.cc /MD -o $@ /link /LIBPATH:$(ABSEIL)/build/lib ${ABSEIL_LIBS}
 
 progs:	$(BUILD_PROGS)
 
