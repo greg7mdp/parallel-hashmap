@@ -124,5 +124,6 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_insert_bench examples/insert_bench.cc)
     add_executable(ex_knucleotide examples/knucleotide.cc)
     target_link_libraries(ex_knucleotide Threads::Threads)
+    target_link_libraries(ex_bench Threads::Threads)
 endif()
 
