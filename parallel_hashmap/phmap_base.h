@@ -4719,18 +4719,20 @@ public:
 
 #ifdef PHMAP_HAS_BOOST_THREAD_MUTEXES
 
+#if 1
 // ---------------------------------------------------------------------------
 template <>
 class  LockableImpl<boost::shared_mutex> : public boost::shared_mutex
 {
 public:
     using mutex_type      = boost::shared_mutex;
+    using Base            = LockableBaseImpl<boost::shared_mutex>;
     using SharedLock      = boost::shared_lock<mutex_type>;
     using UpgradeLock     = boost::unique_lock<mutex_type>;  // we assume that boost::shared_mutex can't upgrade
     using UniqueLock      = boost::unique_lock<mutex_type>;
     using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
-
+#else
 // ---------------------------------------------------------------------------
 template <>
 class  LockableImpl<boost::upgrade_mutex> : public boost::upgrade_mutex
@@ -4742,6 +4744,7 @@ public:
     using UniqueLock      = boost::unique_lock<mutex_type>;
     using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
 };
+#endif
 
 #endif
 
