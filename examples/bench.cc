@@ -4,45 +4,50 @@
     #include <unordered_map>
     #define MAPNAME std::unordered_map
     #define EXTRAARGS
-#elif defined(SPARSEPP)
-    #define SPP_USE_SPP_ALLOC 1
-    #include <sparsepp/spp.h>
-    #define MAPNAME spp::sparse_hash_map
-    #define EXTRAARGS
-#elif defined(ABSEIL_FLAT)
-    #include "absl/container/flat_hash_map.h"
-    #define MAPNAME absl::flat_hash_map
-    #define EXTRAARGS
 #elif defined(PHMAP_FLAT)
     #include "parallel_hashmap/phmap.h"
     #define MAPNAME phmap::flat_hash_map
     #define NMSP phmap
     #define EXTRAARGS
-#elif defined(ABSEIL_PARALLEL_FLAT) || defined(PHMAP)
-    #if defined(ABSEIL_PARALLEL_FLAT)
-        #include "absl/container/parallel_flat_hash_map.h"
-        #define MAPNAME absl::parallel_flat_hash_map
-        #define NMSP absl
-        #define MTX absl::Mutex
-    #else
+#else
+    #if 1
+        #include <mutex>
+        #define MTX std::mutex
+    #elif 0
+        #include <boost/thread/locks.hpp>
+        #include <boost/thread/shared_mutex.hpp>
         #if 1
-            // use Abseil's mutex... faster
-            #include "absl/synchronization/mutex.h"
-            struct AbslMutex : protected absl::Mutex
-            {
-                void lock()   { this->Lock(); }
-                void unlock()   { this->Unlock(); }
-            };
-            #define MTX AbslMutex //std::mutex
+            #define MTX boost::mutex // faster if all we do is exclusive locks like this bench
         #else
-            #include <mutex>
-            #define MTX std::mutex
+            
+        #elif 1
+            #define MTX boost::upgrade_mutex 
         #endif
-
-        #include "parallel_hashmap/phmap.h"
-        #define MAPNAME phmap::parallel_flat_hash_map
-        #define NMSP phmap
+    #elif 1
+        #include <windows.h>
+        class srwlock {
+            SRWLOCK _lock;
+        public:
+            srwlock()     { InitializeSRWLock(&_lock); }
+            void lock()   { AcquireSRWLockExclusive(&_lock); }
+            void unlock() { ReleaseSRWLockExclusive(&_lock); }
+        };
+        #define MTX srwlock
+    #else
+        // spinlocks - slow!
+        #include <atomic>
+        class spinlock {
+            std::atomic_flag flag = ATOMIC_FLAG_INIT;
+        public:
+            void lock()   { while(flag.test_and_set(std::memory_order_acquire)); }
+            void unlock() { flag.clear(std::memory_order_release); }
+        };
+        #define MTX spinlock
     #endif
+
+    #include "parallel_hashmap/phmap.h"
+    #define MAPNAME phmap::parallel_flat_hash_map
+    #define NMSP phmap
 
     #define MT_SUPPORT 2
     #if MT_SUPPORT == 1
@@ -63,14 +68,13 @@
     #else
         #define EXTRAARGS
     #endif
-
 #endif
 
 #define xstr(s) str(s)
 #define str(s) #s
 
 template <class K, class V>
-using HashT     = MAPNAME<K, V EXTRAARGS>;
+using HashT      = MAPNAME<K, V EXTRAARGS>;
 
 using hash_t     = HashT<int64_t, int64_t>;
 using str_hash_t = HashT<const char *, int64_t>;
@@ -185,15 +189,24 @@ Timer _fill_random(vector<T> &v, HT &hash)
 }
 
 // --------------------------------------------------------------------------
-void out(const char* test, int64_t cnt, const Timer &t)
+void out(const char* test, int64_t cnt, const Timer &t, bool final = false)
 {
     printf("%s,time,%lld,%s,%f\n", test, cnt, program_slug, (float)((double)t.elapsed().count() / 1000));
 }
 
 // --------------------------------------------------------------------------
-void outmem(const char* test, int64_t cnt, uint64_t mem)
+void outmem(const char* test, int64_t cnt, uint64_t mem, bool final = false)
 {
-    printf("%s,memory,%lld,%s,%lld\n", test, cnt, program_slug, mem);
+    static uint64_t max_mem = 0;
+    static uint64_t max_keys = 0;
+    if (final)
+        printf("peak memory usage for %lld values: %.2f GB\n",  max_keys, max_mem / ((double)1000 * 1000 * 1000));
+    else {
+        if (mem > max_mem)
+            max_mem = mem;
+        if (cnt > max_keys)
+            max_keys = cnt;
+    }
 }
 
 static bool all_done = false;
@@ -293,6 +306,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
         out(test, total_num_keys(), timer);
     }
     fprintf(stderr, "inserted %.2lfM\n", (double)hash.size() / 1000000);
+    outmem(test, total_num_keys(), spp::GetProcessMemoryUsed());
     return timer;
 }
 
@@ -439,7 +453,7 @@ int main(int argc, char ** argv)
             for(i = 0; i < num_keys; i++)
                 str_hash.erase(new_string_from_integer(i));
         }
-
+        
  
         //printf("%f\n", (float)((double)timer.elapsed().count() / 1000));
         fflush(stdout);
@@ -450,6 +464,7 @@ int main(int argc, char ** argv)
     }
 
     all_done = true;
+    outmem(test, 0, 0, true);
     t1.join();
     return 0;
 }
