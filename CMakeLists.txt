@@ -117,6 +117,7 @@ if (PHMAP_BUILD_EXAMPLES)
     find_package(Threads REQUIRED)
 
     add_executable(ex_basic examples/basic.cc)
+    add_executable(ex_bench examples/bench.cc)
     add_executable(ex_emplace examples/emplace.cc)
     add_executable(ex_hash_std examples/hash_std.cc)
     add_executable(ex_two_files examples/f1.cc examples/f2.cc)
