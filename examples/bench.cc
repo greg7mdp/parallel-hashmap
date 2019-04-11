@@ -147,11 +147,11 @@ public:
 };
 
 // --------------------------------------------------------------------------
-char * new_string_from_integer(int num)
+char * new_string_from_integer(uint64_t num)
 {
     int ndigits = num == 0 ? 1 : (int)log10(num) + 1;
     char * str = (char *)malloc(ndigits + 1);
-    sprintf(str, "%d", num);
+    sprintf(str, "%zu", num);
     return str;
 }
 
@@ -189,7 +189,7 @@ Timer _fill_random(vector<T> &v, HT &hash)
 // --------------------------------------------------------------------------
 void out(const char* test, int64_t cnt, const Timer &t, bool final = false)
 {
-    printf("%s,time,%lld,%s,%f\n", test, cnt, program_slug, (float)((double)t.elapsed().count() / 1000));
+    printf("%s,time,%zu,%s,%f\n", test, cnt, program_slug, (float)((double)t.elapsed().count() / 1000));
 }
 
 // --------------------------------------------------------------------------
@@ -198,11 +198,11 @@ void outmem(const char* test, int64_t cnt, uint64_t mem, bool final = false)
     static uint64_t max_mem = 0;
     static uint64_t max_keys = 0;
     if (final)
-        printf("peak memory usage for %lld values: %.2f GB\n",  max_keys, max_mem / ((double)1000 * 1000 * 1000));
+        printf("peak memory usage for %zu values: %.2f GB\n",  max_keys, max_mem / ((double)1000 * 1000 * 1000));
     else {
         if (mem > max_mem)
             max_mem = mem;
-        if (cnt > max_keys)
+        if ((uint64_t)cnt > max_keys)
             max_keys = cnt;
     }
 }
