@@ -204,7 +204,7 @@ For that reason, the *parallel_flat_hash_map* can provide internal locking using
 | std::unordered_map (vs2017) | - | 64 |
 | phmap::flat_hash_map | - |48 |
 | phmap::parallel_flat_hash_map, N=4, phmap::NullMutex | 16 |768 |
-| phmap::parallel_flat_hash_map, N=4, phmap::Mutex | 16 | 896 |
+| phmap::parallel_flat_hash_map, N=4, std::mutex | 16 | 896 |
 
 It is about time we provide the complete parallel_flat_hash_map class declaration (the declaration for parallel_flat_hash_set is similar):
 
