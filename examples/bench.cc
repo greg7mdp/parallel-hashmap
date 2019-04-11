@@ -19,8 +19,6 @@
         #if 1
             #define MTX boost::mutex // faster if all we do is exclusive locks like this bench
         #else
-            
-        #elif 1
             #define MTX boost::upgrade_mutex 
         #endif
     #elif 1
@@ -417,7 +415,7 @@ int main(int argc, char ** argv)
 #endif
         else if(!strcmp(argv[2], "random"))
         {
-            fprintf(stderr, "size = %d\n", sizeof(hash));
+            fprintf(stderr, "size = %llu\n", sizeof(hash));
             timer = _fill_random2(num_keys, hash);
             //out("random", num_keys, timer);
             //fprintf(stderr, "inserted %llu\n", hash.size());
