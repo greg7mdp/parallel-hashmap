@@ -193,7 +193,7 @@ void WriteFrequencies(const Cfg::Data& input)
     for(const auto& i: frequencies)
         freq.insert({i.second, i.first});
 
-    const unsigned sum = input.size() + 1 - size;
+    const unsigned sum = (unsigned)input.size() + 1 - size;
     for(const auto& i : freq)
         std::cout << i.second << ' ' << (sum ? double(100 * i.first) / sum : 0.0) << '\n';
     std::cout << '\n';
@@ -213,8 +213,8 @@ int main()
     Cfg::Data data;
     std::array<char, 256> buf;
 
-    while(fgets(buf.data(), buf.size(), stdin) && memcmp(">THREE", buf.data(), 6));
-    while(fgets(buf.data(), buf.size(), stdin) && buf.front() != '>') {
+    while(fgets(buf.data(), (int)buf.size(), stdin) && memcmp(">THREE", buf.data(), 6));
+    while(fgets(buf.data(), (int)buf.size(), stdin) && buf.front() != '>') {
         if(buf.front() != ';'){
             auto i = std::find(buf.begin(), buf.end(), '\n');
             data.insert(data.end(), buf.begin(), i);

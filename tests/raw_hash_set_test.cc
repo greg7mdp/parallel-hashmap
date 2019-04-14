@@ -30,6 +30,10 @@
 #include <random>
 #include <string>
 
+#ifdef _MSC_VER
+    #pragma warning(disable : 4018 4244 4702)
+#endif  // _MSC_VER
+
 #if PHMAP_HAVE_STD_STRING_VIEW
     #include <string_view>
 #endif
@@ -795,7 +799,7 @@ TEST(Table, RehashWithNoResize) {
 TEST(Table, InsertEraseStressTest) {
   IntTable t;
   const size_t kMinElementCount = 250;
-  std::deque<int> keys;
+  std::deque<size_t> keys;
   size_t i = 0;
   for (; i < MaxDensitySize(kMinElementCount); ++i) {
     t.emplace(i);
@@ -981,8 +985,8 @@ struct ProbeStats {
 
   // Fraction of elements with specified probe length.
   std::vector<double> ProbeNormalizedHistogram() const {
-    double total_elements = std::accumulate(all_probes_histogram.begin(),
-                                            all_probes_histogram.end(), 0ull);
+    double total_elements = (double)std::accumulate(all_probes_histogram.begin(),
+                                                    all_probes_histogram.end(), 0ull);
     std::vector<double> res;
     for (size_t p : all_probes_histogram) {
       res.push_back(p / total_elements);

@@ -361,11 +361,12 @@ void memlog()
 // --------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
-    int64_t num_keys = atoi(argv[1]);
     int64_t i, value = 0;
 
     if(argc <= 2)
         return 1;
+
+    int64_t num_keys = atoi(argv[1]);
 
     hash_t     hash; 
     str_hash_t str_hash;

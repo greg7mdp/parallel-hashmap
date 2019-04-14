@@ -17,12 +17,13 @@
         // Abseil's mutexes are very efficient (at least on windows)
         #include "absl/synchronization/mutex.h"
         #define MTX absl::Mutex
-    #elif 0
+    #elif 1
         #include <boost/thread/locks.hpp>
-        #include <boost/thread/shared_mutex.hpp>
         #if 1
+            #include <boost/thread/mutex.hpp>
             #define MTX boost::mutex // faster if all we do is exclusive locks like this bench
         #else
+            #include <boost/thread/shared_mutex.hpp>
             #define MTX boost::upgrade_mutex 
         #endif
     #elif 1
@@ -51,7 +52,7 @@
     #define MAPNAME phmap::parallel_flat_hash_map
     #define NMSP phmap
 
-    #define MT_SUPPORT 2
+    #define MT_SUPPORT 1
     #if MT_SUPPORT == 1
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
@@ -98,6 +99,9 @@ using std::vector;
 
 int64_t _abs(int64_t x) { return (x < 0) ? -x : x; }
 
+#ifdef _MSC_VER
+    #pragma warning(disable : 4996)
+#endif  // _MSC_VER
 
 // --------------------------------------------------------------------------
 class Timer 
@@ -384,11 +388,15 @@ void memlog()
 // --------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
-    int64_t num_keys = atoi(argv[1]);
+    int64_t num_keys = 100000000;
+    const char *bench_name = "random";
     int64_t i, value = 0;
 
-    if(argc <= 2)
-        return 1;
+    if(argc > 2)
+    {
+        num_keys = atoi(argv[1]);
+        bench_name = argv[2];
+    }
 
     hash_t     hash; 
     str_hash_t str_hash;
@@ -406,27 +414,25 @@ int main(int argc, char ** argv)
 
     try 
     {
-        if(!strcmp(argv[2], "sequential"))
+        if(!strcmp(bench_name, "sequential"))
         {
             for(i = 0; i < num_keys; i++)
                 hash.insert(hash_t::value_type(i, value));
         }
 #if 0
-        else if(!strcmp(argv[2], "random"))
+        else if(!strcmp(bench_name, "random"))
         {
             vector<int64_t> v(num_keys);
             timer = _fill_random(v, hash);
             out("random", num_keys, timer);
         }
 #endif
-        else if(!strcmp(argv[2], "random"))
+        else if(!strcmp(bench_name, "random"))
         {
             fprintf(stderr, "size = %zu\n", sizeof(hash));
             timer = _fill_random2(num_keys, hash);
-            //out("random", num_keys, timer);
-            //fprintf(stderr, "inserted %llu\n", hash.size());
-        }
-        else if(!strcmp(argv[2], "lookup"))
+         }
+        else if(!strcmp(bench_name, "lookup"))
         {
             vector<int64_t> v(num_keys);
             size_t num_present;
@@ -434,22 +440,22 @@ int main(int argc, char ** argv)
             timer = _lookup(v, hash, num_present);
             //fprintf(stderr, "found %zu\n", num_present);
         }
-        else if(!strcmp(argv[2], "delete"))
+        else if(!strcmp(bench_name, "delete"))
         {
             vector<int64_t> v(num_keys);
             timer = _delete(v,  hash);
         }
-        else if(!strcmp(argv[2], "sequentialstring"))
+        else if(!strcmp(bench_name, "sequentialstring"))
         {
             for(i = 0; i < num_keys; i++)
                 str_hash.insert(str_hash_t::value_type(new_string_from_integer(i), value));
         }
-        else if(!strcmp(argv[2], "randomstring"))
+        else if(!strcmp(bench_name, "randomstring"))
         {
             for(i = 0; i < num_keys; i++)
                 str_hash.insert(str_hash_t::value_type(new_string_from_integer((int)rand()), value));
         }
-        else if(!strcmp(argv[2], "deletestring"))
+        else if(!strcmp(bench_name, "deletestring"))
         {
             for(i = 0; i < num_keys; i++)
                 str_hash.insert(str_hash_t::value_type(new_string_from_integer(i), value));

@@ -2551,7 +2551,7 @@ protected:
     {
         bool operator==(const Inner& o) const
         {
-            phmap::scoped_lock<Lockable> l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
+            typename Lockable::SharedLocks l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
             return set_ == o.set_;
         }
 
@@ -3160,7 +3160,7 @@ public:
         {
             for (size_t i=0; i<num_tables; ++i)
             {
-                phmap::scoped_lock<Lockable> l(sets_[i], src.sets_[i]);
+                typename Lockable::UniqueLocks l(sets_[i], src.sets_[i]);
                 sets_[i].set_.merge(src.sets_[i].set_);
             }
         }
@@ -3190,7 +3190,7 @@ public:
         using std::swap;
         for (size_t i=0; i<num_tables; ++i)
         {
-            phmap::scoped_lock<Lockable> l(sets_[i], that.sets_[i]);
+            typename Lockable::UniqueLocks l(sets_[i], that.sets_[i]);
             swap(sets_[i].set_, that.sets_[i].set_);
         }
     }
