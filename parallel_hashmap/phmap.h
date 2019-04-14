@@ -78,7 +78,7 @@ struct phmap_mix<4>
     }
 };
 
-#ifdef PHMAP_HAS_UMUL128
+#if defined(PHMAP_HAS_UMUL128)
     template<>
     struct phmap_mix<8>
     {
@@ -1639,7 +1639,7 @@ public:
     size_type erase(const key_arg<K>& key) {
         auto it = find(key);
         if (it == end()) return 0;
-        erase(it);
+        _erase(it);
         return 1;
     }
 
@@ -1671,7 +1671,7 @@ public:
 
     iterator erase(const_iterator first, const_iterator last) {
         while (first != last) {
-            erase(first++);
+            _erase(first++);
         }
         return last.inner_;
     }
@@ -3112,7 +3112,7 @@ public:
             return 0;
 
         typename Lockable::UpgradeToUnique unique(m);
-        set.erase(it);
+        set._erase(it);
         return 1;
     }
 
@@ -3145,7 +3145,7 @@ public:
 
     iterator erase(const_iterator first, const_iterator last) {
         while (first != last) {
-            erase(first++);
+            _erase(first++);
         }
         return last.iter_;
     }
