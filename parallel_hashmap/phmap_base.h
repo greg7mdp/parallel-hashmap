@@ -4612,7 +4612,7 @@ public:
 
         WriteLock(Mutex& m, try_to_lock_t)  :
             m_(&m), locked_(false) { 
-            try_lock(); 
+            m_->try_lock(); 
         }
 
         WriteLock(WriteLock &&o) :
@@ -4689,7 +4689,7 @@ public:
 
         ReadLock(Mutex& m, try_to_lock_t)  :
             m_(&m), locked_(false) { 
-            try_lock_shared(); 
+            m_->try_lock_shared(); 
         }
 
         ReadLock(ReadLock &&o) :
