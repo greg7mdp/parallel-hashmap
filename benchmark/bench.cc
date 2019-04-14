@@ -28,12 +28,7 @@
         #if 1
             // use Abseil's mutex... faster
             #include "absl/synchronization/mutex.h"
-            struct AbslMutex : protected absl::Mutex
-            {
-                void lock()   { this->Lock(); }
-                void unlock()   { this->Unlock(); }
-            };
-            #define MTX AbslMutex //std::mutex
+            #define MTX absl::Mutex
         #else
             #include <mutex>
             #define MTX std::mutex

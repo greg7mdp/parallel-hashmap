@@ -14,6 +14,10 @@
         #include <mutex>
         #define MTX std::mutex
     #elif 0
+        // Abseil's mutexes are very efficient (at least on windows)
+        #include "absl/synchronization/mutex.h"
+        #define MTX absl::Mutex
+    #elif 0
         #include <boost/thread/locks.hpp>
         #include <boost/thread/shared_mutex.hpp>
         #if 1
@@ -415,7 +419,7 @@ int main(int argc, char ** argv)
 #endif
         else if(!strcmp(argv[2], "random"))
         {
-            fprintf(stderr, "size = %llu\n", sizeof(hash));
+            fprintf(stderr, "size = %zu\n", sizeof(hash));
             timer = _fill_random2(num_keys, hash);
             //out("random", num_keys, timer);
             //fprintf(stderr, "inserted %llu\n", hash.size());

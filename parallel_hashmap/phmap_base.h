@@ -4587,74 +4587,63 @@ public:
         bool owns_lock() const noexcept { return true; }
     };
 
-    class ScopedLock
+    class WriteLock
     {
     public:
         typedef Mutex mutex_type;
 
-        ScopedLock() : 
-            m_(nullptr), locked_(false) 
-        {}
+        WriteLock() :  m_(nullptr), locked_(false)  {}
 
-        explicit ScopedLock(Mutex &m) :
-            m_(&m) 
-        { 
+        explicit WriteLock(Mutex &m) : m_(&m) { 
             m_->lock(); 
             locked_ = true; 
         }
 
-        ScopedLock(Mutex& m, adopt_lock_t) noexcept :
+        WriteLock(Mutex& m, adopt_lock_t) noexcept :
             m_(&m), locked_(true) 
         {}
 
-        ScopedLock(Mutex& m, defer_lock_t) noexcept :
+        WriteLock(Mutex& m, defer_lock_t) noexcept :
             m_(&m), locked_(false) 
         {}
 
-        ScopedLock(Mutex& m, try_to_lock_t)  :
-            m_(&m), locked_(false) 
-        { 
+        WriteLock(Mutex& m, try_to_lock_t)  :
+            m_(&m), locked_(false) { 
             try_lock(); 
         }
 
-        ScopedLock(ScopedLock &&o) :
-            m_(std::move(o.m_)), locked_(std::move(o.locked_))
-        {
+        WriteLock(WriteLock &&o) :
+            m_(std::move(o.m_)), locked_(std::move(o.locked_)) {
             o.locked_ = false;
             o.m_      = nullptr;
         }
 
-        ScopedLock& operator=(ScopedLock&& other) 
-        {
-            ScopedLock temp(std::move(other));
+        WriteLock& operator=(WriteLock&& other) {
+            WriteLock temp(std::move(other));
             swap(temp);
             return *this;
         }
 
-        ~ScopedLock() 
-        {
+        ~WriteLock() {
             if (locked_) 
                 m_->unlock(); 
         }
 
-        void lock() 
-        { 
+        void lock() { 
             if (!locked_) { 
                 m_->lock(); 
                 locked_ = true; 
             }
         }
 
-        void unlock() 
-        { 
+        void unlock() { 
             if (locked_) {
                 m_->unlock(); 
                 locked_ = false;
             }
         } 
 
-        bool try_lock() 
-        { 
+        bool try_lock() { 
             if (locked_)
                 return true;
             locked_ = m_->try_lock(); 
@@ -4663,8 +4652,84 @@ public:
         
         bool owns_lock() const noexcept { return locked_; }
 
-        void swap(ScopedLock &o) noexcept
-        { 
+        void swap(WriteLock &o) noexcept { 
+            std::swap(m_, o.m_);
+            std::swap(locked_, o.locked_);
+        }
+
+        Mutex *mutex() const noexcept { return m_; }
+
+    private:
+        Mutex *m_;
+        bool  locked_;
+    };
+
+    class ReadLock
+    {
+    public:
+        typedef Mutex mutex_type;
+
+        ReadLock() :  m_(nullptr), locked_(false)  {}
+
+        explicit ReadLock(Mutex &m) : m_(&m) { 
+            m_->lock_shared(); 
+            locked_ = true; 
+        }
+
+        ReadLock(Mutex& m, adopt_lock_t) noexcept :
+            m_(&m), locked_(true) 
+        {}
+
+        ReadLock(Mutex& m, defer_lock_t) noexcept :
+            m_(&m), locked_(false) 
+        {}
+
+        ReadLock(Mutex& m, try_to_lock_t)  :
+            m_(&m), locked_(false) { 
+            try_lock_shared(); 
+        }
+
+        ReadLock(ReadLock &&o) :
+            m_(std::move(o.m_)), locked_(std::move(o.locked_)) {
+            o.locked_ = false;
+            o.m_      = nullptr;
+        }
+
+        ReadLock& operator=(ReadLock&& other) {
+            ReadLock temp(std::move(other));
+            swap(temp);
+            return *this;
+        }
+
+        ~ReadLock() {
+            if (locked_) 
+                m_->unlock_shared(); 
+        }
+
+        void lock() { 
+            if (!locked_) { 
+                m_->lock_shared(); 
+                locked_ = true; 
+            }
+        }
+
+        void unlock() { 
+            if (locked_) {
+                m_->unlock_shared(); 
+                locked_ = false;
+            }
+        } 
+
+        bool try_lock() { 
+            if (locked_)
+                return true;
+            locked_ = m_->try_lock_shared(); 
+            return locked_;
+        }
+        
+        bool owns_lock() const noexcept { return locked_; }
+
+        void swap(ReadLock &o) noexcept { 
             std::swap(m_, o.m_);
             std::swap(locked_, o.locked_);
         }
@@ -4692,21 +4757,25 @@ public:
 //    }
 //
 // ---------------------------------------------------------------------------
+//         Generic mutex support (always write locks)
+// --------------------------------------------------------------------------
 template <class Mtx_>
-class LockableImpl : public Mtx_, public LockableBaseImpl<Mtx_>
+class LockableImpl : public Mtx_
 {
 public:
     using mutex_type      = Mtx_;
     using Base            = LockableBaseImpl<Mtx_>;
-    using SharedLock      = typename Base::ScopedLock;
-    using UpgradeLock     = typename Base::ScopedLock;
-    using UniqueLock      = typename Base::ScopedLock;
+    using SharedLock      = typename Base::WriteLock;
+    using UpgradeLock     = typename Base::WriteLock;
+    using UniqueLock      = typename Base::WriteLock;
     using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
 
 // ---------------------------------------------------------------------------
+//          Null mutex (no-op) - when we don't want internal synchronization
+// ---------------------------------------------------------------------------
 template <>
-class  LockableImpl<phmap::NullMutex>: public phmap::NullMutex, public LockableBaseImpl<phmap::NullMutex>
+class  LockableImpl<phmap::NullMutex>: public phmap::NullMutex
 {
 public:
     using mutex_type      = phmap::NullMutex;
@@ -4717,36 +4786,68 @@ public:
     using UpgradeToUnique = typename Base::DoNothing; 
 };
 
+// --------------------------------------------------------------------------
+//         Abseil Mutex support (read and write lock support)
+// --------------------------------------------------------------------------
+#ifdef ABSL_SYNCHRONIZATION_MUTEX_H_
+    
+    struct AbslMutex : protected absl::Mutex
+    {
+        void lock()            { this->Lock(); }
+        void unlock()          { this->Unlock(); }
+        void try_lock()        { this->TryLock(); }
+        void lock_shared()     { this->ReaderLock(); }
+        void unlock_shared()   { this->ReaderUnlock(); }
+        void try_lock_shared() { this->ReaderTryLock(); }
+    };
+    
+    template <>
+    class  LockableImpl<absl::Mutex> : public AbslMutex
+    {
+    public:
+        using mutex_type      = phmap::AbslMutex;
+        using Base            = LockableBaseImpl<phmap::AbslMutex>;
+        using SharedLock      = typename Base::ReadLock;
+        using UpgradeLock     = typename Base::WriteLock;
+        using UniqueLock      = typename Base::WriteLock;
+        using UpgradeToUnique = typename Base::DoNothing; // we already have unique ownership
+    };
+
+#endif
+
+// --------------------------------------------------------------------------
+//         Boost shared_mutex support (read and write lock support)
+// --------------------------------------------------------------------------
 #ifdef PHMAP_HAS_BOOST_THREAD_MUTEXES
 
 #if 1
-// ---------------------------------------------------------------------------
-template <>
-class  LockableImpl<boost::shared_mutex> : public boost::shared_mutex
-{
-public:
-    using mutex_type      = boost::shared_mutex;
-    using Base            = LockableBaseImpl<boost::shared_mutex>;
-    using SharedLock      = boost::shared_lock<mutex_type>;
-    using UpgradeLock     = boost::unique_lock<mutex_type>;  // we assume that boost::shared_mutex can't upgrade
-    using UniqueLock      = boost::unique_lock<mutex_type>;
-    using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
-};
+    // ---------------------------------------------------------------------------
+    template <>
+    class  LockableImpl<boost::shared_mutex> : public boost::shared_mutex
+    {
+    public:
+        using mutex_type      = boost::shared_mutex;
+        using Base            = LockableBaseImpl<boost::shared_mutex>;
+        using SharedLock      = boost::shared_lock<mutex_type>;
+        using UpgradeLock     = boost::unique_lock<mutex_type>; // assume can't upgrade
+        using UniqueLock      = boost::unique_lock<mutex_type>;
+        using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
+    };
 #else
-// ---------------------------------------------------------------------------
-template <>
-class  LockableImpl<boost::upgrade_mutex> : public boost::upgrade_mutex
-{
-public:
-    using mutex_type      = boost::upgrade_mutex;
-    using SharedLock      = boost::shared_lock<mutex_type>;
-    using UpgradeLock     = boost::upgrade_lock<mutex_type>;
-    using UniqueLock      = boost::unique_lock<mutex_type>;
-    using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
-};
+    // ---------------------------------------------------------------------------
+    template <>
+    class  LockableImpl<boost::upgrade_mutex> : public boost::upgrade_mutex
+    {
+    public:
+        using mutex_type      = boost::upgrade_mutex;
+        using SharedLock      = boost::shared_lock<mutex_type>;
+        using UpgradeLock     = boost::upgrade_lock<mutex_type>;
+        using UniqueLock      = boost::unique_lock<mutex_type>;
+        using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
+    };
 #endif
 
-#endif
+#endif // PHMAP_HAS_BOOST_THREAD_MUTEXES
 
 
 }  // phmap
