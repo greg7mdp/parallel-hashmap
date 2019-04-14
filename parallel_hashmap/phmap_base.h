@@ -4535,6 +4535,9 @@ public:
     void lock() {}
     void unlock() {}
     bool try_lock() { return true; }
+    void lock_shared() {}
+    void unlock_shared() {}
+    bool try_lock_shared() { return true; }
 };
 
 // --------------------------- simplified scoped_lock ------------------------------
