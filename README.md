@@ -136,33 +136,6 @@ The rules are the same as for std::unordered_map, and are valid for all the phma
 | insert, emplace, emplace_hint, operator[] | Only if rehash triggered   |
 | erase                                     | Only to the element erased |
 
-## Integer keys, and other hash function considerations.
-
-1. For basic integer types, phmap provides a default hash function which does some mixing of the bits of the keys (see [Integer Hashing](http://burtleburtle.net/bob/hash/integer.html)). This prevents a pathological case where inserted keys are sequential (1, 2, 3, 4, ...), and the lookup on non-present keys becomes very slow. 
-
-   Of course, the user of phmap may provide its own hash function,  as shown below:
-   
-   ```c++
-   #include <parallel_hashmap/phmap.h>
-   
-   struct Hash64 {
-       size_t operator()(uint64_t k) const { return (k ^ 14695981039346656037ULL) * 1099511628211ULL; }
-   };
-   
-   struct Hash32 {
-       size_t operator()(uint32_t k) const { return (k ^ 2166136261U)  * 16777619UL; }
-   };
-   
-   int main() 
-   {
-       phmap::flat_hash_map<uint64_t, double, Hash64> map;
-       ...
-   }
-   
-   ```
-
-2. When the user provides its own hash function, for example when inserting custom classes into a hash map, sometimes the resulting hash keys have similar low order bits and cause many collisions, decreasing the efficiency of the hash map. To address this use case, phmap provides an optional 'mixing' of the hash key (see [Integer Hash Function](https://gist.github.com/badboy/6267743) which can be enabled by defining the proprocessor macro: PHMAP_MIX_HASH. 
-
 ## Example 2 - providing a hash function for a user-defined class
 
 In order to use a flat_hash_set or flat_hash_map, a hash function should be provided. Even though a the hash function can be provided via the HashFcn template parameter, we recommend injecting a specialization of `std::hash` for the class into the "std" namespace. We provide a convenient and small header `phmap_utils.h` which allows to easily add such specializations.
