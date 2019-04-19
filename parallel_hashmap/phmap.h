@@ -153,7 +153,7 @@ struct Hash<T *>
 {
     inline size_t operator()(const T *val) const noexcept
     {
-        return (size_t)(const uintptr_t)val; 
+        return static_cast<size_t>(reinterpret_cast<const uintptr_t>(val)); 
     }
 };
 
@@ -460,15 +460,22 @@ inline size_t HashSeed(const ctrl_t* ctrl) {
   return reinterpret_cast<uintptr_t>(ctrl) >> 12;
 }
 
+#ifdef PHMAP_NON_DETERMINISTIC
+
 inline size_t H1(size_t hash, const ctrl_t* ctrl) {
-  return (hash >> 7) 
-#if PHMAP_NON_DETERMINISTIC
-      // use ctrl_ pointer to add entropy to ensure
-      // non-deterministic iteration order.
-                 ^ HashSeed(ctrl)
-#endif
-      ; // last seven bits stored in the control bytes
+    // use ctrl_ pointer to add entropy to ensure
+    // non-deterministic iteration order.
+    return (hash >> 7) ^ HashSeed(ctrl);
 }
+
+#else
+
+inline size_t H1(size_t hash, const ctrl_t* ) {
+    return (hash >> 7);
+}
+
+#endif
+
 
 inline ctrl_t H2(size_t hash)          { return hash & 0x7F; }
 
@@ -488,11 +495,16 @@ inline bool IsEmptyOrDeleted(ctrl_t c) { return c < kSentinel; }
 // --------------------------------------------------------------------------
 inline __m128i _mm_cmpgt_epi8_fixed(__m128i a, __m128i b) {
 #if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Woverflow"
+
   if (std::is_unsigned<char>::value) {
     const __m128i mask = _mm_set1_epi8(0x80);
     const __m128i diff = _mm_subs_epi8(b, a);
     return _mm_cmpeq_epi8(_mm_and_si128(diff, mask), mask);
   }
+
+  #pragma GCC diagnostic pop
 #endif
   return _mm_cmpgt_epi8(a, b);
 }
@@ -740,25 +752,24 @@ struct HashtablezInfo
     void PrepareForSampling() {}
 };
 
-inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {}
+inline void RecordRehashSlow(HashtablezInfo*, size_t ) {}
 
-static inline void RecordInsertSlow(HashtablezInfo* info, size_t hash,
-                                    size_t distance_from_desired) {}
+static inline void RecordInsertSlow(HashtablezInfo* , size_t, size_t ) {}
 
-static inline void RecordEraseSlow(HashtablezInfo* info) {}
+static inline void RecordEraseSlow(HashtablezInfo*) {}
 
-static inline HashtablezInfo* SampleSlow(int64_t* next_sample) { return nullptr; }
-static inline void UnsampleSlow(HashtablezInfo* info) {}
+static inline HashtablezInfo* SampleSlow(int64_t*) { return nullptr; }
+static inline void UnsampleSlow(HashtablezInfo* ) {}
 
 class HashtablezInfoHandle 
 {
 public:
-    inline void RecordStorageChanged(size_t size, size_t capacity) {}
-    inline void RecordRehash(size_t total_probe_length) {}
-    inline void RecordInsert(size_t hash, size_t distance_from_desired) {}
+    inline void RecordStorageChanged(size_t , size_t ) {}
+    inline void RecordRehash(size_t ) {}
+    inline void RecordInsert(size_t , size_t ) {}
     inline void RecordErase() {}
-    friend inline void swap(HashtablezInfoHandle& lhs,
-                            HashtablezInfoHandle& rhs) {}
+    friend inline void swap(HashtablezInfoHandle& ,
+                            HashtablezInfoHandle& ) noexcept {}
 };
 
 static inline HashtablezInfoHandle Sample() { return HashtablezInfoHandle(); }
@@ -769,16 +780,16 @@ public:
     // Returns a global Sampler.
     static HashtablezSampler& Global() {  static HashtablezSampler hzs; return hzs; }
     HashtablezInfo* Register() {  static HashtablezInfo info; return &info; }
-    void Unregister(HashtablezInfo* sample) {}
+    void Unregister(HashtablezInfo* ) {}
 
     using DisposeCallback = void (*)(const HashtablezInfo&);
-    DisposeCallback SetDisposeCallback(DisposeCallback f) { return nullptr; }
-    int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f) { return 0; }
+    DisposeCallback SetDisposeCallback(DisposeCallback ) { return nullptr; }
+    int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& ) { return 0; }
 };
 
-static inline void SetHashtablezEnabled(bool enabled) {}
-static inline void SetHashtablezSampleParameter(int32_t rate) {}
-static inline void SetHashtablezMaxSamples(int32_t max) {}
+static inline void SetHashtablezEnabled(bool ) {}
+static inline void SetHashtablezSampleParameter(int32_t ) {}
+static inline void SetHashtablezMaxSamples(int32_t ) {}
 
 
 namespace memory_internal {
@@ -1855,7 +1866,8 @@ public:
         if (a.size() != b.size()) return false;
         const raw_hash_set* outer = &a;
         const raw_hash_set* inner = &b;
-        if (outer->capacity() > inner->capacity()) std::swap(outer, inner);
+        if (outer->capacity() > inner->capacity()) 
+            std::swap(outer, inner);
         for (const value_type& elem : *outer)
             if (!inner->has_element(elem)) return false;
         return true;
@@ -2724,17 +2736,17 @@ public:
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
     explicit parallel_hash_set(size_t bucket_count, 
-                               const hasher& hash          = hasher(),
+                               const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
                                const allocator_type& alloc = allocator_type()) {
         for (auto& inner : sets_)
-            inner.set_ = EmbeddedSet(bucket_count / N, hash, eq, alloc);
+            inner.set_ = EmbeddedSet(bucket_count / N, hash_param, eq, alloc);
     }
 
     parallel_hash_set(size_t bucket_count, 
-                      const hasher& hash,
+                      const hasher& hash_param,
                       const allocator_type& alloc)
-        : parallel_hash_set(bucket_count, hash, key_equal(), alloc) {}
+        : parallel_hash_set(bucket_count, hash_param, key_equal(), alloc) {}
 
     parallel_hash_set(size_t bucket_count, const allocator_type& alloc)
         : parallel_hash_set(bucket_count, hasher(), key_equal(), alloc) {}
@@ -2744,16 +2756,16 @@ public:
 
     template <class InputIter>
     parallel_hash_set(InputIter first, InputIter last, size_t bucket_count = 0,
-                      const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                      const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(bucket_count, hash, eq, alloc) {
+        : parallel_hash_set(bucket_count, hash_param, eq, alloc) {
         insert(first, last);
     }
 
     template <class InputIter>
     parallel_hash_set(InputIter first, InputIter last, size_t bucket_count,
-                      const hasher& hash, const allocator_type& alloc)
-        : parallel_hash_set(first, last, bucket_count, hash, key_equal(), alloc) {}
+                      const hasher& hash_param, const allocator_type& alloc)
+        : parallel_hash_set(first, last, bucket_count, hash_param, key_equal(), alloc) {}
 
     template <class InputIter>
     parallel_hash_set(InputIter first, InputIter last, size_t bucket_count,
@@ -2788,23 +2800,23 @@ public:
     // --------------------------------------------------------------------
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     parallel_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
-                      const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                      const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash_param, eq, alloc) {}
 
     parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_count = 0,
-                      const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                      const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash_param, eq, alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     parallel_hash_set(std::initializer_list<T> init, size_t bucket_count,
-                      const hasher& hash, const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+                      const hasher& hash_param, const allocator_type& alloc)
+        : parallel_hash_set(init, bucket_count, hash_param, key_equal(), alloc) {}
 
     parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
-                      const hasher& hash, const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+                      const hasher& hash_param, const allocator_type& alloc)
+        : parallel_hash_set(init, bucket_count, hash_param, key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     parallel_hash_set(std::initializer_list<T> init, size_t bucket_count,
@@ -2982,13 +2994,13 @@ public:
     insert_return_type insert(node_type&& node) {
         if (!node) 
             return {end(), false, node_type()};
-        auto& key    = node.key();
-        size_t hash  = HashElement{hash_ref()}(key);
-        Inner& inner = sets_[subidx(hash)];
-        auto&  set   = inner.set_;
+        auto& key      = node.key();
+        size_t hashval = HashElement{hash_ref()}(key);
+        Inner& inner   = sets_[subidx(hashval)];
+        auto&  set     = inner.set_;
 
         typename Lockable::UniqueLock m(inner);
-        auto   res  = set.insert(std::move(node), hash);
+        auto   res  = set.insert(std::move(node), hashval);
         return { make_iterator(&inner, res.position),
                 res.inserted,
                 res.inserted ? node_type() : std::move(res.node) };
@@ -3009,11 +3021,11 @@ public:
     template <class K, class... Args>
     std::pair<iterator, bool> emplace_decomposable(const K& key, Args&&... args)
     {
-        size_t hash  = HashElement{hash_ref()}(key);
-        Inner& inner = sets_[subidx(hash)];
-        auto&  set   = inner.set_;
+        size_t hashval = HashElement{hash_ref()}(key);
+        Inner& inner   = sets_[subidx(hashval)];
+        auto&  set     = inner.set_;
         typename Lockable::UniqueLock m(inner);
-        return make_rv(&inner, set.emplace_decomposable(key, hash, std::forward<Args>(args)...));
+        return make_rv(&inner, set.emplace_decomposable(key, hashval, std::forward<Args>(args)...));
     }
 
     struct EmplaceDecomposable 
@@ -3055,12 +3067,12 @@ public:
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
         const auto& elem = PolicyTraits::element(slot);
-        size_t hash  = HashElement{hash_ref()}(PolicyTraits::key(slot));
-        Inner& inner = sets_[subidx(hash)];
-        auto&  set   = inner.set_;
+        size_t hashval  = HashElement{hash_ref()}(PolicyTraits::key(slot));
+        Inner& inner    = sets_[subidx(hashval)];
+        auto&  set      = inner.set_;
         typename Lockable::UniqueLock m(inner);
         typename EmbeddedSet::template InsertSlotWithHash<true> f {
-            inner, std::move(*slot), hash};
+            inner, std::move(*slot), hashval};
         return make_rv(PolicyTraits::apply(f, elem));
     }
 
@@ -3084,11 +3096,11 @@ public:
 
     template <class K = key_type, class F>
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
-        auto hash    = HashElement{hash_ref()}(key);
-        Inner& inner = sets_[subidx(hash)];
+        auto hashval = HashElement{hash_ref()}(key);
+        Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
-        return make_iterator(&inner, set.lazy_emplace(key, hash, std::forward<F>(f)));
+        return make_iterator(&inner, set.lazy_emplace(key, hashval, std::forward<F>(f)));
     }
 
     // Extension API: support for heterogeneous keys.
@@ -3103,11 +3115,11 @@ public:
     // --------------------------------------------------------------------
     template <class K = key_type>
     size_type erase(const key_arg<K>& key) {
-        auto hash = HashElement{hash_ref()}(key);
-        Inner& inner = sets_[subidx(hash)];
+        auto hashval = HashElement{hash_ref()}(key);
+        Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UpgradeLock m(inner);
-        auto it   = set.find(key, hash);
+        auto it   = set.find(key, hashval);
         if (it == set.end()) 
             return 0;
 
@@ -3231,11 +3243,11 @@ public:
     void prefetch(const key_arg<K>& key) const {
         (void)key;
 #if 0 && defined(__GNUC__)
-        size_t hash        = HashElement{hash_ref()}(key);
-        const Inner& inner = sets_[subidx(hash)];
+        size_t hashval     = HashElement{hash_ref()}(key);
+        const Inner& inner = sets_[subidx(hashval)];
         const auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
-        set.prefetch_hash(hash);
+        set.prefetch_hash(hashval);
 #endif  // __GNUC__
     }
 
@@ -3248,11 +3260,11 @@ public:
     // called heterogeneous key support.
     // --------------------------------------------------------------------
     template <class K = key_type>
-    iterator find(const key_arg<K>& key, size_t hash) {
-        Inner& inner = sets_[subidx(hash)];
+    iterator find(const key_arg<K>& key, size_t hashval) {
+        Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::SharedLock m(inner);
-        auto  it = set.find(key, hash);
+        auto  it = set.find(key, hashval);
         return make_iterator(&inner, it);
     }
 
@@ -3262,8 +3274,8 @@ public:
     }
 
     template <class K = key_type>
-    const_iterator find(const key_arg<K>& key, size_t hash) const {
-        return const_cast<parallel_hash_set*>(this)->find(key, hash);
+    const_iterator find(const key_arg<K>& key, size_t hashval) const {
+        return const_cast<parallel_hash_set*>(this)->find(key, hashval);
     }
 
     template <class K = key_type>
@@ -3381,11 +3393,11 @@ private:
     }
 
     bool has_element(const value_type& elem) const {
-        size_t hash  = PolicyTraits::apply(HashElement{hash_ref()}, elem);
-        Inner& inner = sets_[subidx(hash)];
-        auto&  set   = inner.set_;
+        size_t hashval = PolicyTraits::apply(HashElement{hash_ref()}, elem);
+        Inner& inner   = sets_[subidx(hashval)];
+        auto&  set     = inner.set_;
         typename Lockable::SharedLock m(const_cast<Inner&>(inner));
-        return set.has_element(elem, hash);
+        return set.has_element(elem, hashval);
     }
 
     // TODO(alkis): Optimize this assuming *this and that don't overlap.
@@ -3406,11 +3418,11 @@ protected:
     template <class K>
     std::tuple<Inner*, size_t, bool> 
     find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
-        auto hash    = HashElement{hash_ref()}(key);
-        Inner& inner = sets_[subidx(hash)];
+        auto hashval = HashElement{hash_ref()}(key);
+        Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         mutexlock    = std::move(typename Lockable::UniqueLock(inner));
-        auto  p   = set.find_or_prepare_insert(key, hash); // std::pair<size_t, bool>
+        auto  p   = set.find_or_prepare_insert(key, hashval); // std::pair<size_t, bool>
         return std::make_tuple(&inner, p.first, p.second);
     }
 

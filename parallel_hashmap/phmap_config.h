@@ -311,6 +311,10 @@
     #define PHMAP_HAVE_STD_STRING_VIEW 1
 #endif
 
+#ifndef PHMAP_HAVE_STD_STRING_VIEW
+    #define PHMAP_HAVE_STD_STRING_VIEW 0
+#endif
+
 // In debug mode, MSVC 2017's std::variant throws a EXCEPTION_ACCESS_VIOLATION
 // SEH exception from emplace for variant<SomeStruct> when constructing the
 // struct can throw. This defeats some of variant_test and

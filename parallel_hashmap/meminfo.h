@@ -28,6 +28,11 @@
 
 namespace spp
 {
+    uint64_t GetSystemMemory();
+    uint64_t GetTotalMemoryUsed();
+    uint64_t GetProcessMemoryUsed();
+    uint64_t GetPhysicalMemory();
+
     uint64_t GetSystemMemory()
     {
 #ifdef SPP_WIN

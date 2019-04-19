@@ -57,10 +57,10 @@ struct Cfg {
     Cfg() {
         static unsigned char __tochar[] =  {'A', 'C', 'T', 'G'};
         to_char = __tochar;
-        to_num['A'] = to_num['a'] = 0;
-        to_num['C'] = to_num['c'] = 1;
-        to_num['T'] = to_num['t'] = 2;
-        to_num['G'] = to_num['g'] = 3;
+        to_num[static_cast<unsigned char>('A')] = to_num[static_cast<unsigned char>('a')] = 0;
+        to_num[static_cast<unsigned char>('C')] = to_num[static_cast<unsigned char>('c')] = 1;
+        to_num[static_cast<unsigned char>('T')] = to_num[static_cast<unsigned char>('t')] = 2;
+        to_num[static_cast<unsigned char>('G')] = to_num[static_cast<unsigned char>('g')] = 3;
     }
 } const cfg;
 
@@ -193,7 +193,7 @@ void WriteFrequencies(const Cfg::Data& input)
     for(const auto& i: frequencies)
         freq.insert({i.second, i.first});
 
-    const unsigned sum = (unsigned)input.size() + 1 - size;
+    const unsigned sum = static_cast<unsigned>(input.size()) + 1 - size;
     for(const auto& i : freq)
         std::cout << i.second << ' ' << (sum ? double(100 * i.first) / sum : 0.0) << '\n';
     std::cout << '\n';
@@ -213,8 +213,8 @@ int main()
     Cfg::Data data;
     std::array<char, 256> buf;
 
-    while(fgets(buf.data(), (int)buf.size(), stdin) && memcmp(">THREE", buf.data(), 6));
-    while(fgets(buf.data(), (int)buf.size(), stdin) && buf.front() != '>') {
+    while(fgets(buf.data(), static_cast<int>(buf.size()), stdin) && memcmp(">THREE", buf.data(), 6));
+    while(fgets(buf.data(), static_cast<int>(buf.size()), stdin) && buf.front() != '>') {
         if(buf.front() != ';'){
             auto i = std::find(buf.begin(), buf.end(), '\n');
             data.insert(data.end(), buf.begin(), i);
@@ -232,5 +232,5 @@ int main()
     WriteCount<4>(data, "GGTA");
     WriteCount<6>(data, "GGTATT");
     WriteCount<12>(data, "GGTATTTTAATT");
-     WriteCount<18>(data, "GGTATTTTAATTTATAGT");
+    WriteCount<18>(data, "GGTATTTTAATTTATAGT");
 }

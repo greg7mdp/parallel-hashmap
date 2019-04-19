@@ -604,7 +604,7 @@ TEST(Table, Contains2) {
 
 int decompose_constructed;
 struct DecomposeType {
-  DecomposeType(int i) : i(i) {  // NOLINT
+  DecomposeType(int i_) : i(i_) {  // NOLINT
     ++decompose_constructed;
   }
 
@@ -1096,6 +1096,11 @@ ProbeStats CollectProbeStatsOnKeysXoredWithSeed(const std::vector<int64_t>& keys
   return stats;
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wswitch"
+#endif
+
 ExpectedStats XorSeedExpectedStats() {
   constexpr bool kRandomizesInserts =
 #if NDEBUG
@@ -1107,34 +1112,40 @@ ExpectedStats XorSeedExpectedStats() {
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
   switch (container_internal::Group::kWidth) {
-    case 8:
+  case 8:
       if (kRandomizesInserts) {
-  return {0.05,
-          1.0,
-          {{0.95, 0.5}},
-          {{0.95, 0}, {0.99, 2}, {0.999, 4}, {0.9999, 10}}};
+          return {0.05,
+                  1.0,
+                  {{0.95, 0.5}},
+                  {{0.95, 0}, {0.99, 2}, {0.999, 4}, {0.9999, 10}}};
       } else {
-  return {0.05,
-          2.0,
-          {{0.95, 0.1}},
-          {{0.95, 0}, {0.99, 2}, {0.999, 4}, {0.9999, 10}}};
+          return {0.05,
+                  2.0,
+                  {{0.95, 0.1}},
+                  {{0.95, 0}, {0.99, 2}, {0.999, 4}, {0.9999, 10}}};
       }
-    case 16:
+  case 16:
+  default:
       if (kRandomizesInserts) {
-        return {0.1,
-                1.0,
-                {{0.95, 0.1}},
-                {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
+          return {0.1,
+                  1.0,
+                  {{0.95, 0.1}},
+                  {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
       } else {
-        return {0.05,
-                1.0,
-                {{0.95, 0.05}},
-                {{0.95, 0}, {0.99, 1}, {0.999, 4}, {0.9999, 10}}};
+          return {0.05,
+                  1.0,
+                  {{0.95, 0.05}},
+                  {{0.95, 0}, {0.99, 1}, {0.999, 4}, {0.9999, 10}}};
       }
   }
   //PHMAP_RAW_LOG(FATAL, "%s", "Unknown Group width");
   return {};
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic pop
+#endif
+
 
 TEST(Table, DISABLED_EnsureNonQuadraticTopNXorSeedByProbeSeqLength) {
   ProbeStatsPerSize stats;
@@ -1190,6 +1201,11 @@ ProbeStats CollectProbeStatsOnLinearlyTransformedKeys(
   return stats;
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wswitch"
+#endif
+
 ExpectedStats LinearTransformExpectedStats() {
   constexpr bool kRandomizesInserts =
 #if NDEBUG
@@ -1201,34 +1217,39 @@ ExpectedStats LinearTransformExpectedStats() {
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
   switch (container_internal::Group::kWidth) {
-    case 8:
+  case 8:
       if (kRandomizesInserts) {
-        return {0.1,
-                0.5,
-                {{0.95, 0.3}},
-                {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
+          return {0.1,
+                  0.5,
+                  {{0.95, 0.3}},
+                  {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
       } else {
-        return {0.15,
-                0.5,
-                {{0.95, 0.3}},
-                {{0.95, 0}, {0.99, 3}, {0.999, 15}, {0.9999, 25}}};
+          return {0.15,
+                  0.5,
+                  {{0.95, 0.3}},
+                  {{0.95, 0}, {0.99, 3}, {0.999, 15}, {0.9999, 25}}};
       }
-    case 16:
+  case 16:
+  default:
       if (kRandomizesInserts) {
-        return {0.1,
-                0.4,
-                {{0.95, 0.3}},
-                {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
+          return {0.1,
+                  0.4,
+                  {{0.95, 0.3}},
+                  {{0.95, 0}, {0.99, 1}, {0.999, 8}, {0.9999, 15}}};
       } else {
-        return {0.05,
-                0.2,
-                {{0.95, 0.1}},
-                {{0.95, 0}, {0.99, 1}, {0.999, 6}, {0.9999, 10}}};
+          return {0.05,
+                  0.2,
+                  {{0.95, 0.1}},
+                  {{0.95, 0}, {0.99, 1}, {0.999, 6}, {0.9999, 10}}};
       }
   }
   //PHMAP_RAW_LOG(FATAL, "%s", "Unknown Group width");
   return {};
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic pop
+#endif
 
 TEST(Table, DISABLED_EnsureNonQuadraticTopNLinearTransformByProbeSeqLength) {
   ProbeStatsPerSize stats;

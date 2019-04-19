@@ -218,7 +218,7 @@ void outmem(const char* test, int64_t cnt, uint64_t mem, bool final = false)
 }
 
 static bool all_done = false;
-static int64_t num_keys[16] = { 0 };
+static int64_t s_num_keys[16] = { 0 };
 static int64_t loop_idx = 0;
 static int64_t inner_cnt = 0;
 static const char *test = "random";
@@ -230,7 +230,7 @@ void _fill_random_inner(int64_t cnt, HT &hash, RSU &rsu)
     for (int64_t i=0; i<cnt; ++i)
     {
         hash.insert(typename HT::value_type(rsu.next(), 0));
-        ++num_keys[0];
+        ++s_num_keys[0];
     }
 }
 
@@ -241,13 +241,13 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
     constexpr int64_t num_threads = 8;   // has to be a power of two
     std::unique_ptr<std::thread> threads[num_threads];
 
-    auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
+    auto thread_fn = [&hash, cnt, num_threads](size_t thread_idx, RSU rsu_) {
 #if MT_SUPPORT
         size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
-            unsigned int key = rsu.next();                  // get next key to insert
+            unsigned int key = rsu_.next();                  // get next key to insert
 #if MT_SUPPORT == 1
             size_t hashval = hash.hash(key);                   // compute its hash
             size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
@@ -257,7 +257,7 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
 #endif
             {
                 hash.insert(typename HT::value_type(key, 0)); // insert the value
-                ++(num_keys[thread_idx]);                     // increment count of inserted values
+                ++(s_num_keys[thread_idx]);                     // increment count of inserted values
             }
         }
 #endif
@@ -267,7 +267,7 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
     // thread 0 will insert the keys whose hash direct them to submap0 or submap1
     // thread 1 will insert the keys whose hash direct them to submap2 or submap3
     // --------------------------------------------------------------------------
-    for (int64_t i=0; i<num_threads; ++i)
+    for (size_t i=0; i<num_threads; ++i)
         threads[i].reset(new std::thread(thread_fn, i, rsu));
 
     // rsu passed by value to threads... we need to increment the reference object
@@ -275,7 +275,7 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
         rsu.next();
     
     // wait for the threads to finish their work and exit
-    for (int64_t i=0; i<num_threads; ++i)
+    for (size_t i=0; i<num_threads; ++i)
         threads[i]->join();
 }
 
@@ -284,7 +284,7 @@ size_t total_num_keys()
 {
     size_t n = 0;
     for (int i=0; i<16; ++i)
-        n += num_keys[i];
+        n += s_num_keys[i];
     return n;
 }
     
@@ -301,7 +301,7 @@ Timer _fill_random2(int64_t cnt, HT &hash)
     inner_cnt = cnt / num_loops;
 
     for (int i=0; i<16; ++i)
-        num_keys[i] = 0;
+        s_num_keys[i] = 0;
 
     for (loop_idx=0; loop_idx<num_loops; ++loop_idx)
     {

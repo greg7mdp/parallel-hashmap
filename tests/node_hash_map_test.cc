@@ -143,7 +143,7 @@ TEST(FlatHashMap, MoveOnlyKey) {
 }
 
 struct NonMovableKey {
-  explicit NonMovableKey(int i) : i(i) {}
+  explicit NonMovableKey(int i_) : i(i_) {}
   NonMovableKey(NonMovableKey&&) = delete;
   int i;
 };

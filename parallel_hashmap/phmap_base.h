@@ -3077,11 +3077,9 @@ bool LessThanImpl(Span<T> a, Span<T> b) {
 // https://bugs.llvm.org/show_bug.cgi?id=27538.
 template <typename From, typename To>
 struct IsConvertibleHelper {
- private:
   static std::true_type testval(To);
   static std::false_type testval(...);
 
- public:
   using type = decltype(testval(std::declval<From>()));
 };
 

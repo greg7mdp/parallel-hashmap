@@ -69,7 +69,7 @@ INSTANTIATE_TYPED_TEST_SUITE_P(THIS_TEST_NAME, ModifiersTest, MapTypes);
 
 TEST(THIS_TEST_NAME, StandardLayout) {
   struct Int {
-    explicit Int(size_t value) : value(value) {}
+    explicit Int(size_t val) : value(val) {}
     Int() : value(0) { ADD_FAILURE(); }
     Int(const Int& other) : value(other.value) { ADD_FAILURE(); }
     Int(Int&&) = default;
@@ -121,8 +121,8 @@ TEST(THIS_TEST_NAME, IteratesMsan) {
 // avoid creating expensive key elements when the item is already present in the
 // map.
 struct LazyInt {
-  explicit LazyInt(size_t value, int* tracker)
-      : value(value), tracker(tracker) {}
+  explicit LazyInt(size_t val, int* tracker_)
+      : value(val), tracker(tracker_) {}
 
   explicit operator size_t() const {
     ++*tracker;
@@ -162,7 +162,7 @@ TEST(THIS_TEST_NAME, PtrKet) {
     int a, b;
     hash.insert(H::value_type(&a, true));
     hash.insert(H::value_type(&b, false));
-};
+}
 
 TEST(THIS_TEST_NAME, LazyKeyPattern) {
   // hashes are only guaranteed in opt mode, we use assertions to track internal

@@ -67,6 +67,8 @@ namespace
     };
 }  // namespace
 
+std::mt19937_64* GetSharedRng(); // declaration
+
 std::mt19937_64* GetSharedRng() {
     RandomDeviceSeedSeq seed_seq;
     static auto* rng = new std::mt19937_64(seed_seq);

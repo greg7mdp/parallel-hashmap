@@ -467,6 +467,11 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
     #define PHMAP_BLOCK_TAIL_CALL_OPTIMIZATION() if (volatile int x = 0) { (void)x; }
 #endif
 
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
 #ifdef PHMAP_HAVE_INTRINSIC_INT128
     inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
     {
@@ -484,6 +489,10 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
         }
         #define PHMAP_HAS_UMUL128 1
     #endif
+#endif
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic pop
 #endif
 
 #if defined(__GNUC__)
