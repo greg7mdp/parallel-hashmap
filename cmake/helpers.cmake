@@ -1,5 +1,5 @@
 #set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(PHMAP_IDE_FOLDER Abseil)
+set(PHMAP_IDE_FOLDER phmap)
 
 # -------------------------------------------------------------
 # phmap_cc_test(NAME awesome_test
