@@ -27,6 +27,9 @@ namespace phmap {
 #ifdef PHMAP_USE_ABSL_HASHEQ
             using Hash = absl::Hash<T>;
             using Eq   = absl::EqualTo<T>;
+#elif PHMAP_USE_ABSL_HASH
+            using Hash = absl::Hash<T>;
+            using Eq   = phmap::EqualTo<T>;
 #else
             using Hash = phmap::Hash<T>;
             using Eq   = phmap::EqualTo<T>;
