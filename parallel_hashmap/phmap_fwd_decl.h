@@ -24,10 +24,10 @@ namespace phmap {
         template <class T, class E = void>
         struct HashEq 
         {
-#ifdef PHMAP_USE_ABSL_HASHEQ
+#if defined(PHMAP_USE_ABSL_HASHEQ)
             using Hash = absl::Hash<T>;
             using Eq   = absl::EqualTo<T>;
-#elif PHMAP_USE_ABSL_HASH
+#elif defined(PHMAP_USE_ABSL_HASH)
             using Hash = absl::Hash<T>;
             using Eq   = phmap::EqualTo<T>;
 #else
