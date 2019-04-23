@@ -345,7 +345,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
     }
     #define PHMAP_HAS_UMUL128 1
 #elif (defined(_MSC_VER))
-    #if defined(_WIN64)
+    #if defined(_M_X64)
         #pragma intrinsic(_umul128)
         inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
         {
