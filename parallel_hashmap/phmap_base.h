@@ -59,7 +59,7 @@ template<class T1, class T2> using Pair = typename std::pair<T1, T2>;
 template <class T>
 struct EqualTo
 {
-    inline size_t operator()(const T& a, const T& b) const
+    inline bool operator()(const T& a, const T& b) const
     {
         return std::equal_to<T>()(a, b);
     }
