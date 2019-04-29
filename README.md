@@ -170,6 +170,7 @@ struct Person
     string _last;
     int    _age;
 };
+```
 
 - Inject a specialization of `std::hash` for the class into the "std" namespace. We provide a convenient and small header `phmap_utils.h` which allows to easily add such specializations.
 
