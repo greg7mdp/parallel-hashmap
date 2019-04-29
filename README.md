@@ -141,7 +141,37 @@ The rules are the same as for std::unordered_map, and are valid for all the phma
 
 ## Example 2 - providing a hash function for a user-defined class
 
-In order to use a flat_hash_set or flat_hash_map, a hash function should be provided. Even though a the hash function can be provided via the HashFcn template parameter, we recommend injecting a specialization of `std::hash` for the class into the "std" namespace. We provide a convenient and small header `phmap_utils.h` which allows to easily add such specializations.
+In order to use a flat_hash_set or flat_hash_map, a hash function should be provided. This can be done with one of the following methods:
+
+- Provide a hash functor via the HashFcn template parameter
+
+- As with boost, you may add a `hash_value()` friend function in your class. 
+
+For example:
+ 
+```c++
+#include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::HashState()
+#include <string>
+using std::string;
+
+struct Person
+{
+    bool operator==(const Person &o) const
+    { 
+        return _first == o._first && _last == o._last && _age == o._age; 
+    }
+
+    friend size_t hash_value(const Person &p)
+    {
+        return phmap::HashState().combine(0, p._first, p._last, p._age);
+    }
+
+    string _first;
+    string _last;
+    int    _age;
+};
+
+- Inject a specialization of `std::hash` for the class into the "std" namespace. We provide a convenient and small header `phmap_utils.h` which allows to easily add such specializations.
 
 For example:
 
