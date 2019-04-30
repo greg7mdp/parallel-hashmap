@@ -36,7 +36,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include <cstring>
 #include <iterator>
 #include <limits>
@@ -45,13 +44,11 @@
 #include <type_traits>
 #include <utility>
 #include <array>
-#include <functional>
 #include <cassert>
 
-#include "phmap_bits.h"
+#include "phmap_utils.h"
 #include "phmap_base.h"
 #include "phmap_fwd_decl.h"
-#include "phmap_utils.h"
 
 #if PHMAP_HAVE_STD_STRING_VIEW
     #include <string_view>
