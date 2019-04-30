@@ -11,10 +11,15 @@
 //      https://www.apache.org/licenses/LICENSE-2.0
 // ---------------------------------------------------------------------------
 
+#include <memory>
+#include <utility>
+
 namespace phmap {
 
     template <class T> struct Hash;
     template <class T> struct EqualTo;
+    template <class T> using Allocator      = typename std::allocator<T>;
+    template<class T1, class T2> using Pair = typename std::pair<T1, T2>;
 
     class NullMutex;
 
