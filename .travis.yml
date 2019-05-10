@@ -112,6 +112,18 @@ matrix:
             - g++-7
       env: COMPILER='clang++-5.0' CXX_FLAGS='-std=c++17'
 
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources: 
+            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-5.0
+            - g++-7
+      env: COMPILER='clang++-5.0' CXX_FLAGS='-std=c++17'
+
 dist: trusty
 
 script: 
