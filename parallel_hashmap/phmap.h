@@ -2148,6 +2148,8 @@ class raw_hash_map : public raw_hash_set<Policy, Hash, Eq, Alloc>
     using KeyArgImpl =
         KeyArg<IsTransparent<Eq>::value && IsTransparent<Hash>::value>;
 
+    using Base = raw_hash_set<Policy, Hash, Eq, Alloc>;
+
 public:
     using key_type = typename Policy::key_type;
     using mapped_type = typename Policy::mapped_type;
@@ -2163,7 +2165,7 @@ public:
     using const_iterator = typename raw_hash_map::raw_hash_set::const_iterator;
 
     raw_hash_map() {}
-    using raw_hash_map::raw_hash_set::raw_hash_set;
+    using Base::raw_hash_set; // use raw_hash_set constructor  
 
     // The last two template parameters ensure that both arguments are rvalues
     // (lvalue arguments are handled by the overloads below). This is necessary
