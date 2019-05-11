@@ -113,7 +113,7 @@ struct Key
         for(size_t i = 0; i != size; ++i, data >>= 2)
             tmp += cfg.to_char[data & 3ull];
         std::reverse(tmp.begin(), tmp.end());
-        return std::move(tmp);
+        return tmp;
     }
 
     bool operator== (const Key& in) const {

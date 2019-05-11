@@ -195,14 +195,14 @@ Timer _fill_random(vector<T> &v, HT &hash)
 }
 
 // --------------------------------------------------------------------------
-void out(const char* test, int64_t cnt, const Timer &t, bool final = false)
+void out(const char* test, int64_t cnt, const Timer &t, bool  = false)
 {
     printf("%s,time,%u,%s,%f\n", test, (unsigned int)cnt, program_slug, 
            (float)((double)t.elapsed().count() / 1000));
 }
 
 // --------------------------------------------------------------------------
-void outmem(const char* test, int64_t cnt, uint64_t mem, bool final = false)
+void outmem(const char*, int64_t cnt, uint64_t mem, bool final = false)
 {
     static uint64_t max_mem = 0;
     static uint64_t max_keys = 0;

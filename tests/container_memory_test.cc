@@ -118,7 +118,7 @@ DecomposeValueImpl(int, F&& f, Arg&& arg) {
 }
 
 template <class F, class Arg>
-const char* DecomposeValueImpl(char, F&& f, Arg&& arg) {
+const char* DecomposeValueImpl(char, F&& , Arg&& ) {
   return "not decomposable";
 }
 
@@ -152,7 +152,7 @@ DecomposePairImpl(int, F&& f, Args&&... args) {
 }
 
 template <class F, class... Args>
-const char* DecomposePairImpl(char, F&& f, Args&&... args) {
+const char* DecomposePairImpl(char, F&& , Args&&... ) {
   return "not decomposable";
 }
 
