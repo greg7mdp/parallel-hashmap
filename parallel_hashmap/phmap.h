@@ -4148,7 +4148,11 @@ class flat_hash_set
 
 public:
     flat_hash_set() {}
+#ifdef __INTEL_COMPILER
     using Base::raw_hash_set;
+#else
+    using Base::Base;
+#endif
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4207,7 +4211,11 @@ class flat_hash_map : public phmap::container_internal::raw_hash_map<
 
 public:
     flat_hash_map() {}
+#ifdef __INTEL_COMPILER
     using Base::raw_hash_map;
+#else
+    using Base::Base;
+#endif
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4266,7 +4274,11 @@ class node_hash_set
 
 public:
     node_hash_set() {}
+#ifdef __INTEL_COMPILER
     using Base::raw_hash_set;
+#else
+    using Base::Base;
+#endif
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4325,7 +4337,11 @@ class node_hash_map
 
 public:
     node_hash_map() {}
+#ifdef __INTEL_COMPILER
     using Base::raw_hash_map;
+#else
+    using Base::Base;
+#endif
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4376,7 +4392,11 @@ class parallel_flat_hash_set
 
 public:
     parallel_flat_hash_set() {}
+#ifdef __INTEL_COMPILER
     using Base::parallel_hash_set;
+#else
+    using Base::Base;
+#endif
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4423,7 +4443,11 @@ class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_m
 
 public:
     parallel_flat_hash_map() {}
+#ifdef __INTEL_COMPILER
     using Base::parallel_hash_map;
+#else
+    using Base::Base;
+#endif
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4474,7 +4498,11 @@ class parallel_node_hash_set
 
 public:
     parallel_node_hash_set() {}
+#ifdef __INTEL_COMPILER
     using Base::parallel_hash_set;
+#else
+    using Base::Base;
+#endif
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4524,7 +4552,11 @@ class parallel_node_hash_map
 
 public:
     parallel_node_hash_map() {}
+#ifdef __INTEL_COMPILER
     using Base::parallel_hash_map;
+#else
+    using Base::Base;
+#endif
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
