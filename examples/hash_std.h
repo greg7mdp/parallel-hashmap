@@ -20,7 +20,8 @@ struct Person
 namespace std
 {
     // inject specialization of std::hash for Person into namespace std
-    // ----------------------------------------------------------------
+    // An alternative is to provide a hash_value() friend function (see hash_value.h)
+    // ------------------------------------------------------------------------------
     template<> struct hash<Person>
     {
         std::size_t operator()(Person const &p) const
