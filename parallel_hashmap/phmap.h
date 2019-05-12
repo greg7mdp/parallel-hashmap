@@ -3285,7 +3285,7 @@ class parallel_hash_map : public parallel_hash_set<N, RefSet, Mtx_, Policy, Hash
     using KeyArgImpl =
         KeyArg<IsTransparent<Eq>::value && IsTransparent<Hash>::value>;
 
-    using Base = parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc>;
+    using Base = typename parallel_hash_map::parallel_hash_set;
     using Lockable = phmap::LockableImpl<Mtx_>;
 
 public:
@@ -3303,7 +3303,7 @@ public:
     using const_iterator = typename parallel_hash_map::parallel_hash_set::const_iterator;
 
     parallel_hash_map() {}
-    using Base::parallel_hash_set; // constructor
+    using parallel_hash_map::parallel_hash_set::parallel_hash_set;
 
     // The last two template parameters ensure that both arguments are rvalues
     // (lvalue arguments are handled by the overloads below). This is necessary
@@ -4139,12 +4139,11 @@ class flat_hash_set
     : public phmap::container_internal::raw_hash_set<
           phmap::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
-    using Base = typename phmap::container_internal::raw_hash_set<
-          phmap::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Alloc>;
+    using Base = typename flat_hash_set::raw_hash_set;
 
 public:
     flat_hash_set() {}
-    using Base::raw_hash_set;
+    using Base::Base;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4199,13 +4198,11 @@ template <class K, class V, class Hash, class Eq, class Alloc> // default values
 class flat_hash_map : public phmap::container_internal::raw_hash_map<
                           phmap::container_internal::FlatHashMapPolicy<K, V>,
                           Hash, Eq, Alloc> {
-    using Base = typename phmap::container_internal::raw_hash_map<
-        phmap::container_internal::FlatHashMapPolicy<K, V>,
-        Hash, Eq, Alloc>;
+    using Base = typename flat_hash_map::raw_hash_map;
 
 public:
     flat_hash_map() {}
-    using Base::raw_hash_map;
+    using Base::Base;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4260,12 +4257,11 @@ class node_hash_set
     : public phmap::container_internal::raw_hash_set<
           phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
-    using Base = typename phmap::container_internal::raw_hash_set<
-        phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc>;
+    using Base = typename node_hash_set::raw_hash_set;
 
 public:
     node_hash_set() {}
-    using Base::raw_hash_set;
+    using Base::Base;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4320,13 +4316,11 @@ class node_hash_map
           phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
           Alloc> 
 {
-    using Base = typename phmap::container_internal::raw_hash_map<
-        phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
-        Alloc>;
+    using Base = typename node_hash_map::raw_hash_map;
 
 public:
     node_hash_map() {}
-    using Base::raw_hash_map;
+    using Base::Base;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -4373,14 +4367,11 @@ class parallel_flat_hash_set
          phmap::container_internal::FlatHashSetPolicy<T>, 
          Hash, Eq, Alloc> 
 {
-    using Base = typename phmap::container_internal::parallel_hash_set<
-        N, phmap::container_internal::raw_hash_set, Mtx_,
-        phmap::container_internal::FlatHashSetPolicy<T>, 
-        Hash, Eq, Alloc>;
+    using Base = typename parallel_flat_hash_set::parallel_hash_set;
 
 public:
     parallel_flat_hash_set() {}
-    using Base::parallel_hash_set;
+    using Base::Base;
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4423,14 +4414,11 @@ class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_m
                 phmap::container_internal::FlatHashMapPolicy<K, V>,
                 Hash, Eq, Alloc> 
 {
-    using Base = typename phmap::container_internal::parallel_hash_map<
-                N, phmap::container_internal::raw_hash_set, Mtx_,
-                phmap::container_internal::FlatHashMapPolicy<K, V>,
-                Hash, Eq, Alloc>;
+    using Base = typename parallel_flat_hash_map::parallel_hash_map;
 
 public:
     parallel_flat_hash_map() {}
-    using Base::parallel_hash_map;
+    using Base::Base;
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4477,13 +4465,11 @@ class parallel_node_hash_set
              N, phmap::container_internal::raw_hash_set, Mtx_,
              phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
-    using Base = typename phmap::container_internal::parallel_hash_set<
-        N, phmap::container_internal::raw_hash_set, Mtx_,
-        phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc>;
+    using Base = typename parallel_node_hash_set::parallel_hash_set;
 
 public:
     parallel_node_hash_set() {}
-    using Base::parallel_hash_set;
+    using Base::Base;
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
@@ -4529,14 +4515,11 @@ class parallel_node_hash_map
           phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
           Alloc> 
 {
-    using Base = typename phmap::container_internal::parallel_hash_map<
-        N, phmap::container_internal::raw_hash_set, Mtx_,
-        phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
-        Alloc>;
+    using Base = typename parallel_node_hash_map::parallel_hash_map;
 
 public:
     parallel_node_hash_map() {}
-    using Base::parallel_hash_map;
+    using Base::Base;
     using Base::hash;
     using Base::subidx;
     using Base::subcnt;
