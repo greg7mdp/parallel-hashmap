@@ -1417,10 +1417,11 @@ struct RebindAlloc {
   using type = typename RebindFirstArg<T, U>::type;
 };
 
-template <typename T, typename U>
-struct RebindAlloc<T, U, true> {
-  using type = typename T::template rebind<U>::other;
+template <typename A, typename U>
+struct RebindAlloc<A, U, true> {
+    using type = typename std::allocator_traits<A>::template rebind_alloc<U>;
 };
+
 
 }  // namespace memory_internal
 
@@ -1632,7 +1633,7 @@ private:
     static auto construct_impl(int, A& a,  // NOLINT(runtime/references)
                                Args&&... args)
         -> decltype(a.construct(std::forward<Args>(args)...)) {
-        a.construct(std::forward<Args>(args)...);
+        std::allocator_traits<A>::construct(a, std::forward<Args>(args)...);
     }
 
     template <typename T, typename... Args>
@@ -1643,7 +1644,7 @@ private:
     template <typename A, typename T>
     static auto destroy_impl(int, A& a,  // NOLINT(runtime/references)
                              T* p) -> decltype(a.destroy(p)) {
-        a.destroy(p);
+        std::allocator_traits<A>::destroy(a, p);
     }
     template <typename T>
     static void destroy_impl(char, Alloc&, T* p) {
