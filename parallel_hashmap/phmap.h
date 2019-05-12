@@ -3303,7 +3303,12 @@ public:
     using const_iterator = typename parallel_hash_map::parallel_hash_set::const_iterator;
 
     parallel_hash_map() {}
+
+#ifdef __INTEL_COMPILER
     using Base::parallel_hash_set;
+#else
+    using parallel_hash_map::parallel_hash_set::parallel_hash_set;
+#endif
 
     // The last two template parameters ensure that both arguments are rvalues
     // (lvalue arguments are handled by the overloads below). This is necessary
