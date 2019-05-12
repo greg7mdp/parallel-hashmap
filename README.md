@@ -23,7 +23,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - **Tested** on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 
-- Automatic support for **boost's hash_value()** method for providing the hash function.
+- Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`).
 
 
 ## Fast *and*  memory friendly
