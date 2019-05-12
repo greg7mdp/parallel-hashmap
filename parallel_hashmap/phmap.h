@@ -3303,7 +3303,7 @@ public:
     using const_iterator = typename parallel_hash_map::parallel_hash_set::const_iterator;
 
     parallel_hash_map() {}
-    using parallel_hash_map::parallel_hash_set::parallel_hash_set;
+    using Base::parallel_hash_set;
 
     // The last two template parameters ensure that both arguments are rvalues
     // (lvalue arguments are handled by the overloads below). This is necessary
