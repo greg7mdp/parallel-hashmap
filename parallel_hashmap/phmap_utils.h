@@ -113,7 +113,7 @@ private:
     typedef std::true_type yes;
     typedef std::false_type no;
 
-    template<typename U> static auto test(int) -> decltype(hash_value(std::declval<U&>()) == 1, yes());
+    template<typename U> static auto test(int) -> decltype(U::hash_value(std::declval<U&>()) == 1, yes());
 
     template<typename> static no test(...);
 
@@ -130,7 +130,7 @@ struct Hash
     template <class U, typename std::enable_if<has_hash_value<U>::value, int>::type = 0>
     size_t _hash(const T& val) const
     {
-        return hash_value(val);
+        return U::hash_value(val);
     }
  
     template <class U, typename std::enable_if<!has_hash_value<U>::value, int>::type = 0>
