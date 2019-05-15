@@ -21,7 +21,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. 
 
-- **Tested** on Windows (vs2015 & vs2017), linux (g++ 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
+- **Tested** on Windows (vs2015 & vs2017, vs2019, Intel compiler 18 and 19), linux (g++ 4.8.4, 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 
 - Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`).
 
