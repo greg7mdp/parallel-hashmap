@@ -4275,7 +4275,13 @@ constexpr bool IsFinal() {
 
 template <typename T>
 constexpr bool ShouldUseBase() {
-  return std::is_class<T>::value && std::is_empty<T>::value && !IsFinal<T>();
+#ifdef __INTEL_COMPILER
+    // avoid crash in Intel compiler
+    // assertion failed at: "shared/cfe/edgcpfe/lower_init.c", line 7013
+    return false; 
+#else
+    return std::is_class<T>::value && std::is_empty<T>::value && !IsFinal<T>();
+#endif
 }
 
 // The storage class provides two specializations:

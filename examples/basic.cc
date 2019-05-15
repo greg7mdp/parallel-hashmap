@@ -7,12 +7,7 @@ using phmap::flat_hash_map;
 int main()
 {
     // Create an unordered_map of three strings (that map to strings)
-    flat_hash_map<std::string, std::string> email = 
-    {
-        { "tom",  "tom@gmail.com"},
-        { "jeff", "jk@gmail.com"},
-        { "jim",  "jimg@microsoft.com"}
-    };
+    flat_hash_map<std::string, std::string> email;
  
     // Iterate and print keys and values 
     for (const auto& n : email) 
