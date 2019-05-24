@@ -770,13 +770,15 @@ namespace base_internal {
 
 namespace {
 template <typename T>
-[[noreturn]] void Throw(const T& error) {
 #ifdef PHMAP_HAVE_EXCEPTIONS
-  throw error;
-#else
-  std::abort();
-#endif
+[[noreturn]] void Throw(const T& error) {
+    throw error;
 }
+#else
+[[noreturn]] void Throw(const T&) {
+    std::abort();
+}
+#endif
 }  // namespace
 
 static inline void ThrowStdLogicError(const std::string& what_arg) {
