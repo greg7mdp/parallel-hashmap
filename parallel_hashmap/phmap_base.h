@@ -50,6 +50,10 @@
 
 #include "phmap_config.h"
 
+#ifdef PHMAP_HAVE_SHARED_MUTEX
+    #include <shared_mutex>  // after "phmap_config.h"
+#endif
+
 namespace phmap {
 
 template <class T> using Allocator = typename std::allocator<T>;
@@ -4895,6 +4899,27 @@ public:
         using SharedLocks     = typename Base::ReadLocks;
         using UniqueLocks     = typename Base::WriteLocks;
         using UpgradeToUnique = boost::upgrade_to_unique_lock<mutex_type>;
+    };
+#endif
+
+// --------------------------------------------------------------------------
+//         std::shared_mutex support (read and write lock support)
+// --------------------------------------------------------------------------
+#ifdef PHMAP_HAVE_SHARED_MUTEX
+
+    // ---------------------------------------------------------------------------
+    template <>
+    class  LockableImpl<std::shared_mutex> : public std::shared_mutex
+    {
+    public:
+        using mutex_type      = std::shared_mutex;
+        using Base            = LockableBaseImpl<std::shared_mutex>;
+        using SharedLock      = std::shared_lock<mutex_type>;
+        using UpgradeLock     = std::unique_lock<mutex_type>; // assume can't upgrade
+        using UniqueLock      = std::unique_lock<mutex_type>;
+        using SharedLocks     = typename Base::ReadLocks;
+        using UniqueLocks     = typename Base::WriteLocks;
+        using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
     };
 #endif
 
