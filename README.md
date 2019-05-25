@@ -249,7 +249,7 @@ Parallel Hashmap containers follow the thread safety rules of the Standard C++ l
 
 - It is safe to read and write to one instance of a type even if another thread is reading or writing to a different instance of the same type. For example, given hash tables A and B of the same type, it is safe if A is being written in thread 1 and B is being read in thread 2.
 
-- The *parallel* tables can be made fully thread-safe, by providing a synchronization type (for example [std::mutex](https://en.cppreference.com/w/cpp/thread/mutex)) as the last template argument. Because locking is performed at the *submap* level, a high level of concurrency can still be achieved. 
+- The *parallel* tables can be made internally thread-safe, by providing a synchronization type (for example [std::mutex](https://en.cppreference.com/w/cpp/thread/mutex)) as the last template argument. Because locking is performed at the *submap* level, a high level of concurrency can still be achieved. However please be aware that returned iterators are not protected by the mutex, so they cannot be used reliably on a hash map which can be changed by another thread.
 
 - Examples on how to use various mutex types, including boost::mutex, boost::shared_mutex and absl::Mutex can be found in `examples/bench.cc`
 
