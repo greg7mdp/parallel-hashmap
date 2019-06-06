@@ -2,7 +2,7 @@
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">  
   <!-- VC 2015 -->
-  <Type Name="phmap::flat_hash_set&lt;*,*,*,*&gt;">  
+  <Type            Name="phmap::flat_hash_set&lt;*,*,*,*&gt;">  
   <AlternativeType Name="phmap::flat_hash_map&lt;*,*,*,*,*&gt;" />  
   <AlternativeType Name="phmap::node_hash_set&lt;*,*,*,*&gt;" />  
   <AlternativeType Name="phmap::node_hash_map&lt;*,*,*,*,*&gt;" />  
@@ -45,11 +45,12 @@
       <Expand>  
         <CustomListItems MaxItemsPerView="1000" ExcludeView="Test">  
           <Variable Name="idx" InitialValue="0" />  
-          <Variable Name="maxidx" InitialValue="16" />  
+          <Variable Name="maxidx" InitialValue="$T5" />  
           <Variable Name="ctrl" InitialValue="sets_._Elems[0].set_.ctrl_" />  
           <Variable Name="slot" InitialValue="sets_._Elems[0].set_.slots_" />  
           <Variable Name="ctrl_end" InitialValue="sets_._Elems[0].set_.ctrl_" />  
           <Variable Name="slot_end" InitialValue="sets_._Elems[0].set_.slots_" />  
+          <Exec>maxidx = 2 &lt;&lt; maxidx</Exec>
           <Loop>  
                 <Break Condition="idx == maxidx" />  
                 <Exec>ctrl = sets_._Elems[idx].set_.ctrl_</Exec>  
