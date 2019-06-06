@@ -37,13 +37,42 @@
        <DisplayString>{*slot_,na}</DisplayString>
   </Type>
 
-  <Type Name="spp::raw_hash_set&lt;*,*,*,*&gt;">
-    <DisplayString Condition="row_current==0">end()</DisplayString>
-    <DisplayString Condition="row_current->_group == -1">end()</DisplayString>
-    <DisplayString>{*col_current}</DisplayString>
-    <Expand>
-      <ExpandedItem Condition="row_current->_group != -1">*col_current</ExpandedItem>
-    </Expand>
+  <Type            Name="phmap::parallel_flat_hash_set&lt;*,*,*,*,*,*&gt;">  
+  <AlternativeType Name="phmap::parallel_flat_hash_map&lt;*,*,*,*,*,*,*&gt;" />  
+  <AlternativeType Name="phmap::parallel_node_hash_set&lt;*,*,*,*,*,*&gt;" />  
+  <AlternativeType Name="phmap::parallel_node_hash_map&lt;*,*,*,*,*,*,*&gt;" /> 
+      <DisplayString>{{size = ?}}</DisplayString>  
+      <Expand>  
+        <CustomListItems MaxItemsPerView="1000" ExcludeView="Test">  
+          <Variable Name="idx" InitialValue="0" />  
+          <Variable Name="maxidx" InitialValue="16" />  
+          <Variable Name="ctrl" InitialValue="sets_._Elems[0].set_.ctrl_" />  
+          <Variable Name="slot" InitialValue="sets_._Elems[0].set_.slots_" />  
+          <Variable Name="ctrl_end" InitialValue="sets_._Elems[0].set_.ctrl_" />  
+          <Variable Name="slot_end" InitialValue="sets_._Elems[0].set_.slots_" />  
+          <Loop>  
+                <Break Condition="idx == maxidx" />  
+                <Exec>ctrl = sets_._Elems[idx].set_.ctrl_</Exec>  
+                <Exec>slot = sets_._Elems[idx].set_.slots_</Exec>  
+                <Exec>ctrl_end = sets_._Elems[idx].set_.ctrl_ + sets_._Elems[idx].set_.capacity_</Exec>  
+                <Exec>slot_end = sets_._Elems[idx].set_.slots_ + sets_._Elems[idx].set_.capacity_</Exec>  
+                <Loop>  
+                    <Break Condition="slot == slot_end" />  
+                    <If Condition="*ctrl >= -1">
+                      <Item>*slot,na</Item>  
+                    </If>  
+                    <Exec>++slot</Exec>  
+                    <Exec>++ctrl</Exec>  
+                </Loop>
+                <Exec>++idx</Exec>  
+          </Loop>
+        </CustomListItems>  
+      </Expand>  
+  </Type>  
+    
+  <Type Name="phmap::container_internal::parallel_hash_set&lt;*,*,*,*,*,*,*&gt;::iterator">
+       <DisplayString>{it_,na}</DisplayString>
   </Type>
 
 </AutoVisualizer>  
+
