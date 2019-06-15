@@ -7,7 +7,7 @@ template<class Set, class F>
 void test_set(F &f)
 {
     Set s;
-    Set::iterator it;
+    typename Set::iterator it;
     for (int i=0; i<100; ++i)
         s.insert(f(i));
 
@@ -21,7 +21,7 @@ void test_set(F &f)
     it = s.begin();
 }
 
-int main(int argc, char ** argv)
+int main(int, char **)
 {
     using namespace std;
 
@@ -54,6 +54,4 @@ int main(int argc, char ** argv)
 
     test_set<phmap::parallel_node_hash_map<int, int>>(make_2int);
     test_set<phmap::parallel_node_hash_map<string, string>>(make_2string);
-
-    
 }
