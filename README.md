@@ -25,6 +25,8 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`).
 
+- **natvis** visualization support in Visual Studio
+
 
 ## Fast *and*  memory friendly
 
@@ -37,6 +39,8 @@ The hashmaps provided here are built upon those open sourced by Google in the Ab
 ## Installation
 
 Copy the parallel_hashmap directory to your project. Update your include path. That's all.
+
+If you are using Visual Studio, you probably want to add `phmap.natvis` to your projects. This will allow for a clear display of the hash table contents in the debugger.
 
 > A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON .. && cmake --build . && make test`
 
