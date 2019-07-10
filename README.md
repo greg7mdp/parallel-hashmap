@@ -25,7 +25,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`).
 
-- **natvis** visualization support in Visual Studio
+- **natvis** visualization support in Visual Studio.
 
 
 ## Fast *and*  memory friendly
