@@ -3967,63 +3967,16 @@ public:
 //  hash_default
 // --------------------------------------------------------------------------
 
-#if 0
-
-struct int64_t_hash 
-{
-    using is_transparent = void;
-    size_t operator()(int64_t v) const {
-        return (size_t)v;
-    }
-};
-
-template <>
-struct HashEq<int64_t> {
-    using Hash = int64_t_hash;
-    using Eq   = std::equal_to<int64_t>;
-};
-
-#endif
-
 #if PHMAP_HAVE_STD_STRING_VIEW
-
-struct StringHash 
-{
-    using is_transparent = void;
-
-    size_t operator()(std::string_view v) const {
-        return phmap::Hash<std::string_view>{}(v);
-    }
-};
-
-// Supports heterogeneous lookup for string-like elements.
-struct StringHashEq 
-{
-    using Hash = StringHash;
-    struct Eq {
-        using is_transparent = void;
-        bool operator()(std::string_view lhs, std::string_view rhs) const {
-            return lhs == rhs;
-        }
-    };
-};
-
-template <>
-struct HashEq<std::string> : StringHashEq {};
-
-template <>
-struct HashEq<std::string_view> : StringHashEq {};
-
 
 // support char16_t wchar_t ....
 template<class CharT> 
 struct StringHashT 
 {
-
     using is_transparent = void;
 
     size_t operator()(std::basic_string_view<CharT> v) const {
-        std::string_view bv{reinterpret_cast<const char*>(v.data()), v.size()*sizeof(CharT)};
+        std::string_view bv{reinterpret_cast<const char*>(v.data()), v.size() * sizeof(CharT)};
         return phmap::Hash<std::string_view>{}(bv);
     }
 };
@@ -4033,13 +3986,21 @@ template<class CharT>
 struct StringHashEqT
 {
     using Hash = StringHashT<CharT>;
+
     struct Eq {
         using is_transparent = void;
+
         bool operator()(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) const {
             return lhs == rhs;
         }
     };
 };
+
+template <>
+struct HashEq<std::string> : StringHashEqT<char> {};
+
+template <>
+struct HashEq<std::string_view> : StringHashEqT<char> {};
 
 // char16_t
 template <>
