@@ -4014,6 +4014,47 @@ struct HashEq<std::string> : StringHashEq {};
 template <>
 struct HashEq<std::string_view> : StringHashEq {};
 
+
+// support char16_t wchar_t ....
+template<class CharT> 
+struct StringHashT 
+{
+
+    using is_transparent = void;
+
+    size_t operator()(std::basic_string_view<CharT> v) const {
+        std::string_view bv{reinterpret_cast<const char*>(v.data()), v.size()*sizeof(CharT)};
+        return phmap::Hash<std::string_view>{}(bv);
+    }
+};
+
+// Supports heterogeneous lookup for basic_string<T>-like elements.
+template<class CharT> 
+struct StringHashEqT
+{
+    using Hash = StringHashT<CharT>;
+    struct Eq {
+        using is_transparent = void;
+        bool operator()(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) const {
+            return lhs == rhs;
+        }
+    };
+};
+
+// char16_t
+template <>
+struct HashEq<std::u16string> : StringHashEqT<char16_t> {};
+
+template <>
+struct HashEq<std::u16string_view> : StringHashEqT<char16_t> {};
+
+// wchar_t
+template <>
+struct HashEq<std::wstring> : StringHashEqT<wchar_t> {};
+
+template <>
+struct HashEq<std::wstring_view> : StringHashEqT<wchar_t> {};
+
 #endif
 
 // Supports heterogeneous lookup for pointers and smart pointers.
