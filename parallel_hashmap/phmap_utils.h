@@ -4,7 +4,9 @@
 // ---------------------------------------------------------------------------
 // Copyright (c) 2019, Gregory Popovitch - greg7mdp@gmail.com
 //
-//       minimal header providing phmap::hash_combine
+//       minimal header providing phmap::HashState
+//
+//       use as:  phmap::HashState().combine(0, _first_name, _last_name, _age);
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
