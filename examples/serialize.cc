@@ -51,11 +51,6 @@ int main()
     // -----------------------
     showtime("serialize", [&table]() {
             ofstream os("z:\out.cereal", ios::binary);
-#if 0
-            const unsigned int length = 8192;
-            char buffer[length];
-            os.rdbuf()->pubsetbuf(buffer, length);
-#endif
             cereal::BinaryOutputArchive archive(os);
             archive(table.size());
             archive(table);
