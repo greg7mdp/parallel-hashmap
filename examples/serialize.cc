@@ -27,7 +27,7 @@ void showtime(const char *name, std::function<void ()> doit)
     
 int main()
 {
-    using MapType = phmap::parallel_flat_hash_map<bitset<42>, int>;
+    using MapType = phmap::flat_hash_map<bitset<42>, int>;
     MapType table;
     const int num_items = 100000000;
 
@@ -50,18 +50,18 @@ int main()
     // cerealize and save data
     // -----------------------
     showtime("serialize", [&table]() {
-            ofstream os("z:\out.cereal", ios::binary);
+            ofstream os("out.cereal", ios::binary);
             cereal::BinaryOutputArchive archive(os);
             archive(table.size());
             archive(table);
         });
 
-    MapType().swap(table);
+    MapType().swap(table); // make sure table is newly created
 
     // deserialize
     // -----------
     showtime("deserialize", [&table]() {
-            ifstream is("z:\out.cereal", ios::binary);
+            ifstream is("out.cereal", ios::binary);
             cereal::BinaryInputArchive archive_in(is);
             size_t table_size;
 
