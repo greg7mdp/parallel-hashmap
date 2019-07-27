@@ -1202,6 +1202,8 @@ public:
         // compared to destruction of the elements of the container. So we pick the
         // largest bucket_count() threshold for which iteration is still fast and
         // past that we simply deallocate the array.
+        if (empty())
+            return;
         if (capacity_ > 127) {
             destroy_slots();
         } else if (capacity_) {
