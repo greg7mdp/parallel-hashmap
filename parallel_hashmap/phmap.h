@@ -1543,7 +1543,7 @@ public:
         }
         // bitor is a faster way of doing `max` here. We will round up to the next
         // power-of-2-minus-1, so bitor is good enough.
-        auto m = NormalizeCapacity(std::max(n, size()));
+        auto m = NormalizeCapacity((std::max)(n, size()));
         // n == 0 unconditionally rehashes as per the standard.
         if (n == 0 || m > capacity_) {
             resize(m);
