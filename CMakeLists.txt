@@ -17,6 +17,7 @@ set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(helpers)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -130,6 +131,8 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_two_files examples/f1.cc examples/f2.cc phmap.natvis)
     add_executable(ex_insert_bench examples/insert_bench.cc phmap.natvis)
     add_executable(ex_knucleotide examples/knucleotide.cc phmap.natvis)
+    add_executable(ex_dump_load examples/dump_load.cc phmap.natvis)
+
     target_link_libraries(ex_knucleotide Threads::Threads)
     target_link_libraries(ex_bench Threads::Threads)
 endif()

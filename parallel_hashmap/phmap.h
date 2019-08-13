@@ -45,6 +45,9 @@
 #include <utility>
 #include <array>
 #include <cassert>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include "phmap_utils.h"
 #include "phmap_base.h"
@@ -1532,6 +1535,151 @@ public:
             // If the allocators do not compare equal it is officially undefined
             // behavior. We choose to do nothing.
         }
+    }
+
+    template<typename V = value_type>
+    typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
+    dump(const std::string& dump_file) noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {
+        if (size_ == 0) {
+            std::cout << "Empty set, nothing to dump" << std::endl;
+            return true;
+        }
+        assert(slots_ != nullptr);
+        std::ofstream ofs(dump_file);
+        if (!ofs.is_open()) {
+            std::cout << "Failed to open dump file " << dump_file << std::endl;
+            return false;
+        }
+        ofs.write(reinterpret_cast<char*>(&size_), sizeof(size_));
+        ofs.write(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));        
+        ofs.write(reinterpret_cast<char*>(ctrl_), capacity_ * sizeof(ctrl_t));
+        ofs.write(reinterpret_cast<char*>(slots_), capacity_ * sizeof(slot_type));
+        ofs.close();
+        return true;
+    }
+
+    template<typename V = value_type>
+    typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
+    load(const std::string& load_file) noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {
+        std::ifstream ifs(load_file);
+        if (!ifs.is_open()) {
+            std::cerr << "Failed to open load file " << load_file << std::endl;
+            return false;
+        }
+        // get file size
+        ifs.seekg(0, std::ios::end);
+        size_t file_size = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
+        if (file_size <= sizeof(size_) + sizeof(capacity_)) {
+            std::cerr << "Invalid file format. file size: " << file_size << ", size_: "
+                      << size_ << ", capacity_: " << capacity_ << ", slot type size: "
+                      << sizeof(slot_type);
+            return false;
+        }
+
+        ifs.read(reinterpret_cast<char*>(&size_), sizeof(size_));
+        ifs.read(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));
+        if (file_size != sizeof(size_) + sizeof(capacity_) + capacity_ * sizeof(ctrl_t)
+                         + capacity_ * sizeof(slot_type)) {
+            std::cerr << "Invalid file format. file size: " << file_size << ", size_: "
+                      << size_ << ", capacity_: " << capacity_ << ", slot type size: "
+                      << sizeof(slot_type);
+            return false;
+        }
+        // allocate memory for ctrl_ and slots_
+        initialize_slots();
+
+        ifs.read(reinterpret_cast<char*>(ctrl_), capacity_ * sizeof(ctrl_t));
+        ifs.read(reinterpret_cast<char*>(slots_), capacity_ * sizeof(slot_type));
+        ifs.close();
+        return true;
+    }
+
+    // V will be V for hash_set and std::pair<const K, V> for hash_map
+    template<typename V = value_type>
+    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
+                            && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    dump(const std::string& dump_file) noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {
+        if (size_ == 0) {
+            std::cout << "Empty set, nothing to dump" << std::endl;
+            return true;
+        }
+        assert(slots_ != nullptr);
+        std::ofstream ofs(dump_file);
+        if (!ofs.is_open()) {
+            std::cout << "Failed to open dump file " << dump_file << std::endl;
+            return false;
+        }
+
+        ofs.write(reinterpret_cast<char*>(&size_), sizeof(size_));
+
+        for (auto it = this->begin(); it != this->end(); ++it) {
+            type_traits_internal::Archive<V>::dump(*it, &ofs);
+        }
+        ofs.close();
+        return true;
+    }
+
+    template<typename V = value_type>
+    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
+                              && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    load(const std::string& load_file = "") noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {
+
+        std::ifstream ifs(load_file);
+        if (!ifs.is_open()) {
+            std::cerr << "Failed to open load file " << load_file << std::endl;
+            return false;
+        }
+
+        size_t total_count = 0;
+        ifs.read((char*)&total_count, sizeof(total_count));
+                
+        for (size_t i = 0; i < total_count; i ++) {
+            if (ifs.eof()) {
+                std::cerr << "Data is not enough, total_count: " << total_count
+                    << ", meet eof at index: " << i << std::endl;
+                return false;
+            }
+            V v;
+            type_traits_internal::Archive<V>::load(ifs, &v);
+            this->insert(v);
+        }
+        ifs.close();
+        return true;
+    }
+
+    template<typename V = value_type>
+    typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    dump(const std::string&) noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {
+        std::cerr << "Does not support this type now!" << std::endl;
+        std::abort();
+        return false;
+    }
+
+    template<typename V = value_type>
+    typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type    
+    load(const std::string&) noexcept(
+        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
+        (!AllocTraits::propagate_on_container_swap::value ||
+         IsNoThrowSwappable<allocator_type>())) {   
+        std::cerr << "Does not support this type now!" << std::endl;
+        std::abort();
+        return false;
     }
 
     void rehash(size_t n) {

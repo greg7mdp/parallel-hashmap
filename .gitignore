@@ -5,4 +5,5 @@ benchmark/charts.html
 build
 build_linux
 .vagrant
+**/.vscode
 TAGS

@@ -33,7 +33,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ---------------------------------------------------------------------------
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -70,6 +69,87 @@ struct EqualTo
 };
 
 namespace type_traits_internal {
+
+template<typename T>
+struct PairTrait : public std::false_type {
+    using first_type = typename std::remove_cv<T>::type;
+    using second_type = typename std::remove_cv<T>::type;
+};
+
+template<typename T1, typename T2>
+struct PairTrait<std::pair<T1, T2>>: public std::true_type {
+    using first_type = typename std::remove_cv<T1>::type;
+    using second_type = typename std::remove_cv<T2>::type;
+};
+
+template<typename V>
+struct IsArithmeticType {
+    static constexpr bool value  = std::is_arithmetic<V>::value
+                                  || (PairTrait<V>::value &&
+                                  std::is_arithmetic<typename PairTrait<V>::first_type>::value
+                                  && std::is_arithmetic<typename PairTrait<V>::second_type>::value);
+};
+
+template<typename V>
+struct IsStringOrArithmeticType {
+    static constexpr bool value  = IsArithmeticType<V>::value
+                                    || std::is_same<V, std::string>::value
+                                    || (PairTrait<V>::value
+                                       && (std::is_arithmetic<typename PairTrait<V>::first_type>::value
+                                         || std::is_same<typename PairTrait<V>::first_type, std::string>::value)
+                                       && (std::is_arithmetic<typename PairTrait<V>::second_type>::value
+                                         || std::is_same<typename PairTrait<V>::second_type, std::string>::value));
+};
+
+// only support std::is_arithmetic or std::string types
+template<typename T>
+struct Archive {
+    template<typename V = T>
+    static typename std::enable_if<std::is_arithmetic<V>::value, void>::type
+    dump(const V& v, std::ofstream* ofs) {
+        ofs->write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
+    }
+
+    template<typename V = T>
+    static typename std::enable_if<std::is_arithmetic<V>::value, void>::type
+    load(std::ifstream& ifs, V* v) {        
+        ifs.read(reinterpret_cast<char*>(v), sizeof(V));
+    }
+
+    template<typename V = T>
+    static typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, void>::type
+    dump(const V& v, std::ofstream* ofs) {
+        uint32_t sz = v.length();
+        ofs->write(reinterpret_cast<char*>(&sz), sizeof(sz));
+        ofs->write(const_cast<char*>(v.data()), sz);
+    }
+
+    template<typename V = T>
+    static typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, void>::type
+    load(std::ifstream& ifs, V* v) {
+        uint32_t sz = 0;
+        ifs.read(reinterpret_cast<char*>(&sz), sizeof(sz));
+        const_cast<std::string*>(v)->resize(sz);
+        ifs.read(const_cast<char*>(v->data()), sz);
+    }
+
+    template<typename V = T>
+    static typename std::enable_if<PairTrait<V>::value && IsStringOrArithmeticType<V>::value, void>::type
+    dump(const V& v, std::ofstream* ofs) {
+        dump<typename PairTrait<V>::first_type>(v.first, ofs);
+        dump<typename PairTrait<V>::second_type>(v.second, ofs);
+    }
+
+    template<typename V = T>
+    static typename std::enable_if<PairTrait<V>::value && IsStringOrArithmeticType<V>::value, void>::type
+    load(std::ifstream& ifs, V* v) {
+        using first_type = typename PairTrait<V>::first_type;
+        using second_type = typename PairTrait<V>::second_type;
+        load<first_type>(ifs, const_cast<first_type*>(&v->first));        
+        load<second_type>(ifs, const_cast<second_type*>(&v->second));        
+    }
+};
+
 
 template <typename... Ts>
 struct VoidTImpl {
