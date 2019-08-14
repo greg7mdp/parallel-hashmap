@@ -23,6 +23,8 @@ void load_dump_string_string() {
     // Iterate and print keys and values g|++
     for (const auto& n : mp2) 
         std::cout << n.first << "'s value is: " << n.second << "\n";
+
+    std::remove("./dump.data");
 }
 
 void load_dump_uint64_uint32() {
@@ -43,6 +45,8 @@ void load_dump_uint64_uint32() {
     // Iterate and print keys and values g|++
     for (const auto& n : mp2) 
         std::cout << n.first << "'s value is: " << n.second << "\n";
+
+    std::remove("./dump.data");
 }
 
 void load_dump_string_uint32() {
@@ -63,6 +67,8 @@ void load_dump_string_uint32() {
     // Iterate and print keys and values g|++
     for (const auto& n : mp2) 
         std::cout << n.first << "'s value is: " << n.second << "\n";
+
+    std::remove("./dump.data");
 }
 
 void load_dump_uint32_string() {
@@ -83,6 +89,8 @@ void load_dump_uint32_string() {
     // Iterate and print keys and values g|++
     for (const auto& n : mp2) 
         std::cout << n.first << "'s value is: " << n.second << "\n";
+
+    std::remove("./dump.data");
 }
 
 void load_dump_string() {
@@ -103,6 +111,8 @@ void load_dump_string() {
     // Iterate and print keys and values g|++
     for (const auto& n : st2)
         std::cout << "value: " << n << "\n";
+
+    std::remove("./dump.data");
 }
 
 void load_dump_uint64() {
@@ -123,6 +133,8 @@ void load_dump_uint64() {
     // Iterate and print keys and values g|++
     for (const auto& n : st2)
         std::cout << "value: " << n << "\n";
+
+    std::remove("./dump.data");
 }
 
 int main()
@@ -133,6 +145,5 @@ int main()
     load_dump_uint32_string();
     load_dump_string();
     load_dump_uint64();
-    std::remove("./dump.data");
     return 0;
 }
