@@ -132,6 +132,7 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_insert_bench examples/insert_bench.cc phmap.natvis)
     add_executable(ex_knucleotide examples/knucleotide.cc phmap.natvis)
     add_executable(ex_dump_load examples/dump_load.cc phmap.natvis)
+    # add_executable(ex_serialize_compare examples/serialize_compare.cc phmap.natvis)
 
     target_link_libraries(ex_knucleotide Threads::Threads)
     target_link_libraries(ex_bench Threads::Threads)

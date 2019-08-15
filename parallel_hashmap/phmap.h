@@ -1554,7 +1554,7 @@ public:
             return false;
         }
         ofs.write(reinterpret_cast<char*>(&size_), sizeof(size_));
-        ofs.write(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));        
+        ofs.write(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));
         ofs.write(reinterpret_cast<char*>(ctrl_), capacity_ * sizeof(ctrl_t));
         ofs.write(reinterpret_cast<char*>(slots_), capacity_ * sizeof(slot_type));
         ofs.close();
@@ -3285,6 +3285,69 @@ public:
     friend void swap(parallel_hash_set& a,
                      parallel_hash_set& b) noexcept(noexcept(a.swap(b))) {
         a.swap(b);
+    }
+
+    bool dump(const std::string& dump_dir) {
+        for (size_t i = 0; i <  sets_.size(); ++i) {
+            auto& inner = sets_[i];
+            if (inner.set_.size() == 0) {
+                continue;
+            }
+            const std::string& dump_path = dump_dir + "/submap_" + std::to_string(i) + ".dump";
+            typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
+            if (!inner.set_.dump(dump_path)) {
+                return false;
+            }
+        }
+        std::ofstream fout(dump_dir + "/dump.meta");
+        fout << sets_.size(); // submap count
+        fout.close();
+        return true;
+    }
+
+    bool load(const std::string& load_dir) {
+        std::ifstream fin(load_dir + "/dump.meta");
+        if (! fin.is_open()) {
+            std::cerr << "Failed to find dump.meta in dir " << load_dir << std::endl;
+            return false;
+        }
+
+        size_t submap_count = 0;
+        fin >> submap_count;
+        if (submap_count <= 0) {
+            std::cerr << "Invalid submap count: " << submap_count << std::endl;
+            return false;
+        }
+
+        fin.close();
+
+        if (submap_count != subcnt()) {
+            std::cerr << "submap count(" << submap_count << ") != N(" << N << ")" << std::endl;
+            return false;
+        }
+
+        auto file_exists = [] (const std::string& file_name) -> bool {
+            std::ifstream fin(file_name);
+            if (fin.is_open()) {
+                fin.close();
+                return true;
+            } else {
+                fin.close();
+                return false;
+            }
+        };
+
+        for (size_t i = 0; i < submap_count; ++i) {
+            auto& inner = sets_[i];
+            const std::string& load_file = load_dir + "/submap_" + std::to_string(i) + ".dump";
+            if (!file_exists(load_file)) {
+                continue;
+            }
+            if (!inner.set_.load(load_file)) {
+                return false;
+            }
+        }
+        return true;
     }
 
 private:

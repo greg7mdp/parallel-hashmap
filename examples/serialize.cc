@@ -22,9 +22,9 @@ void showtime(const char *name, std::function<void ()> doit)
     doit();
     auto t2 = std::chrono::high_resolution_clock::now();
     auto elapsed = milliseconds<double>(t2 - t1).count();
-    printf("%s: %.3fms\n", name, (int)elapsed / 1000.0f);
+    printf("%s: %.3fs\n", name, (int)elapsed / 1000.0f);
 }
-    
+
 int main()
 {
     using MapType = phmap::flat_hash_map<bitset<42>, int>;
