@@ -1537,148 +1537,111 @@ public:
         }
     }
 
-    template<typename V = value_type>
+    template<typename OutputArchive, typename V = value_type>
     typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
-    dump(const std::string& dump_file) noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
-        if (size_ == 0) {
-            std::cout << "Empty set, nothing to dump" << std::endl;
-            return true;
-        }
-        assert(slots_ != nullptr);
-        std::ofstream ofs(dump_file);
-        if (!ofs.is_open()) {
-            std::cout << "Failed to open dump file " << dump_file << std::endl;
+    dump(OutputArchive& ar) {
+        typename OutputArchive::Guard guard(&ar);
+        if (!ar.dump(size_)) {
+            std::cerr << "Failed to dump size_" << std::endl;
             return false;
         }
-        ofs.write(reinterpret_cast<char*>(&size_), sizeof(size_));
-        ofs.write(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));
-        ofs.write(reinterpret_cast<char*>(ctrl_), capacity_ * sizeof(ctrl_t));
-        ofs.write(reinterpret_cast<char*>(slots_), capacity_ * sizeof(slot_type));
-        ofs.close();
+        if (size_ == 0) {
+            return true;
+        }        
+        if (!ar.dump(capacity_)) {
+            std::cerr << "Failed to dump capacity_" << std::endl;
+            return false;
+        }
+        if (!ar.dump(reinterpret_cast<char*>(ctrl_), sizeof(ctrl_t) * capacity_)) {
+            std::cerr << "Failed to dump ctrl_" << std::endl;
+            return false;
+        }
+        if (!ar.dump(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
+            std::cerr << "Failed to dump slot_" << std::endl;
+            return false;
+        }
         return true;
     }
 
-    template<typename V = value_type>
+    template<typename InputArchive, typename V = value_type>
     typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
-    load(const std::string& load_file) noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
-        std::ifstream ifs(load_file);
-        if (!ifs.is_open()) {
-            std::cerr << "Failed to open load file " << load_file << std::endl;
+    load(InputArchive& ar) {
+        typename InputArchive::Guard guard(&ar);
+        if (!ar.load(&size_)){
+            std::cerr << "Failed to load size_" << std::endl;
             return false;
         }
-        // get file size
-        ifs.seekg(0, std::ios::end);
-        size_t file_size = ifs.tellg();
-        ifs.seekg(0, std::ios::beg);
-        if (file_size <= sizeof(size_) + sizeof(capacity_)) {
-            std::cerr << "Invalid file format. file size: " << file_size << ", size_: "
-                      << size_ << ", capacity_: " << capacity_ << ", slot type size: "
-                      << sizeof(slot_type);
-            return false;
+        if (size_ == 0) {
+            return true;
         }
-
-        ifs.read(reinterpret_cast<char*>(&size_), sizeof(size_));
-        ifs.read(reinterpret_cast<char*>(&capacity_), sizeof(capacity_));
-        if (file_size != sizeof(size_) + sizeof(capacity_) + capacity_ * sizeof(ctrl_t)
-                         + capacity_ * sizeof(slot_type)) {
-            std::cerr << "Invalid file format. file size: " << file_size << ", size_: "
-                      << size_ << ", capacity_: " << capacity_ << ", slot type size: "
-                      << sizeof(slot_type);
+        if (!ar.load(&capacity_)) {
+            std::cerr << "Failed to load capacity_" << std::endl;
             return false;
         }
         // allocate memory for ctrl_ and slots_
         initialize_slots();
-
-        ifs.read(reinterpret_cast<char*>(ctrl_), capacity_ * sizeof(ctrl_t));
-        ifs.read(reinterpret_cast<char*>(slots_), capacity_ * sizeof(slot_type));
-        ifs.close();
+        if (!ar.load(reinterpret_cast<char*>(ctrl_), sizeof(ctrl_t) * capacity_)) {
+            std::cerr << "Failed to load ctrl" << std::endl;
+            return false;
+        }
+        if (!ar.load(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
+            std::cerr << "Failed to load slot" << std::endl;
+            return false;
+        }
         return true;
     }
 
     // V will be V for hash_set and std::pair<const K, V> for hash_map
-    template<typename V = value_type>
+    template<typename OutputArchive, typename V = value_type>
     typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
                             && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    dump(const std::string& dump_file) noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
-        if (size_ == 0) {
-            std::cout << "Empty set, nothing to dump" << std::endl;
+    dump(OutputArchive& ar) {
+        typename OutputArchive::Guard guard(&ar);
+        if (!ar.template dump<size_t>(size_)) {
+            std::cerr << "Failed to dump size" << std::endl;
+            return false;
+        }
+        if (size_ == 0) {    
             return true;
         }
-        assert(slots_ != nullptr);
-        std::ofstream ofs(dump_file);
-        if (!ofs.is_open()) {
-            std::cout << "Failed to open dump file " << dump_file << std::endl;
-            return false;
-        }
-
-        ofs.write(reinterpret_cast<char*>(&size_), sizeof(size_));
-
         for (auto it = this->begin(); it != this->end(); ++it) {
-            type_traits_internal::Archive<V>::dump(*it, &ofs);
-        }
-        ofs.close();
-        return true;
-    }
-
-    template<typename V = value_type>
-    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
-                              && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    load(const std::string& load_file = "") noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
-
-        std::ifstream ifs(load_file);
-        if (!ifs.is_open()) {
-            std::cerr << "Failed to open load file " << load_file << std::endl;
-            return false;
-        }
-
-        size_t total_count = 0;
-        ifs.read((char*)&total_count, sizeof(total_count));
-                
-        for (size_t i = 0; i < total_count; i ++) {
-            if (ifs.eof()) {
-                std::cerr << "Data is not enough, total_count: " << total_count
-                    << ", meet eof at index: " << i << std::endl;
+            if (!ar.template dump<V>(*it)) {
+                std::cerr << "Failed to dump element" << std::endl;
                 return false;
             }
-            V v;
-            type_traits_internal::Archive<V>::load(ifs, &v);
-            this->insert(v);
         }
-        ifs.close();
         return true;
     }
 
-    template<typename V = value_type>
+    template<typename InputArchive, typename V = value_type>
+    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
+                              && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    load(InputArchive& ar) {
+        typename InputArchive::Guard guard(&ar);
+        size_t sz = 0;
+        ar.template load<size_t>(&sz);
+        for (size_t i = 0; i < sz; i ++) {
+            V v;
+            if (!ar.template load<V>(&v)) {
+                std::cerr << "Failed to load element " << i << std::endl;
+                return false;
+            }
+            this->insert(v);
+        }
+        return true;
+    }
+
+    template<typename OutputArchive, typename V = value_type>
     typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    dump(const std::string&) noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
+    dump(OutputArchive&) {
         std::cerr << "Does not support this type now!" << std::endl;
-        std::abort();
         return false;
     }
 
-    template<typename V = value_type>
+    template<typename InputArchive, typename V = value_type>
     typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type    
-    load(const std::string&) noexcept(
-        IsNoThrowSwappable<hasher>() && IsNoThrowSwappable<key_equal>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {   
-        std::cerr << "Does not support this type now!" << std::endl;
-        std::abort();
+    load(InputArchive&) {   
+        std::cerr << "Does not support this type now!" << std::endl;        
         return false;
     }
 
@@ -3287,63 +3250,39 @@ public:
         a.swap(b);
     }
 
-    bool dump(const std::string& dump_dir) {
-        for (size_t i = 0; i <  sets_.size(); ++i) {
+    template<typename OutputArchiveWrapper>
+    bool dump(OutputArchiveWrapper& w) {
+        for (size_t i = 0; i < sets_.size(); ++i) {
             auto& inner = sets_[i];
-            if (inner.set_.size() == 0) {
-                continue;
-            }
-            const std::string& dump_path = dump_dir + "/submap_" + std::to_string(i) + ".dump";
+            auto ar = w.create_archive(i);
             typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
-            if (!inner.set_.dump(dump_path)) {
+            if (!inner.set_.dump(*ar)) {
+                std::cerr << "Failed to dump submap " << i << std::endl;
                 return false;
             }
         }
-        std::ofstream fout(dump_dir + "/dump.meta");
-        fout << sets_.size(); // submap count
-        fout.close();
+
+        if (! w.dump_meta(subcnt())) {
+            std::cerr << "Failed to dump meta!" << std::endl;
+            return false;
+        }
         return true;
     }
 
-    bool load(const std::string& load_dir) {
-        std::ifstream fin(load_dir + "/dump.meta");
-        if (! fin.is_open()) {
-            std::cerr << "Failed to find dump.meta in dir " << load_dir << std::endl;
-            return false;
-        }
-
-        size_t submap_count = 0;
-        fin >> submap_count;
-        if (submap_count <= 0) {
-            std::cerr << "Invalid submap count: " << submap_count << std::endl;
-            return false;
-        }
-
-        fin.close();
+    template<typename InputArchiveWrapper>
+    bool load(InputArchiveWrapper& w) {
+        size_t submap_count = w.load_meta();
 
         if (submap_count != subcnt()) {
             std::cerr << "submap count(" << submap_count << ") != N(" << N << ")" << std::endl;
             return false;
         }
 
-        auto file_exists = [] (const std::string& file_name) -> bool {
-            std::ifstream fin(file_name);
-            if (fin.is_open()) {
-                fin.close();
-                return true;
-            } else {
-                fin.close();
-                return false;
-            }
-        };
-
-        for (size_t i = 0; i < submap_count; ++i) {
+        for (size_t i = 0; i < sets_.size(); ++i) {
+            auto ar = w.create_archive(i);
             auto& inner = sets_[i];
-            const std::string& load_file = load_dir + "/submap_" + std::to_string(i) + ".dump";
-            if (!file_exists(load_file)) {
-                continue;
-            }
-            if (!inner.set_.load(load_file)) {
+            if (!inner.set_.load(*ar)) {
+                std::cerr << "Failed to load submap " << i << std::endl;
                 return false;
             }
         }
