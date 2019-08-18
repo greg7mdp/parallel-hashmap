@@ -1552,14 +1552,16 @@ public:
             std::cerr << "Failed to dump capacity_" << std::endl;
             return false;
         }
-        if (!ar.dump(reinterpret_cast<char*>(ctrl_), sizeof(ctrl_t) * capacity_)) {
+        if (!ar.dump(reinterpret_cast<char*>(ctrl_),
+            sizeof(ctrl_t) * (capacity_ + Group::kWidth - 1) / Group::kWidth * Group::kWidth)) {
+
             std::cerr << "Failed to dump ctrl_" << std::endl;
             return false;
         }
         if (!ar.dump(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
             std::cerr << "Failed to dump slot_" << std::endl;
             return false;
-        }
+        }       
         return true;
     }
 
@@ -1580,7 +1582,8 @@ public:
         }
         // allocate memory for ctrl_ and slots_
         initialize_slots();
-        if (!ar.load(reinterpret_cast<char*>(ctrl_), sizeof(ctrl_t) * capacity_)) {
+        if (!ar.load(reinterpret_cast<char*>(ctrl_),
+            sizeof(ctrl_t) * (capacity_ + Group::kWidth - 1) / Group::kWidth * Group::kWidth)) {
             std::cerr << "Failed to load ctrl" << std::endl;
             return false;
         }
