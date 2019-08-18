@@ -56,22 +56,25 @@ int main()
             archive(table);
         });
 
-    MapType().swap(table); // make sure table is newly created
+    MapType table_in;
 
     // deserialize
     // -----------
-    showtime("deserialize", [&table]() {
+    showtime("deserialize", [&table_in]() {
             ifstream is("out.cereal", ios::binary);
             cereal::BinaryInputArchive archive_in(is);
             size_t table_size;
 
             archive_in(table_size);
-            table.reserve(table_size);
-            archive_in(table);             // deserialize from file out.cereal into variable
+            table_in.reserve(table_size);
+            archive_in(table_in);             // deserialize from file out.cereal into table_in
         });
 
     
-    printf("table size: %zu\n", table.size());
+    if (table == table_in)
+        printf("All checks out, table size: %zu\n", table_in.size());
+    else
+        printf("FAILURE\n");
 
     return 0;
 }
