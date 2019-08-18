@@ -361,7 +361,7 @@ struct CustomAlloc : std::allocator<T> {
     CustomAlloc() {}
 
     template <typename U>
-    CustomAlloc(const CustomAlloc<U>& other) {}
+    CustomAlloc(const CustomAlloc<U>& ) {}
 
     template<class U> struct rebind {
         using other = CustomAlloc<U>;
@@ -445,9 +445,10 @@ TEST(Table, Prefetch) {
 
   // Do not run in debug mode, when prefetch is not implemented, or when
   // sanitizers are enabled.
-#if defined(NDEBUG) && defined(__GNUC__) && !defined(ADDRESS_SANITIZER) && \
-    !defined(MEMORY_SANITIZER) && !defined(THREAD_SANITIZER) &&            \
-    !defined(UNDEFINED_BEHAVIOR_SANITIZER)
+#if defined(NDEBUG) && defined(__GNUC__) && defined(__x86_64__) && \
+    !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER) && \
+    !defined(THREAD_SANITIZER) &&  !defined(UNDEFINED_BEHAVIOR_SANITIZER)&& \
+    !defined(__EMSCRIPTEN__)
   const auto now = [] { return phmap::base_internal::CycleClock::Now(); };
 
   // Make size enough to not fit in L2 cache (16.7 Mb)
@@ -1103,7 +1104,7 @@ ProbeStats CollectProbeStatsOnKeysXoredWithSeed(const std::vector<int64_t>& keys
 
 ExpectedStats XorSeedExpectedStats() {
   constexpr bool kRandomizesInserts =
-#if NDEBUG
+#ifdef NDEBUG
       false;
 #else   // NDEBUG
       true;
@@ -1208,7 +1209,7 @@ ProbeStats CollectProbeStatsOnLinearlyTransformedKeys(
 
 ExpectedStats LinearTransformExpectedStats() {
   constexpr bool kRandomizesInserts =
-#if NDEBUG
+#ifdef NDEBUG
       false;
 #else   // NDEBUG
       true;

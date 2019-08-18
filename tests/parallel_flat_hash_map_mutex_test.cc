@@ -2,7 +2,6 @@
 #define THIS_TEST_NAME ParallelFlatHashMap
 
 #if 1
-    #include <mutex>
     #define THIS_EXTRA_TPL_PARAMS , 4, std::mutex
 #else
     #include <boost/thread/locks.hpp>
