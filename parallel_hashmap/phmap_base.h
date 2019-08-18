@@ -101,56 +101,6 @@ struct IsStringOrArithmeticType {
                                          || std::is_same<typename PairTrait<V>::second_type, std::string>::value));
 };
 
-// only support std::is_arithmetic or std::string types
-template<typename T>
-struct Archive {
-    template<typename V = T>
-    static typename std::enable_if<std::is_arithmetic<V>::value, void>::type
-    dump(const V& v, std::ofstream* ofs) {
-        ofs->write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
-    }
-
-    template<typename V = T>
-    static typename std::enable_if<std::is_arithmetic<V>::value, void>::type
-    load(std::ifstream& ifs, V* v) {        
-        ifs.read(reinterpret_cast<char*>(v), sizeof(V));
-    }
-
-    template<typename V = T>
-    static typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, void>::type
-    dump(const V& v, std::ofstream* ofs) {
-        uint32_t sz = v.length();
-        ofs->write(reinterpret_cast<char*>(&sz), sizeof(sz));
-        ofs->write(const_cast<char*>(v.data()), sz);
-    }
-
-    template<typename V = T>
-    static typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, void>::type
-    load(std::ifstream& ifs, V* v) {
-        uint32_t sz = 0;
-        ifs.read(reinterpret_cast<char*>(&sz), sizeof(sz));
-        const_cast<std::string*>(v)->resize(sz);
-        ifs.read(const_cast<char*>(v->data()), sz);
-    }
-
-    template<typename V = T>
-    static typename std::enable_if<PairTrait<V>::value && IsStringOrArithmeticType<V>::value, void>::type
-    dump(const V& v, std::ofstream* ofs) {
-        dump<typename PairTrait<V>::first_type>(v.first, ofs);
-        dump<typename PairTrait<V>::second_type>(v.second, ofs);
-    }
-
-    template<typename V = T>
-    static typename std::enable_if<PairTrait<V>::value && IsStringOrArithmeticType<V>::value, void>::type
-    load(std::ifstream& ifs, V* v) {
-        using first_type = typename PairTrait<V>::first_type;
-        using second_type = typename PairTrait<V>::second_type;
-        load<first_type>(ifs, const_cast<first_type*>(&v->first));        
-        load<second_type>(ifs, const_cast<second_type*>(&v->second));        
-    }
-};
-
-
 template <typename... Ts>
 struct VoidTImpl {
   using type = void;

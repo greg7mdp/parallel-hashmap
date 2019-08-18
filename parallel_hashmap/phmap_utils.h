@@ -23,8 +23,11 @@
 
 #include <cstdint>
 #include <functional>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "phmap_bits.h"
-
+#include "phmap_base.h"
 namespace phmap
 {
 
@@ -305,6 +308,192 @@ H HashStateBase<H>::combine(H seed, const T& v, const Ts&... vs)
 }
 
 using HashState = HashStateBase<size_t>;
+
+
+// -----------------------------------------------------------------------------
+
+#define CHECK_FILE(f) {                                 \
+    if (!f.is_open()) {                                 \
+        std::cerr << "File is not open!" << std::endl;  \
+        return false;                                   \
+    }                                                   \
+}
+
+template<typename Archive>
+class ArchiveGuard {
+public:
+    ArchiveGuard(Archive* ar): ar_(ar) {};
+    ~ArchiveGuard() {
+        if (ar_) {
+            ar_->finish();
+        }        
+    }
+private:
+    Archive* ar_;
+};
+
+class BinaryOutputArchive {
+public:
+    using Guard = ArchiveGuard<BinaryOutputArchive>;
+
+    BinaryOutputArchive(const std::string& file_path) {
+        ofs_.open(file_path.c_str(), std::ios_base::binary);
+    }
+
+    virtual ~BinaryOutputArchive() {
+        finish();
+    }
+
+    bool dump(char* p, size_t sz) {
+        CHECK_FILE(ofs_);
+        ofs_.write(p, sz);
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<std::is_arithmetic<V>::value, bool>::type
+    dump(const V& v) {
+        CHECK_FILE(ofs_);        
+        ofs_.write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, bool>::type
+    dump(const V& v) {
+        CHECK_FILE(ofs_);
+        uint32_t sz = v.length();
+        ofs_.write(reinterpret_cast<char*>(&sz), sizeof(sz));
+        ofs_.write(const_cast<char*>(v.data()), sz);
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<type_traits_internal::PairTrait<V>::value
+        && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    dump(const V& v) {
+        return dump<typename type_traits_internal::PairTrait<V>::first_type>(v.first)
+        && dump<typename type_traits_internal::PairTrait<V>::second_type>(v.second);
+    }
+
+    void finish() {
+        if (ofs_.is_open()) {
+            ofs_.close();
+        }
+    }
+private:
+    std::ofstream ofs_;
+};
+
+
+class BinaryInputArchive {
+public:
+    using Guard = ArchiveGuard<BinaryInputArchive>;
+
+    BinaryInputArchive(const std::string& file_path) {
+        ifs_.open(file_path.c_str(), std::ios_base::binary);
+    }
+
+    virtual ~BinaryInputArchive() {
+        finish();
+    }
+
+    bool load(char* p, size_t sz) {
+        CHECK_FILE(ifs_);
+        ifs_.read(p, sz);
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<std::is_arithmetic<V>::value, bool>::type
+    load(V* v) {
+        CHECK_FILE(ifs_);
+        ifs_.read(reinterpret_cast<char*>(v), sizeof(V));
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, bool>::type
+    load(V* v) {
+        CHECK_FILE(ifs_);
+        uint32_t sz = 0;
+        ifs_.read(reinterpret_cast<char*>(&sz), sizeof(sz));
+        const_cast<std::string*>(v)->resize(sz);
+        ifs_.read(const_cast<char*>(v->data()), sz);
+        return true;
+    }
+
+    template<typename V>
+    typename std::enable_if<type_traits_internal::PairTrait<V>::value
+                            && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+    load(V* v) {
+        using first_type = typename type_traits_internal::PairTrait<V>::first_type;
+        using second_type = typename type_traits_internal::PairTrait<V>::second_type;
+        return load<first_type>(const_cast<first_type*>(&v->first))       
+        && load<second_type>(const_cast<second_type*>(&v->second));        
+    }
+
+    void finish() {
+        if (ifs_.is_open()) {
+            ifs_.close();
+        }
+    }    
+private:
+    std::ifstream ifs_;
+};
+
+template<typename T = BinaryOutputArchive>
+class OutputArchiveWrapper {
+public:
+    using SubArchive = T;
+    OutputArchiveWrapper(const std::string& dir): dir_(dir) {
+    }
+
+    virtual ~OutputArchiveWrapper() {
+
+    }
+
+    bool dump_meta(size_t subcnt) {
+        auto ar = std::make_shared<SubArchive>(dir_ + "/meta.dump");
+        typename SubArchive::Guard guard(ar.get());
+        ar->dump(subcnt);
+        return true;
+    }
+
+    std::shared_ptr<SubArchive> create_archive(size_t i) {
+        std::string file_path = dir_ + "/sub_" + std::to_string(i) + ".dump";
+        return std::make_shared<SubArchive>(file_path);
+    }
+private:
+    std::string dir_;
+};
+
+template<typename T = BinaryInputArchive>
+class InputArchiveWrapper {
+public:
+    using SubArchive = T;
+    InputArchiveWrapper(const std::string& dir): dir_(dir) {
+    }
+
+    virtual ~InputArchiveWrapper() {
+
+    }
+
+    size_t load_meta() {
+        size_t subcnt = 0;
+        auto ar = std::make_shared<SubArchive>(dir_ + "/meta.dump");
+        typename SubArchive::Guard guard(ar.get());        
+        ar->load(&subcnt);
+        return subcnt;
+    }
+
+    std::shared_ptr<SubArchive> create_archive(size_t i) {
+        std::string file_path = dir_ + "/sub_" + std::to_string(i) + ".dump";
+        return std::make_shared<SubArchive>(file_path);
+    }
+private:
+    std::string dir_;
+};
 
 }  // namespace phmap
 
