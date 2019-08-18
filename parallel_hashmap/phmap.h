@@ -2246,14 +2246,16 @@ public:
     template <class K = key_type, class P = Policy>
     MappedReference<P> at(const key_arg<K>& key) {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
     template <class K = key_type, class P = Policy>
     MappedConstReference<P> at(const key_arg<K>& key) const {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end())
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
@@ -3394,14 +3396,16 @@ public:
     template <class K = key_type, class P = Policy>
     MappedReference<P> at(const key_arg<K>& key) {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
     template <class K = key_type, class P = Policy>
     MappedConstReference<P> at(const key_arg<K>& key) const {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
