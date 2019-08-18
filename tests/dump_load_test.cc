@@ -16,43 +16,22 @@ using ::phmap::BinaryInputArchive;
 using ::phmap::OutputArchiveWrapper;
 using ::phmap::InputArchiveWrapper;
 
-TEST(DumpLoad, FlatHashSet_string) {
-    flat_hash_set<std::string> st1;
+TEST(DumpLoad, FlatHashSet_uin32) {
+    flat_hash_set<uint32_t> st1;
     BinaryOutputArchive ar_out("./dump.data");
 
-    st1.insert("hello");
-    st1.insert("world");
+    st1.insert(1991);
+    st1.insert(1202);
  
     EXPECT_TRUE(st1.dump(ar_out));
-    flat_hash_set<std::string> st2;
+    flat_hash_set<uint32_t> st2;
     BinaryInputArchive ar_in("./dump.data");
 
     EXPECT_TRUE(st2.load(ar_in));
 
     EXPECT_EQ(2, st2.size());
-    EXPECT_TRUE(st2.count("hello"));
-    EXPECT_TRUE(st2.count("world"));
-}
-
-TEST(DumpLoad, FlatHashMap_string_uint32) {
-    flat_hash_map<std::string, uint32_t> mp1;
-    BinaryOutputArchive ar_out("./dump.data");
-
-    mp1["key-1"] = 99;
-    mp1["key-2"] = 299;
- 
-    EXPECT_TRUE(mp1.dump(ar_out));
-    flat_hash_map<std::string, uint32_t> mp2;
-    BinaryInputArchive ar_in("./dump.data");
-
-    EXPECT_TRUE(mp2.load(ar_in));
-
-    EXPECT_EQ(2, mp2.size());
-
-    EXPECT_TRUE(mp2.count("key-1"));
-    EXPECT_TRUE(mp2.count("key-2"));
-    EXPECT_EQ(99, mp2.at("key-1"));
-    EXPECT_EQ(299, mp2.at("key-2"));
+    EXPECT_TRUE(st2.count(1991));
+    EXPECT_TRUE(st2.count(1202));
 }
 
 TEST(DumpLoad, FlatHashMap_uint64_uint32) {
@@ -100,6 +79,5 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
     EXPECT_EQ(1299, mp2[2130]);
 }
 
-}
 }
 }
