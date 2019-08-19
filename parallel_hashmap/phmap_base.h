@@ -78,27 +78,16 @@ struct PairTrait : public std::false_type {
 
 template<typename T1, typename T2>
 struct PairTrait<std::pair<T1, T2>>: public std::true_type {
-    using first_type = typename std::remove_cv<T1>::type;
-    using second_type = typename std::remove_cv<T2>::type;
+    using first_type = T1;
+    using second_type = T2;
 };
 
 template<typename V>
-struct IsArithmeticType {
-    static constexpr bool value  = std::is_arithmetic<V>::value
-                                  || (PairTrait<V>::value &&
-                                  std::is_arithmetic<typename PairTrait<V>::first_type>::value
-                                  && std::is_arithmetic<typename PairTrait<V>::second_type>::value);
-};
-
-template<typename V>
-struct IsStringOrArithmeticType {
-    static constexpr bool value  = IsArithmeticType<V>::value
-                                    || std::is_same<V, std::string>::value
-                                    || (PairTrait<V>::value
-                                       && (std::is_arithmetic<typename PairTrait<V>::first_type>::value
-                                         || std::is_same<typename PairTrait<V>::first_type, std::string>::value)
-                                       && (std::is_arithmetic<typename PairTrait<V>::second_type>::value
-                                         || std::is_same<typename PairTrait<V>::second_type, std::string>::value));
+struct IsDumpableType {
+    static constexpr bool value = std::is_trivially_copyable<V>::value
+            || (PairTrait<V>::value
+              && std::is_trivially_copyable<typename PairTrait<V>::first_type>::value
+              && std::is_trivially_copyable<typename PairTrait<V>::second_type>::value);
 };
 
 template <typename... Ts>

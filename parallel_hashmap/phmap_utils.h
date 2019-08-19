@@ -351,7 +351,7 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_arithmetic<V>::value, bool>::type
+    typename std::enable_if<std::is_trivially_copyable<V>::value, bool>::type
     dump(const V& v) {
         CHECK_FILE(ofs_);        
         ofs_.write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
@@ -359,21 +359,13 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, bool>::type
-    dump(const V& v) {
-        CHECK_FILE(ofs_);
-        uint32_t sz = v.length();
-        ofs_.write(reinterpret_cast<char*>(&sz), sizeof(sz));
-        ofs_.write(const_cast<char*>(v.data()), sz);
-        return true;
-    }
-
-    template<typename V>
     typename std::enable_if<type_traits_internal::PairTrait<V>::value
-        && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+        && type_traits_internal::IsDumpableType<V>::value, bool>::type
     dump(const V& v) {
-        return dump<typename type_traits_internal::PairTrait<V>::first_type>(v.first)
-        && dump<typename type_traits_internal::PairTrait<V>::second_type>(v.second);
+        using first_type = typename type_traits_internal::PairTrait<V>::first_type;
+        using second_type = typename type_traits_internal::PairTrait<V>::second_type;
+        return dump<first_type>(v.first)
+        && dump<second_type>(v.second);
     }
 
     void finish() {
@@ -405,7 +397,7 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_arithmetic<V>::value, bool>::type
+    typename std::enable_if<std::is_trivially_copyable<V>::value, bool>::type
     load(V* v) {
         CHECK_FILE(ifs_);
         ifs_.read(reinterpret_cast<char*>(v), sizeof(V));
@@ -413,24 +405,13 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<V>::type>::value, bool>::type
-    load(V* v) {
-        CHECK_FILE(ifs_);
-        uint32_t sz = 0;
-        ifs_.read(reinterpret_cast<char*>(&sz), sizeof(sz));
-        const_cast<std::string*>(v)->resize(sz);
-        ifs_.read(const_cast<char*>(v->data()), sz);
-        return true;
-    }
-
-    template<typename V>
     typename std::enable_if<type_traits_internal::PairTrait<V>::value
-                            && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
+                            && type_traits_internal::IsDumpableType<V>::value, bool>::type
     load(V* v) {
-        using first_type = typename type_traits_internal::PairTrait<V>::first_type;
-        using second_type = typename type_traits_internal::PairTrait<V>::second_type;
-        return load<first_type>(const_cast<first_type*>(&v->first))       
-        && load<second_type>(const_cast<second_type*>(&v->second));        
+        using first_type = typename std::remove_cv<typename type_traits_internal::PairTrait<V>::first_type>::type;
+        using second_type = typename std::remove_cv<typename type_traits_internal::PairTrait<V>::second_type>::type;
+        return load<first_type>(const_cast<first_type*>(&v->first))
+                && load<second_type>(const_cast<second_type*>(&v->second));
     }
 
     void finish() {

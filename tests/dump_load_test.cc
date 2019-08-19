@@ -8,6 +8,7 @@
 namespace phmap {
 namespace container_internal {
 namespace {
+
 using ::phmap::flat_hash_set;
 using ::phmap::flat_hash_map;
 using ::phmap::parallel_flat_hash_map;
@@ -22,7 +23,7 @@ TEST(DumpLoad, FlatHashSet_uin32) {
 
     st1.insert(1991);
     st1.insert(1202);
- 
+
     EXPECT_TRUE(st1.dump(ar_out));
     flat_hash_set<uint32_t> st2;
     BinaryInputArchive ar_in("./dump.data");
@@ -81,3 +82,5 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
 
 }
 }
+}
+

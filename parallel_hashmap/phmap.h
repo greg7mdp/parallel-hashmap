@@ -1538,7 +1538,7 @@ public:
     }
 
     template<typename OutputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
+    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
     dump(OutputArchive& ar) {
         typename OutputArchive::Guard guard(&ar);
         if (!ar.dump(size_)) {
@@ -1547,7 +1547,7 @@ public:
         }
         if (size_ == 0) {
             return true;
-        }        
+        }
         if (!ar.dump(capacity_)) {
             std::cerr << "Failed to dump capacity_" << std::endl;
             return false;
@@ -1561,12 +1561,12 @@ public:
         if (!ar.dump(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
             std::cerr << "Failed to dump slot_" << std::endl;
             return false;
-        }       
+        }
         return true;
     }
 
     template<typename InputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsArithmeticType<V>::value, bool>::type
+    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
     load(InputArchive& ar) {
         typename InputArchive::Guard guard(&ar);
         if (!ar.load(&size_)){
@@ -1592,60 +1592,6 @@ public:
             return false;
         }
         return true;
-    }
-
-    // V will be V for hash_set and std::pair<const K, V> for hash_map
-    template<typename OutputArchive, typename V = value_type>
-    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
-                            && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    dump(OutputArchive& ar) {
-        typename OutputArchive::Guard guard(&ar);
-        if (!ar.template dump<size_t>(size_)) {
-            std::cerr << "Failed to dump size" << std::endl;
-            return false;
-        }
-        if (size_ == 0) {    
-            return true;
-        }
-        for (auto it = this->begin(); it != this->end(); ++it) {
-            if (!ar.template dump<V>(*it)) {
-                std::cerr << "Failed to dump element" << std::endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<typename InputArchive, typename V = value_type>
-    typename std::enable_if<! type_traits_internal::IsArithmeticType<V>::value
-                              && type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    load(InputArchive& ar) {
-        typename InputArchive::Guard guard(&ar);
-        size_t sz = 0;
-        ar.template load<size_t>(&sz);
-        for (size_t i = 0; i < sz; i ++) {
-            V v;
-            if (!ar.template load<V>(&v)) {
-                std::cerr << "Failed to load element " << i << std::endl;
-                return false;
-            }
-            this->insert(v);
-        }
-        return true;
-    }
-
-    template<typename OutputArchive, typename V = value_type>
-    typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type
-    dump(OutputArchive&) {
-        std::cerr << "Does not support this type now!" << std::endl;
-        return false;
-    }
-
-    template<typename InputArchive, typename V = value_type>
-    typename std::enable_if<!type_traits_internal::IsStringOrArithmeticType<V>::value, bool>::type    
-    load(InputArchive&) {   
-        std::cerr << "Does not support this type now!" << std::endl;        
-        return false;
     }
 
     void rehash(size_t n) {
@@ -3253,8 +3199,9 @@ public:
         a.swap(b);
     }
 
-    template<typename OutputArchiveWrapper>
-    bool dump(OutputArchiveWrapper& w) {
+    template<typename OutputArchiveWrapper, typename V = value_type>
+    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
+    dump(OutputArchiveWrapper& w) {
         for (size_t i = 0; i < sets_.size(); ++i) {
             auto& inner = sets_[i];
             auto ar = w.create_archive(i);
@@ -3272,8 +3219,9 @@ public:
         return true;
     }
 
-    template<typename InputArchiveWrapper>
-    bool load(InputArchiveWrapper& w) {
+    template<typename InputArchiveWrapper, typename V = value_type>
+    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
+    load(InputArchiveWrapper& w) {
         size_t submap_count = w.load_meta();
 
         if (submap_count != subcnt()) {
