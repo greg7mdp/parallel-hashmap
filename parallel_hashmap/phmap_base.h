@@ -82,12 +82,21 @@ struct PairTrait<std::pair<T1, T2>>: public std::true_type {
     using second_type = T2;
 };
 
+template<typename T>
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20150801
+struct IsTriviallyCopyable : public std::integral_constant<bool, __has_trivial_copy(T)> {
+};
+#else
+struct IsTriviallyCopyable : public std::is_trivially_copyable<T> {
+};
+#endif
+
 template<typename V>
 struct IsDumpableType {
-    static constexpr bool value = std::is_trivially_copyable<V>::value
+    static constexpr bool value = IsTriviallyCopyable<V>::value
             || (PairTrait<V>::value
-              && std::is_trivially_copyable<typename PairTrait<V>::first_type>::value
-              && std::is_trivially_copyable<typename PairTrait<V>::second_type>::value);
+              && IsTriviallyCopyable<typename PairTrait<V>::first_type>::value
+              && IsTriviallyCopyable<typename PairTrait<V>::second_type>::value);
 };
 
 template <typename... Ts>

@@ -326,7 +326,7 @@ public:
     ~ArchiveGuard() {
         if (ar_) {
             ar_->finish();
-        }        
+        }
     }
 private:
     Archive* ar_;
@@ -351,21 +351,11 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_trivially_copyable<V>::value, bool>::type
+    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
     dump(const V& v) {
         CHECK_FILE(ofs_);        
         ofs_.write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
         return true;
-    }
-
-    template<typename V>
-    typename std::enable_if<type_traits_internal::PairTrait<V>::value
-        && type_traits_internal::IsDumpableType<V>::value, bool>::type
-    dump(const V& v) {
-        using first_type = typename type_traits_internal::PairTrait<V>::first_type;
-        using second_type = typename type_traits_internal::PairTrait<V>::second_type;
-        return dump<first_type>(v.first)
-        && dump<second_type>(v.second);
     }
 
     void finish() {
@@ -397,21 +387,11 @@ public:
     }
 
     template<typename V>
-    typename std::enable_if<std::is_trivially_copyable<V>::value, bool>::type
+    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
     load(V* v) {
         CHECK_FILE(ifs_);
         ifs_.read(reinterpret_cast<char*>(v), sizeof(V));
         return true;
-    }
-
-    template<typename V>
-    typename std::enable_if<type_traits_internal::PairTrait<V>::value
-                            && type_traits_internal::IsDumpableType<V>::value, bool>::type
-    load(V* v) {
-        using first_type = typename std::remove_cv<typename type_traits_internal::PairTrait<V>::first_type>::type;
-        using second_type = typename std::remove_cv<typename type_traits_internal::PairTrait<V>::second_type>::type;
-        return load<first_type>(const_cast<first_type*>(&v->first))
-                && load<second_type>(const_cast<second_type*>(&v->second));
     }
 
     void finish() {
