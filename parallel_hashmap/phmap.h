@@ -1553,7 +1553,7 @@ public:
             return false;
         }
         if (!ar.dump(reinterpret_cast<char*>(ctrl_),
-            sizeof(ctrl_t) * (capacity_ + Group::kWidth - 1) / Group::kWidth * Group::kWidth)) {
+            sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1))) {
 
             std::cerr << "Failed to dump ctrl_" << std::endl;
             return false;
@@ -1583,7 +1583,7 @@ public:
         // allocate memory for ctrl_ and slots_
         initialize_slots();
         if (!ar.load(reinterpret_cast<char*>(ctrl_),
-            sizeof(ctrl_t) * (capacity_ + Group::kWidth - 1) / Group::kWidth * Group::kWidth)) {
+            sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1))) {
             std::cerr << "Failed to load ctrl" << std::endl;
             return false;
         }
@@ -3199,40 +3199,44 @@ public:
         a.swap(b);
     }
 
-    template<typename OutputArchiveWrapper, typename V = value_type>
+    template<typename OutputArchive, typename V = value_type>
     typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    dump(OutputArchiveWrapper& w) {
+    dump(OutputArchive& ar) {
+        typename OutputArchive::Guard guard(&ar);
+        if (! ar.dump(subcnt())) {
+            std::cerr << "Failed to dump meta!" << std::endl;
+            return false;
+        }
         for (size_t i = 0; i < sets_.size(); ++i) {
             auto& inner = sets_[i];
-            auto ar = w.create_archive(i);
             typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
-            if (!inner.set_.dump(*ar)) {
+            if (!inner.set_.dump(ar)) {
                 std::cerr << "Failed to dump submap " << i << std::endl;
                 return false;
             }
         }
-
-        if (! w.dump_meta(subcnt())) {
-            std::cerr << "Failed to dump meta!" << std::endl;
-            return false;
-        }
         return true;
     }
 
-    template<typename InputArchiveWrapper, typename V = value_type>
+    template<typename InputArchive, typename V = value_type>
     typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    load(InputArchiveWrapper& w) {
-        size_t submap_count = w.load_meta();
+    load(InputArchive& ar) {
+        typename InputArchive::Guard guard(&ar);
+        size_t submap_count = 0;
+        if (!ar.load(&submap_count)) {
+            std::cerr << "Failed to load submap count!" << std::endl;
+            return false;
+        }
 
         if (submap_count != subcnt()) {
             std::cerr << "submap count(" << submap_count << ") != N(" << N << ")" << std::endl;
             return false;
         }
 
-        for (size_t i = 0; i < sets_.size(); ++i) {
-            auto ar = w.create_archive(i);
+        for (size_t i = 0; i < submap_count; ++i) {            
             auto& inner = sets_[i];
-            if (!inner.set_.load(*ar)) {
+            typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
+            if (!inner.set_.load(ar)) {
                 std::cerr << "Failed to load submap " << i << std::endl;
                 return false;
             }

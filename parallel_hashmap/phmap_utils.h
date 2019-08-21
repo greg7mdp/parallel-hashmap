@@ -322,9 +322,13 @@ using HashState = HashStateBase<size_t>;
 template<typename Archive>
 class ArchiveGuard {
 public:
-    ArchiveGuard(Archive* ar): ar_(ar) {};
+    ArchiveGuard(Archive* ar): ar_(ar) {
+        if (ar_->guard_ == NULL) {
+            ar_->guard_ = this;
+        }
+    };
     ~ArchiveGuard() {
-        if (ar_) {
+        if (ar_ && ar_->guard_ == this) {
             ar_->finish();
         }
     }
@@ -336,7 +340,7 @@ class BinaryOutputArchive {
 public:
     using Guard = ArchiveGuard<BinaryOutputArchive>;
 
-    BinaryOutputArchive(const std::string& file_path) {
+    BinaryOutputArchive(const std::string& file_path): guard_(NULL) {
         ofs_.open(file_path.c_str(), std::ios_base::binary);
     }
 
@@ -364,7 +368,9 @@ public:
         }
     }
 private:
+    friend class ArchiveGuard<BinaryOutputArchive>;
     std::ofstream ofs_;
+    Guard* guard_;
 };
 
 
@@ -372,7 +378,7 @@ class BinaryInputArchive {
 public:
     using Guard = ArchiveGuard<BinaryInputArchive>;
 
-    BinaryInputArchive(const std::string& file_path) {
+    BinaryInputArchive(const std::string& file_path): guard_(NULL) {
         ifs_.open(file_path.c_str(), std::ios_base::binary);
     }
 
@@ -400,62 +406,10 @@ public:
         }
     }    
 private:
+    friend class ArchiveGuard<BinaryInputArchive>;
     std::ifstream ifs_;
+    Guard* guard_;
 };
-
-template<typename T = BinaryOutputArchive>
-class OutputArchiveWrapper {
-public:
-    using SubArchive = T;
-    OutputArchiveWrapper(const std::string& dir): dir_(dir) {
-    }
-
-    virtual ~OutputArchiveWrapper() {
-
-    }
-
-    bool dump_meta(size_t subcnt) {
-        auto ar = std::make_shared<SubArchive>(dir_ + "/meta.dump");
-        typename SubArchive::Guard guard(ar.get());
-        ar->dump(subcnt);
-        return true;
-    }
-
-    std::shared_ptr<SubArchive> create_archive(size_t i) {
-        std::string file_path = dir_ + "/sub_" + std::to_string(i) + ".dump";
-        return std::make_shared<SubArchive>(file_path);
-    }
-private:
-    std::string dir_;
-};
-
-template<typename T = BinaryInputArchive>
-class InputArchiveWrapper {
-public:
-    using SubArchive = T;
-    InputArchiveWrapper(const std::string& dir): dir_(dir) {
-    }
-
-    virtual ~InputArchiveWrapper() {
-
-    }
-
-    size_t load_meta() {
-        size_t subcnt = 0;
-        auto ar = std::make_shared<SubArchive>(dir_ + "/meta.dump");
-        typename SubArchive::Guard guard(ar.get());        
-        ar->load(&subcnt);
-        return subcnt;
-    }
-
-    std::shared_ptr<SubArchive> create_archive(size_t i) {
-        std::string file_path = dir_ + "/sub_" + std::to_string(i) + ".dump";
-        return std::make_shared<SubArchive>(file_path);
-    }
-private:
-    std::string dir_;
-};
-
 }  // namespace phmap
 
 

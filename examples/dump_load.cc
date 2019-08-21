@@ -27,7 +27,7 @@ void dump_load_uint64_uint32() {
 
 void dump_load_parallel_flat_hash_map() {
     parallel_flat_hash_map<uint64_t, uint32_t> mp1;
-    phmap::OutputArchiveWrapper<phmap::BinaryOutputArchive> w_out("./");
+    phmap::BinaryOutputArchive ar_out("./dump.data");
 
     // Add a new entry
     mp1[100] = 99;
@@ -40,11 +40,11 @@ void dump_load_parallel_flat_hash_map() {
     for (const auto& n : mp1)
         std::cout << "key: " << n.first << ", value: " << n.second << "\n";
  
-    mp1.dump(w_out);
+    mp1.dump(ar_out);
     parallel_flat_hash_map<uint64_t, uint32_t> mp2;
-    phmap::InputArchiveWrapper<phmap::BinaryInputArchive> w_in("./");
+    phmap::BinaryInputArchive ar_in("./dump.data");
 
-    mp2.load(w_in);
+    mp2.load(ar_in);
     for (const auto& n : mp2)
         std::cout << "key: " << n.first << ", value: " << n.second << "\n";
 }
