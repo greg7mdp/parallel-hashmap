@@ -14,8 +14,6 @@ using ::phmap::flat_hash_map;
 using ::phmap::parallel_flat_hash_map;
 using ::phmap::BinaryOutputArchive;
 using ::phmap::BinaryInputArchive;
-using ::phmap::OutputArchiveWrapper;
-using ::phmap::InputArchiveWrapper;
 
 TEST(DumpLoad, FlatHashSet_uin32) {
     flat_hash_set<uint32_t> st1;
@@ -58,7 +56,7 @@ TEST(DumpLoad, FlatHashMap_uint64_uint32) {
 
 TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
     parallel_flat_hash_map<uint64_t, uint32_t> mp1;
-    OutputArchiveWrapper<BinaryOutputArchive> w_out("./");
+    BinaryOutputArchive ar_out("./dump.data");
 
     mp1[100] = 99;
     mp1[300] = 299;
@@ -67,11 +65,11 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
     mp1[1130] = 299;
     mp1[2130] = 1299;
 
-    EXPECT_TRUE(mp1.dump(w_out));
+    EXPECT_TRUE(mp1.dump(ar_out));
     parallel_flat_hash_map<uint64_t, uint32_t> mp2;
-    InputArchiveWrapper<BinaryInputArchive> w_in("./");
+    BinaryInputArchive ar_in("./dump.data");
 
-    EXPECT_TRUE(mp2.load(w_in));
+    EXPECT_TRUE(mp2.load(ar_in));
 
     EXPECT_EQ(6, mp2.size());
     EXPECT_EQ(99, mp2[100]);
