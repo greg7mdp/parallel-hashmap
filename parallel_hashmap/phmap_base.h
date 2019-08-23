@@ -33,6 +33,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ---------------------------------------------------------------------------
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -69,35 +70,6 @@ struct EqualTo
 };
 
 namespace type_traits_internal {
-
-template<typename T>
-struct PairTrait : public std::false_type {
-    using first_type = typename std::remove_cv<T>::type;
-    using second_type = typename std::remove_cv<T>::type;
-};
-
-template<typename T1, typename T2>
-struct PairTrait<std::pair<T1, T2>>: public std::true_type {
-    using first_type = T1;
-    using second_type = T2;
-};
-
-template<typename T>
-#if defined(__GLIBCXX__) && __GLIBCXX__ < 20150801
-struct IsTriviallyCopyable : public std::integral_constant<bool, __has_trivial_copy(T)> {
-};
-#else
-struct IsTriviallyCopyable : public std::is_trivially_copyable<T> {
-};
-#endif
-
-template<typename V>
-struct IsDumpableType {
-    static constexpr bool value = IsTriviallyCopyable<V>::value
-            || (PairTrait<V>::value
-              && IsTriviallyCopyable<typename PairTrait<V>::first_type>::value
-              && IsTriviallyCopyable<typename PairTrait<V>::second_type>::value);
-};
 
 template <typename... Ts>
 struct VoidTImpl {
