@@ -8,72 +8,55 @@ namespace phmap {
 namespace container_internal {
 namespace {
 
-using ::phmap::flat_hash_set;
-using ::phmap::flat_hash_map;
-using ::phmap::parallel_flat_hash_map;
-using ::phmap::BinaryOutputArchive;
-using ::phmap::BinaryInputArchive;
-
 TEST(DumpLoad, FlatHashSet_uin32) {
-    flat_hash_set<uint32_t> st1;
-    BinaryOutputArchive ar_out("./dump.data");
+    phmap::flat_hash_set<uint32_t> st1 = { 1991, 1202 };
 
-    st1.insert(1991);
-    st1.insert(1202);
+    {
+        phmap::BinaryOutputArchive ar_out("./dump.data");
+        EXPECT_TRUE(st1.dump(ar_out));
+    }
 
-    EXPECT_TRUE(st1.dump(ar_out));
-    flat_hash_set<uint32_t> st2;
-    BinaryInputArchive ar_in("./dump.data");
-
-    EXPECT_TRUE(st2.load(ar_in));
-
-    EXPECT_EQ(2, st2.size());
-    EXPECT_TRUE(st2.count(1991));
-    EXPECT_TRUE(st2.count(1202));
+    phmap::flat_hash_set<uint32_t> st2;
+    {
+        phmap::BinaryInputArchive ar_in("./dump.data");
+        EXPECT_TRUE(st2.load(ar_in));
+    }
+    EXPECT_TRUE(st1 == st2);
 }
 
 TEST(DumpLoad, FlatHashMap_uint64_uint32) {
-    flat_hash_map<uint64_t, uint32_t> mp1;
-    BinaryOutputArchive ar_out("./dump.data");
+    phmap::flat_hash_map<uint64_t, uint32_t> mp1 = {
+        { 78731, 99}, {13141, 299}, {2651, 101} };
 
-    mp1[78731] = 99;
-    mp1[13141] = 299;
-    mp1[2651] = 101;
+    {
+        phmap::BinaryOutputArchive ar_out("./dump.data");
+        EXPECT_TRUE(mp1.dump(ar_out));
+    }
 
-    EXPECT_TRUE(mp1.dump(ar_out));
-    flat_hash_map<uint64_t, uint32_t> mp2;
-    BinaryInputArchive ar_in("./dump.data");
+    phmap::flat_hash_map<uint64_t, uint32_t> mp2;
+    {
+        phmap::BinaryInputArchive ar_in("./dump.data");
+        EXPECT_TRUE(mp2.load(ar_in));
+    }
 
-    EXPECT_TRUE(mp2.load(ar_in));
-
-    EXPECT_EQ(3, mp2.size());
-    EXPECT_TRUE(mp2.count(78731));
-    EXPECT_TRUE(mp2.count(13141));
-    EXPECT_EQ(99, mp2.at(78731));
-    EXPECT_EQ(101, mp2.at(2651));
+    EXPECT_TRUE(mp1 == mp2);
 }
 
 TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
-    parallel_flat_hash_map<uint64_t, uint32_t> mp1;
-    BinaryOutputArchive ar_out("./dump.data");
+    phmap::parallel_flat_hash_map<uint64_t, uint32_t> mp1 = {
+        {99, 299}, {992, 2991}, {299, 1299} };
 
-    mp1[100] = 99;
-    mp1[300] = 299;
-    mp1[101] = 992;
-    mp1[1300] = 2991;
-    mp1[1130] = 299;
-    mp1[2130] = 1299;
+    {
+        phmap::BinaryOutputArchive ar_out("./dump.data");
+        EXPECT_TRUE(mp1.dump(ar_out));
+    }
 
-    EXPECT_TRUE(mp1.dump(ar_out));
-    parallel_flat_hash_map<uint64_t, uint32_t> mp2;
-    BinaryInputArchive ar_in("./dump.data");
-
-    EXPECT_TRUE(mp2.load(ar_in));
-    EXPECT_EQ(6, mp2.size());
-    EXPECT_EQ(99, mp2[100]);
-    EXPECT_EQ(299, mp2[300]);
-    EXPECT_EQ(299, mp2[1130]);
-    EXPECT_EQ(1299, mp2[2130]);
+    phmap::parallel_flat_hash_map<uint64_t, uint32_t> mp2;
+    {
+        phmap::BinaryInputArchive ar_in("./dump.data");
+        EXPECT_TRUE(mp2.load(ar_in));
+    }
+    EXPECT_TRUE(mp1 == mp2);
 }
 
 }
