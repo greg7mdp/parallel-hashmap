@@ -4,4 +4,5 @@ benchmark/output
 benchmark/charts.html
 build*
 .vagrant
+**/.vscode
 TAGS

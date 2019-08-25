@@ -1534,6 +1534,12 @@ public:
         }
     }
 
+    template<typename OutputArchive>
+    bool dump(OutputArchive&);
+
+    template<typename InputArchive>
+    bool load(InputArchive&);
+
     void rehash(size_t n) {
         if (n == 0 && capacity_ == 0) return;
         if (n == 0 && size_ == 0) {
@@ -3140,6 +3146,12 @@ public:
                      parallel_hash_set& b) noexcept(noexcept(a.swap(b))) {
         a.swap(b);
     }
+
+    template<typename OutputArchive>
+    bool dump(OutputArchive& ar);
+
+    template<typename InputArchive>
+    bool load(InputArchive& ar);
 
 private:
     template <class Container, typename Enabler>
