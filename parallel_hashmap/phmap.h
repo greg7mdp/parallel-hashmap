@@ -45,9 +45,6 @@
 #include <utility>
 #include <array>
 #include <cassert>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
 #include "phmap_utils.h"
 #include "phmap_base.h"
@@ -1537,62 +1534,17 @@ public:
         }
     }
 
-    template<typename OutputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    dump(OutputArchive& ar) {
-        typename OutputArchive::Guard guard(&ar);
-        if (!ar.dump(size_)) {
-            std::cerr << "Failed to dump size_" << std::endl;
-            return false;
-        }
-        if (size_ == 0) {
-            return true;
-        }
-        if (!ar.dump(capacity_)) {
-            std::cerr << "Failed to dump capacity_" << std::endl;
-            return false;
-        }
-        if (!ar.dump(reinterpret_cast<char*>(ctrl_),
-            sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1))) {
+    template<typename OutputArchive>
+    bool dump(OutputArchive&);
 
-            std::cerr << "Failed to dump ctrl_" << std::endl;
-            return false;
-        }
-        if (!ar.dump(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
-            std::cerr << "Failed to dump slot_" << std::endl;
-            return false;
-        }
-        return true;
-    }
+    template<typename InputArchive>
+    bool load(InputArchive&);
 
-    template<typename InputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    load(InputArchive& ar) {
-        typename InputArchive::Guard guard(&ar);
-        if (!ar.load(&size_)){
-            std::cerr << "Failed to load size_" << std::endl;
-            return false;
-        }
-        if (size_ == 0) {
-            return true;
-        }
-        if (!ar.load(&capacity_)) {
-            std::cerr << "Failed to load capacity_" << std::endl;
-            return false;
-        }
-        // allocate memory for ctrl_ and slots_
-        initialize_slots();
-        if (!ar.load(reinterpret_cast<char*>(ctrl_),
-            sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1))) {
-            std::cerr << "Failed to load ctrl" << std::endl;
-            return false;
-        }
-        if (!ar.load(reinterpret_cast<char*>(slots_), sizeof(slot_type) * capacity_)) {
-            std::cerr << "Failed to load slot" << std::endl;
-            return false;
-        }
-        return true;
-    }
+    template<typename OutputArchive>
+    bool mmap_dump(OutputArchive&);
+
+    template<typename MmapInputArchive>    
+    bool mmap_load(MmapInputArchive&);
 
     void rehash(size_t n) {
         if (n == 0 && capacity_ == 0) return;
@@ -2377,7 +2329,7 @@ class parallel_hash_set
         KeyArg<IsTransparent<Eq>::value && IsTransparent<Hash>::value>;
 
     static_assert(N <= 12, "N = 12 means 4096 hash tables!");
-    constexpr static size_t num_tables = 1 << N;
+    constexpr static size_t num_tables = 1 N;
     constexpr static size_t mask = num_tables - 1;
 
 public:
@@ -3199,51 +3151,17 @@ public:
         a.swap(b);
     }
 
-    template<typename OutputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    dump(OutputArchive& ar) {
-        typename OutputArchive::Guard guard(&ar);
-        if (! ar.dump(subcnt())) {
-            std::cerr << "Failed to dump meta!" << std::endl;
-            return false;
-        }
-        for (size_t i = 0; i < sets_.size(); ++i) {
-            auto& inner = sets_[i];
-            typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
-            if (!inner.set_.dump(ar)) {
-                std::cerr << "Failed to dump submap " << i << std::endl;
-                return false;
-            }
-        }
-        return true;
-    }
+    template<typename OutputArchive>
+    bool dump(OutputArchive& ar);
 
-    template<typename InputArchive, typename V = value_type>
-    typename std::enable_if<type_traits_internal::IsDumpableType<V>::value, bool>::type
-    load(InputArchive& ar) {
-        typename InputArchive::Guard guard(&ar);
-        size_t submap_count = 0;
-        if (!ar.load(&submap_count)) {
-            std::cerr << "Failed to load submap count!" << std::endl;
-            return false;
-        }
+    template<typename InputArchive>
+    bool load(InputArchive& ar);
 
-        if (submap_count != subcnt()) {
-            std::cerr << "submap count(" << submap_count << ") != N(" << N << ")" << std::endl;
-            return false;
-        }
+    template<typename OutputArchive>
+    bool mmap_dump(OutputArchive& ar);
 
-        for (size_t i = 0; i < submap_count; ++i) {            
-            auto& inner = sets_[i];
-            typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
-            if (!inner.set_.load(ar)) {
-                std::cerr << "Failed to load submap " << i << std::endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
+    template<typename InputArchive>
+    bool mmap_load(InputArchive& ar);
 private:
     template <class Container, typename Enabler>
     friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;

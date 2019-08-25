@@ -23,11 +23,8 @@
 
 #include <cstdint>
 #include <functional>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include "phmap_bits.h"
-#include "phmap_base.h"
+
 namespace phmap
 {
 
@@ -309,107 +306,6 @@ H HashStateBase<H>::combine(H seed, const T& v, const Ts&... vs)
 
 using HashState = HashStateBase<size_t>;
 
-
-// -----------------------------------------------------------------------------
-
-#define CHECK_FILE(f) {                                 \
-    if (!f.is_open()) {                                 \
-        std::cerr << "File is not open!" << std::endl;  \
-        return false;                                   \
-    }                                                   \
-}
-
-template<typename Archive>
-class ArchiveGuard {
-public:
-    ArchiveGuard(Archive* ar): ar_(ar) {
-        if (ar_->guard_ == NULL) {
-            ar_->guard_ = this;
-        }
-    };
-    ~ArchiveGuard() {
-        if (ar_ && ar_->guard_ == this) {
-            ar_->finish();
-        }
-    }
-private:
-    Archive* ar_;
-};
-
-class BinaryOutputArchive {
-public:
-    using Guard = ArchiveGuard<BinaryOutputArchive>;
-
-    BinaryOutputArchive(const std::string& file_path): guard_(NULL) {
-        ofs_.open(file_path.c_str(), std::ios_base::binary);
-    }
-
-    virtual ~BinaryOutputArchive() {
-        finish();
-    }
-
-    bool dump(char* p, size_t sz) {
-        CHECK_FILE(ofs_);
-        ofs_.write(p, sz);
-        return true;
-    }
-
-    template<typename V>
-    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
-    dump(const V& v) {
-        CHECK_FILE(ofs_);        
-        ofs_.write(reinterpret_cast<char*>(const_cast<V*>(&v)), sizeof(V));
-        return true;
-    }
-
-    void finish() {
-        if (ofs_.is_open()) {
-            ofs_.close();
-        }
-    }
-private:
-    friend class ArchiveGuard<BinaryOutputArchive>;
-    std::ofstream ofs_;
-    Guard* guard_;
-};
-
-
-class BinaryInputArchive {
-public:
-    using Guard = ArchiveGuard<BinaryInputArchive>;
-
-    BinaryInputArchive(const std::string& file_path): guard_(NULL) {
-        ifs_.open(file_path.c_str(), std::ios_base::binary);
-    }
-
-    virtual ~BinaryInputArchive() {
-        finish();
-    }
-
-    bool load(char* p, size_t sz) {
-        CHECK_FILE(ifs_);
-        ifs_.read(p, sz);
-        return true;
-    }
-
-    template<typename V>
-    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
-    load(V* v) {
-        CHECK_FILE(ifs_);
-        ifs_.read(reinterpret_cast<char*>(v), sizeof(V));
-        return true;
-    }
-
-    void finish() {
-        if (ifs_.is_open()) {
-            ifs_.close();
-        }
-    }    
-private:
-    friend class ArchiveGuard<BinaryInputArchive>;
-    std::ifstream ifs_;
-    Guard* guard_;
-};
 }  // namespace phmap
 
 
