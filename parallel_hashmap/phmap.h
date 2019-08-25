@@ -1540,12 +1540,6 @@ public:
     template<typename InputArchive>
     bool load(InputArchive&);
 
-    template<typename OutputArchive>
-    bool mmap_dump(OutputArchive&);
-
-    template<typename MmapInputArchive>    
-    bool mmap_load(MmapInputArchive&);
-
     void rehash(size_t n) {
         if (n == 0 && capacity_ == 0) return;
         if (n == 0 && size_ == 0) {
@@ -3157,11 +3151,6 @@ public:
     template<typename InputArchive>
     bool load(InputArchive& ar);
 
-    template<typename OutputArchive>
-    bool mmap_dump(OutputArchive& ar);
-
-    template<typename InputArchive>
-    bool mmap_load(InputArchive& ar);
 private:
     template <class Container, typename Enabler>
     friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
