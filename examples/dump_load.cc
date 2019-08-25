@@ -112,6 +112,7 @@ void mmap_load_parallel_flat_hash_map() {
         mp2[6771 + i] = i;
     }
     std::cout << "[debug] map capacity: " << mp2.capacity() << ", size: " << mp2.size() << std::endl;
+
     for (const auto& n : mp2)
         std::cout << "key: " << n.first << ", value: " << n.second << "\n";
 }

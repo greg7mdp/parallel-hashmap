@@ -72,7 +72,6 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
     BinaryInputArchive ar_in("./dump.data");
 
     EXPECT_TRUE(mp2.load(ar_in));
-
     EXPECT_EQ(6, mp2.size());
     EXPECT_EQ(99, mp2[100]);
     EXPECT_EQ(299, mp2[300]);
@@ -133,7 +132,6 @@ TEST(MmapDumpLoad, ParallelFlatHashMap_uint64_uint32) {
     MmapInputArchive ar_in("./dump.data");
 
     EXPECT_TRUE(mp2.mmap_load(ar_in));
-
     EXPECT_EQ(6, mp2.size());
     EXPECT_EQ(99, mp2[100]);
     EXPECT_EQ(299, mp2[300]);
