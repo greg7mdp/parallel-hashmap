@@ -1534,11 +1534,13 @@ public:
         }
     }
 
+#ifndef PHMAP_NON_DETERMINISTIC
     template<typename OutputArchive>
     bool dump(OutputArchive&);
 
     template<typename InputArchive>
     bool load(InputArchive&);
+#endif
 
     void rehash(size_t n) {
         if (n == 0 && capacity_ == 0) return;
@@ -3147,11 +3149,13 @@ public:
         a.swap(b);
     }
 
+#ifndef PHMAP_NON_DETERMINISTIC
     template<typename OutputArchive>
     bool dump(OutputArchive& ar);
 
     template<typename InputArchive>
     bool load(InputArchive& ar);
+#endif
 
 private:
     template <class Container, typename Enabler>
