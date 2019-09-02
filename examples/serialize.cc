@@ -1,12 +1,17 @@
 #include <iostream>
 #include <bitset>
 #include <cinttypes>
-#include "parallel_hashmap/phmap.h"
-#include "cereal/types/unordered_map.hpp"
-#include "cereal/types/memory.hpp"
-#include "cereal/types/bitset.hpp"
-#include "cereal/archives/binary.hpp"
-#include <fstream>
+#include "parallel_hashmap/phmap_dump.h"
+
+#define USE_CEREAL 0
+
+#if USE_CEREAL
+    #include "cereal/types/unordered_map.hpp"
+    #include "cereal/types/memory.hpp"
+    #include "cereal/types/bitset.hpp"
+    #include "cereal/archives/binary.hpp"
+    #include <fstream>
+#endif
 #include <random>
 #include <chrono>
 #include <functional>
@@ -50,10 +55,15 @@ int main()
     // cerealize and save data
     // -----------------------
     showtime("serialize", [&table]() {
+#if !USE_CEREAL
+            phmap::BinaryOutputArchive ar_out("./dump.data");
+            table.dump(ar_out);
+#else
             ofstream os("out.cereal", ios::binary);
             cereal::BinaryOutputArchive archive(os);
             archive(table.size());
             archive(table);
+#endif
         });
 
     MapType table_in;
@@ -61,6 +71,10 @@ int main()
     // deserialize
     // -----------
     showtime("deserialize", [&table_in]() {
+#if !USE_CEREAL
+            phmap::BinaryInputArchive ar_in("./dump.data");
+            table_in.load(ar_in);
+#else
             ifstream is("out.cereal", ios::binary);
             cereal::BinaryInputArchive archive_in(is);
             size_t table_size;
@@ -68,6 +82,7 @@ int main()
             archive_in(table_size);
             table_in.reserve(table_size);
             archive_in(table_in);             // deserialize from file out.cereal into table_in
+#endif
         });
 
     
