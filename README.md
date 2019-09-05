@@ -21,7 +21,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. 
 
-- **Dump/load** feature: when a hash table stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`.
+- **Dump/load** feature: when a hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`.
 
 - **Tested** on Windows (vs2015 & vs2017, vs2019, Intel compiler 18 and 19), linux (g++ 4.8.4, 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 
