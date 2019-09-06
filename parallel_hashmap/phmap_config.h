@@ -391,7 +391,7 @@
     #define PHMAP_ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-#if PHMAP_HAVE_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
+#if PHMAP_HAVE_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER))
     #define PHMAP_ATTRIBUTE_NOINLINE __attribute__((noinline))
     #define PHMAP_HAVE_ATTRIBUTE_NOINLINE 1
 #else
