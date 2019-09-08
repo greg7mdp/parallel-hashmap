@@ -12,7 +12,6 @@
     #include "cereal/archives/binary.hpp"
     #include <fstream>
 #endif
-#include <random>
 #include <chrono>
 #include <functional>
 #include <cstdio>
@@ -21,6 +20,39 @@ using phmap::flat_hash_map;
 using namespace std;
 template <typename T> using milliseconds = std::chrono::duration<T, std::milli>;
 
+// --------------------------------------------------------------------------
+//  from: https://github.com/preshing/RandomSequence
+// --------------------------------------------------------------------------
+class RSU
+{
+private:
+    unsigned int m_index;
+    unsigned int m_intermediateOffset;
+
+    static unsigned int permuteQPR(unsigned int x)
+    {
+        static const unsigned int prime = 4294967291u;
+        if (x >= prime)
+            return x;  // The 5 integers out of range are mapped to themselves.
+        unsigned int residue = ((unsigned long long) x * x) % prime;
+        return (x <= prime / 2) ? residue : prime - residue;
+    }
+
+public:
+    RSU(unsigned int seedBase, unsigned int seedOffset)
+    {
+        m_index = permuteQPR(permuteQPR(seedBase) + 0x682f0161);
+        m_intermediateOffset = permuteQPR(permuteQPR(seedOffset) + 0x46790905);
+    }
+
+    unsigned int next()
+    {
+        return permuteQPR((permuteQPR(m_index++) + m_intermediateOffset) ^ 0x5bf03635);
+    }
+};
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 void showtime(const char *name, std::function<void ()> doit)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -30,26 +62,23 @@ void showtime(const char *name, std::function<void ()> doit)
     printf("%s: %.3fs\n", name, (int)elapsed / 1000.0f);
 }
 
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 int main()
 {
-    using MapType = phmap::flat_hash_map<bitset<42>, int>;
+    using MapType = phmap::flat_hash_map<unsigned int, int>;
     MapType table;
     const int num_items = 100000000;
 
     // Iterate and add keys and values 
     // -------------------------------
     showtime("build hash", [&table, num_items]() {
-            random_device dev;
-            mt19937 rng(dev());
-            uniform_int_distribution<mt19937::result_type> dist6(0,1);
+            unsigned int seed = 76687;
+            RSU rsu(seed, seed + 1);
+
             table.reserve(num_items);
             for (int i=0; i < num_items; ++i) 
-            {
-                bitset<42> bs;
-                for (int j=0; j<42; ++j) 
-                    bs[j] = dist6(rng);
-                table[bs] = i;
-            }
+                table.insert(typename MapType::value_type(rsu.next(), i)); 
         });
 
     // cerealize and save data
