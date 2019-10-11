@@ -45,6 +45,7 @@
 #include <utility>
 #include <array>
 #include <cassert>
+#include <atomic>
 
 #include "phmap_utils.h"
 #include "phmap_base.h"
