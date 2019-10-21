@@ -4004,7 +4004,7 @@ struct StringHashT
 
     size_t operator()(std::basic_string_view<CharT> v) const {
         std::string_view bv{reinterpret_cast<const char*>(v.data()), v.size() * sizeof(CharT)};
-        return phmap::Hash<std::string_view>{}(bv);
+        return std::hash<std::string_view>()(bv);
     }
 };
 
