@@ -1,4 +1,4 @@
-#include "hash_std.h"   // defines Person  with std::hash specialization
+#include "hash_value.h"   // defines Person  with std::hash specialization
 
 #include <iostream>
 #include <parallel_hashmap/phmap.h>
