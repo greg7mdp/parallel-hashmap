@@ -344,7 +344,7 @@ private:
     typename std::enable_if<I < sizeof...(P), size_t>::type
     _hash_helper(const std::tuple<P...> &t) const noexcept {
         const auto &el = std::get<I>(t);
-        using el_type = typename std::remove_cv<std::remove_reference<decltype(el)>::type>::type;
+        using el_type = typename std::remove_cv<typename std::remove_reference<decltype(el)>::type>::type;
         return phmap::Hash<el_type>()(el) + _hash_helper<I + 1>(t);
     }
 };
