@@ -323,7 +323,7 @@ using HashState = HashStateBase<size_t>;
 template<class T1, class T2> 
 struct Hash<std::pair<T1, T2>> {
     size_t operator()(std::pair<T1, T2> const& p) const noexcept {
-        return phmap::HashState().combine(0, p.first, p.second);
+        return phmap::HashState().combine(phmap::Hash<T1>()(p.first), p.second);
     }
 };
 
