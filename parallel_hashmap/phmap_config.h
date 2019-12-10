@@ -304,7 +304,7 @@
 // #pragma message(PHMAP_VAR_NAME_VALUE(_MSVC_LANG))
 
 #if defined(_MSC_VER) && _MSC_VER >= 1910 && \
-    ((defined(_MSVC_LANG) && _MSVC_LANG > 201703) || __cplusplus > 201703)
+    ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703) || __cplusplus >= 201703)
     // #define PHMAP_HAVE_STD_ANY 1
     #define PHMAP_HAVE_STD_OPTIONAL 1
     #define PHMAP_HAVE_STD_VARIANT 1
