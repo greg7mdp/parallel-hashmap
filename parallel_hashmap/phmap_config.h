@@ -304,14 +304,14 @@
 // #pragma message(PHMAP_VAR_NAME_VALUE(_MSVC_LANG))
 
 #if defined(_MSC_VER) && _MSC_VER >= 1910 && \
-    ((defined(_MSVC_LANG) && _MSVC_LANG > 201402) || __cplusplus > 201402)
+    ((defined(_MSVC_LANG) && _MSVC_LANG > 201703) || __cplusplus > 201703)
     // #define PHMAP_HAVE_STD_ANY 1
     #define PHMAP_HAVE_STD_OPTIONAL 1
     #define PHMAP_HAVE_STD_VARIANT 1
     #define PHMAP_HAVE_STD_STRING_VIEW 1
 #endif
 
-#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201402) || __cplusplus >= 201402
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201703) || __cplusplus >= 201703
     #define PHMAP_HAVE_SHARED_MUTEX 1
 #endif
 
