@@ -2972,6 +2972,21 @@ struct CommonAccess
     static T Make(Args&&... args) {
         return T(std::forward<Args>(args)...);
     }
+
+    template <typename Node>
+    static void Destroy(Node* node) {
+        node->destroy();
+    }
+
+    template <typename T, typename... Args>
+    static T Transfer(Args&&... args) {
+        return T(typename T::transfer_tag_t{}, std::forward<Args>(args)...);
+    }
+
+    template <typename T, typename... Args>
+    static T Move(Args&&... args) {
+        return T(typename T::move_tag_t{}, std::forward<Args>(args)...);
+    }
 };
 
 // Implement the insert_return_type<> concept of C++17.
@@ -4395,6 +4410,89 @@ class PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTuple<> {};
 }  // namespace container_internal
 }  // namespace phmap
 
+
+namespace phmap {
+namespace container_internal {
+
+
+
+// ----------------------------------------------------------------------------
+// Allocates at least n bytes aligned to the specified alignment.
+// Alignment must be a power of 2. It must be positive.
+//
+// Note that many allocators don't honor alignment requirements above certain
+// threshold (usually either alignof(std::max_align_t) or alignof(void*)).
+// Allocate() doesn't apply alignment corrections. If the underlying allocator
+// returns insufficiently alignment pointer, that's what you are going to get.
+// ----------------------------------------------------------------------------
+template <size_t Alignment, class Alloc>
+void* Allocate(Alloc* alloc, size_t n) {
+  static_assert(Alignment > 0, "");
+  assert(n && "n must be positive");
+  struct alignas(Alignment) M {};
+  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
+  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
+  A mem_alloc(*alloc);
+  void* p = AT::allocate(mem_alloc, (n + sizeof(M) - 1) / sizeof(M));
+  assert(reinterpret_cast<uintptr_t>(p) % Alignment == 0 &&
+         "allocator does not respect alignment");
+  return p;
+}
+
+// ----------------------------------------------------------------------------
+// The pointer must have been previously obtained by calling
+// Allocate<Alignment>(alloc, n).
+// ----------------------------------------------------------------------------
+template <size_t Alignment, class Alloc>
+void Deallocate(Alloc* alloc, void* p, size_t n) {
+  static_assert(Alignment > 0, "");
+  assert(n && "n must be positive");
+  struct alignas(Alignment) M {};
+  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
+  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
+  A mem_alloc(*alloc);
+  AT::deallocate(mem_alloc, static_cast<M*>(p),
+                 (n + sizeof(M) - 1) / sizeof(M));
+}
+
+// Helper functions for asan and msan.
+// ----------------------------------------------------------------------------
+inline void SanitizerPoisonMemoryRegion(const void* m, size_t s) {
+#ifdef ADDRESS_SANITIZER
+    ASAN_POISON_MEMORY_REGION(m, s);
+#endif
+#ifdef MEMORY_SANITIZER
+    __msan_poison(m, s);
+#endif
+    (void)m;
+    (void)s;
+}
+
+inline void SanitizerUnpoisonMemoryRegion(const void* m, size_t s) {
+#ifdef ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(m, s);
+#endif
+#ifdef MEMORY_SANITIZER
+    __msan_unpoison(m, s);
+#endif
+    (void)m;
+    (void)s;
+}
+
+template <typename T>
+inline void SanitizerPoisonObject(const T* object) {
+    SanitizerPoisonMemoryRegion(object, sizeof(T));
+}
+
+template <typename T>
+inline void SanitizerUnpoisonObject(const T* object) {
+    SanitizerUnpoisonMemoryRegion(object, sizeof(T));
+}
+
+}  // namespace container_internal
+}  // namespace phmap
+
+
 // ---------------------------------------------------------------------------
 //  thread_annotations.h
 // ---------------------------------------------------------------------------
@@ -4504,6 +4602,218 @@ inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
 }
 
 }  // namespace thread_safety_analysis
+
+namespace container_internal {
+
+namespace memory_internal {
+
+// ----------------------------------------------------------------------------
+// If Pair is a standard-layout type, OffsetOf<Pair>::kFirst and
+// OffsetOf<Pair>::kSecond are equivalent to offsetof(Pair, first) and
+// offsetof(Pair, second) respectively. Otherwise they are -1.
+//
+// The purpose of OffsetOf is to avoid calling offsetof() on non-standard-layout
+// type, which is non-portable.
+// ----------------------------------------------------------------------------
+template <class Pair, class = std::true_type>
+struct OffsetOf {
+    static constexpr size_t kFirst = (size_t)-1;
+  static constexpr size_t kSecond = (size_t)-1;
+};
+
+template <class Pair>
+struct OffsetOf<Pair, typename std::is_standard_layout<Pair>::type> 
+{
+    static constexpr size_t kFirst = offsetof(Pair, first);
+    static constexpr size_t kSecond = offsetof(Pair, second);
+};
+
+// ----------------------------------------------------------------------------
+template <class K, class V>
+struct IsLayoutCompatible 
+{
+private:
+    struct Pair {
+        K first;
+        V second;
+    };
+
+    // Is P layout-compatible with Pair?
+    template <class P>
+    static constexpr bool LayoutCompatible() {
+        return std::is_standard_layout<P>() && sizeof(P) == sizeof(Pair) &&
+            alignof(P) == alignof(Pair) &&
+            memory_internal::OffsetOf<P>::kFirst ==
+            memory_internal::OffsetOf<Pair>::kFirst &&
+            memory_internal::OffsetOf<P>::kSecond ==
+            memory_internal::OffsetOf<Pair>::kSecond;
+    }
+
+public:
+    // Whether pair<const K, V> and pair<K, V> are layout-compatible. If they are,
+    // then it is safe to store them in a union and read from either.
+    static constexpr bool value = std::is_standard_layout<K>() &&
+        std::is_standard_layout<Pair>() &&
+        memory_internal::OffsetOf<Pair>::kFirst == 0 &&
+        LayoutCompatible<std::pair<K, V>>() &&
+        LayoutCompatible<std::pair<const K, V>>();
+};
+
+}  // namespace memory_internal
+
+// ----------------------------------------------------------------------------
+// The internal storage type for key-value containers like flat_hash_map.
+//
+// It is convenient for the value_type of a flat_hash_map<K, V> to be
+// pair<const K, V>; the "const K" prevents accidental modification of the key
+// when dealing with the reference returned from find() and similar methods.
+// However, this creates other problems; we want to be able to emplace(K, V)
+// efficiently with move operations, and similarly be able to move a
+// pair<K, V> in insert().
+//
+// The solution is this union, which aliases the const and non-const versions
+// of the pair. This also allows flat_hash_map<const K, V> to work, even though
+// that has the same efficiency issues with move in emplace() and insert() -
+// but people do it anyway.
+//
+// If kMutableKeys is false, only the value member can be accessed.
+//
+// If kMutableKeys is true, key can be accessed through all slots while value
+// and mutable_value must be accessed only via INITIALIZED slots. Slots are
+// created and destroyed via mutable_value so that the key can be moved later.
+//
+// Accessing one of the union fields while the other is active is safe as
+// long as they are layout-compatible, which is guaranteed by the definition of
+// kMutableKeys. For C++11, the relevant section of the standard is
+// https://timsong-cpp.github.io/cppwp/n3337/class.mem#19 (9.2.19)
+// ----------------------------------------------------------------------------
+template <class K, class V>
+union map_slot_type 
+{
+    map_slot_type() {}
+    ~map_slot_type() = delete;
+    using value_type = std::pair<const K, V>;
+    using mutable_value_type = std::pair<K, V>;
+
+    value_type value;
+    mutable_value_type mutable_value;
+    K key;
+};
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+template <class K, class V>
+struct map_slot_policy 
+{
+    using slot_type = map_slot_type<K, V>;
+    using value_type = std::pair<const K, V>;
+    using mutable_value_type = std::pair<K, V>;
+
+private:
+    static void emplace(slot_type* slot) {
+        // The construction of union doesn't do anything at runtime but it allows us
+        // to access its members without violating aliasing rules.
+        new (slot) slot_type;
+    }
+    // If pair<const K, V> and pair<K, V> are layout-compatible, we can accept one
+    // or the other via slot_type. We are also free to access the key via
+    // slot_type::key in this case.
+    using kMutableKeys = memory_internal::IsLayoutCompatible<K, V>;
+
+public:
+    static value_type& element(slot_type* slot) { return slot->value; }
+    static const value_type& element(const slot_type* slot) {
+        return slot->value;
+    }
+
+    static const K& key(const slot_type* slot) {
+        return kMutableKeys::value ? slot->key : slot->value.first;
+    }
+
+    template <class Allocator, class... Args>
+    static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
+        emplace(slot);
+        if (kMutableKeys::value) {
+            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value,
+                                                         std::forward<Args>(args)...);
+        } else {
+            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value,
+                                                         std::forward<Args>(args)...);
+        }
+    }
+
+    // Construct this slot by moving from another slot.
+    template <class Allocator>
+    static void construct(Allocator* alloc, slot_type* slot, slot_type* other) {
+        emplace(slot);
+        if (kMutableKeys::value) {
+            phmap::allocator_traits<Allocator>::construct(
+                *alloc, &slot->mutable_value, std::move(other->mutable_value));
+        } else {
+            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value,
+                                                         std::move(other->value));
+        }
+    }
+
+    template <class Allocator>
+    static void destroy(Allocator* alloc, slot_type* slot) {
+        if (kMutableKeys::value) {
+            phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->mutable_value);
+        } else {
+            phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->value);
+        }
+    }
+
+    template <class Allocator>
+    static void transfer(Allocator* alloc, slot_type* new_slot,
+                         slot_type* old_slot) {
+        emplace(new_slot);
+        if (kMutableKeys::value) {
+            phmap::allocator_traits<Allocator>::construct(
+                *alloc, &new_slot->mutable_value, std::move(old_slot->mutable_value));
+        } else {
+            phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->value,
+                                                         std::move(old_slot->value));
+        }
+        destroy(alloc, old_slot);
+    }
+
+    template <class Allocator>
+    static void swap(Allocator* alloc, slot_type* a, slot_type* b) {
+        if (kMutableKeys::value) {
+            using std::swap;
+            swap(a->mutable_value, b->mutable_value);
+        } else {
+            value_type tmp = std::move(a->value);
+            phmap::allocator_traits<Allocator>::destroy(*alloc, &a->value);
+            phmap::allocator_traits<Allocator>::construct(*alloc, &a->value,
+                                                         std::move(b->value));
+            phmap::allocator_traits<Allocator>::destroy(*alloc, &b->value);
+            phmap::allocator_traits<Allocator>::construct(*alloc, &b->value,
+                                                         std::move(tmp));
+        }
+    }
+
+    template <class Allocator>
+    static void move(Allocator* alloc, slot_type* src, slot_type* dest) {
+        if (kMutableKeys::value) {
+            dest->mutable_value = std::move(src->mutable_value);
+        } else {
+            phmap::allocator_traits<Allocator>::destroy(*alloc, &dest->value);
+            phmap::allocator_traits<Allocator>::construct(*alloc, &dest->value,
+                                                          std::move(src->value));
+        }
+    }
+
+    template <class Allocator>
+    static void move(Allocator* alloc, slot_type* first, slot_type* last,
+                     slot_type* result) {
+        for (slot_type *src = first, *dest = result; src != last; ++src, ++dest)
+            move(alloc, src, dest);
+    }
+};
+
+}  // namespace container_internal
 }  // phmap
 
 
