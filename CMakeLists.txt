@@ -112,7 +112,11 @@ if (PHMAP_BUILD_TESTS)
                   COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
 
     phmap_cc_test(NAME dump_load SRCS "tests/dump_load_test.cc"
-                   COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+
+    ## --------------- btree -----------------------------------------------
+    phmap_cc_test(NAME btree SRCS "tests/btree_test.cc"
+                  DEPS gmock_main)
 
 
 endif()
@@ -136,6 +140,7 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_insert_bench examples/insert_bench.cc phmap.natvis)
     add_executable(ex_knucleotide examples/knucleotide.cc phmap.natvis)
     add_executable(ex_dump_load examples/dump_load.cc phmap.natvis)
+    add_executable(ex_btree examples/btree.cc phmap.natvis)
 
     target_link_libraries(ex_knucleotide Threads::Threads)
     target_link_libraries(ex_bench Threads::Threads)

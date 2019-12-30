@@ -1231,8 +1231,8 @@ namespace container_internal {
 
         void set_parent(btree_node *p)     { *GetField<0>() = p; }
         field_type &mutable_count()        { return GetField<1>()[2]; }
-        slot_type *slot(int i)             { return &GetField<2>()[i]; }
-        const slot_type *slot(int i) const { return &GetField<2>()[i]; }
+        slot_type *slot(size_type i)       { return &GetField<2>()[i]; }
+        const slot_type *slot(size_type i) const { return &GetField<2>()[i]; }
         void set_position(field_type v)    { GetField<1>()[0] = v; }
         void set_start(field_type v)       { GetField<1>()[1] = v; }
         void set_count(field_type v)       { GetField<1>()[2] = v; }
@@ -1272,14 +1272,14 @@ namespace container_internal {
         }
 
         // Getters for the key/value at position i in the node.
-        const key_type &key(int i) const { return params_type::key(slot(i)); }
-        reference value(int i) { return params_type::element(slot(i)); }
-        const_reference value(int i) const { return params_type::element(slot(i)); }
+        const key_type &key(size_type i) const { return params_type::key(slot(i)); }
+        reference value(size_type i) { return params_type::element(slot(i)); }
+        const_reference value(size_type i) const { return params_type::element(slot(i)); }
 
         // Getters/setter for the child at position i in the node.
-        btree_node *child(int i) const { return GetField<3>()[i]; }
-        btree_node *&mutable_child(int i) { return GetField<3>()[i]; }
-        void clear_child(int i) {
+        btree_node *child(size_type i) const { return GetField<3>()[i]; }
+        btree_node *&mutable_child(size_type i) { return GetField<3>()[i]; }
+        void clear_child(size_type i) {
             phmap::container_internal::SanitizerPoisonObject(&mutable_child(i));
         }
         void set_child(int i, btree_node *c) {

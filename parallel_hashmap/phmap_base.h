@@ -2874,6 +2874,18 @@ public:
 protected:
     friend struct CommonAccess;
 
+    struct transfer_tag_t {};
+    node_handle_base(transfer_tag_t, const allocator_type& a, slot_type* s)
+        : alloc_(a) {
+        PolicyTraits::transfer(alloc(), slot(), s);
+    }
+    
+    struct move_tag_t {};
+    node_handle_base(move_tag_t, const allocator_type& a, slot_type* s)
+        : alloc_(a) {
+        PolicyTraits::construct(alloc(), slot(), s);
+    }
+
     node_handle_base(const allocator_type& a, slot_type* s) : alloc_(a) {
         PolicyTraits::transfer(alloc(), slot(), s);
     }
@@ -2923,7 +2935,7 @@ public:
 private:
     friend struct CommonAccess;
 
-    node_handle(const Alloc& a, typename Base::slot_type* s) : Base(a, s) {}
+    using Base::Base;
 };
 
 // For maps.
@@ -2952,7 +2964,7 @@ public:
 private:
     friend struct CommonAccess;
 
-    node_handle(const Alloc& a, typename Base::slot_type* s) : Base(a, s) {}
+    using Base::Base;
 };
 
 // Provide access to non-public node-handle functions.
@@ -2964,6 +2976,11 @@ struct CommonAccess
     }
 
     template <typename Node>
+    static void Destroy(Node* node) {
+        node->destroy();
+    }
+
+    template <typename Node>
     static void Reset(Node* node) {
         node->reset();
     }
@@ -2971,11 +2988,6 @@ struct CommonAccess
     template <typename T, typename... Args>
     static T Make(Args&&... args) {
         return T(std::forward<Args>(args)...);
-    }
-
-    template <typename Node>
-    static void Destroy(Node* node) {
-        node->destroy();
     }
 
     template <typename T, typename... Args>
