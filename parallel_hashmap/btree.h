@@ -254,7 +254,7 @@ namespace phmap {
 #else  // __cpp_inline_variables
 
 #define PHMAP_COMPARE_INLINE_BASECLASS_DECL(name)   \
-        static const T name
+        static const T name;
 
 #define PHMAP_COMPARE_INLINE_SUBCLASS_DECL(type, name)
 
@@ -269,39 +269,39 @@ namespace phmap {
         // aren't available in C++11).
         template <typename T>
         struct weak_equality_base {
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequivalent);
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequivalent)
         };
 
         template <typename T>
         struct strong_equality_base {
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equal);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequal);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequivalent);
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equal)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequal)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(nonequivalent)
         };
 
         template <typename T>
         struct partial_ordering_base {
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(unordered);
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(unordered)
         };
 
         template <typename T>
         struct weak_ordering_base {
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater);
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater)
         };
 
         template <typename T>
         struct strong_ordering_base {
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equal);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent);
-            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater);
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(less)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equal)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(equivalent)
+            PHMAP_COMPARE_INLINE_BASECLASS_DECL(greater)
         };
 
     }  // namespace compare_internal

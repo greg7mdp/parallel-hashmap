@@ -1007,8 +1007,8 @@ namespace {
             // `std::string` has heterogeneous support.
             btree_set<std::string> s = {"A"};
 #if PHMAP_HAVE_STD_STRING_VIEW
-            EXPECT_EQ(s.begin(), s.find(phmap::string_view("A")));
-            EXPECT_TRUE(s.contains(phmap::string_view("A")));
+            EXPECT_EQ(s.begin(), s.find(std::string_view("A")));
+            EXPECT_TRUE(s.contains(std::string_view("A")));
 #endif
         }
     }
@@ -1082,8 +1082,8 @@ namespace {
         explicit SubstringLess(int length) : n(length) {}
         bool operator()(const std::string &a, const std::string &b) const {
 #if PHMAP_HAVE_STD_STRING_VIEW
-            return phmap::string_view(a).substr(0, n) <
-                phmap::string_view(b).substr(0, n);
+            return std::string_view(a).substr(0, n) <
+                std::string_view(b).substr(0, n);
 #else
             return a.substr(0, n) < b.substr(0, n);
 #endif
@@ -1288,9 +1288,9 @@ namespace {
         AssertKeyCompareToAdapted<std::less<std::string>, std::string>();
         AssertKeyCompareToAdapted<std::greater<std::string>, std::string>();
 #if PHMAP_HAVE_STD_STRING_VIEW
-        AssertKeyCompareToAdapted<std::less<phmap::string_view>, phmap::string_view>();
-        AssertKeyCompareToAdapted<std::greater<phmap::string_view>,
-                                  phmap::string_view>();
+        AssertKeyCompareToAdapted<std::less<std::string_view>, std::string_view>();
+        AssertKeyCompareToAdapted<std::greater<std::string_view>,
+                                  std::string_view>();
 #endif
         AssertKeyCompareToNotAdapted<std::less<int>, int>();
         AssertKeyCompareToNotAdapted<std::greater<int>, int>();
