@@ -5,7 +5,7 @@
 
 ## Overview
 
-This repository aims to provide a set of excellent hash map implementations, as well as a btree alternative to std::map and std::set, with the following characteristics:
+This repository aims to provide a set of excellent **hash map** implementations, as well as a **btree** alternative to std::map and std::set, with the following characteristics:
 
 - **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
@@ -21,7 +21,7 @@ This repository aims to provide a set of excellent hash map implementations, as 
 
 - Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers
 
-- **Dump/load** feature: when a hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`.
+- **Dump/load** feature: when a hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`. _(hash map/set only)_
 
 - **Tested** on Windows (vs2015 & vs2017, vs2019, Intel compiler 18 and 19), linux (g++ 4.8.4, 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 
@@ -34,7 +34,7 @@ This repository aims to provide a set of excellent hash map implementations, as 
 
 Click here [For a full writeup explaining the design and benefits of the Parallel Hashmap](https://greg7mdp.github.io/parallel-hashmap/).
 
-The hashmaps provided here are built upon those open sourced by Google in the Abseil library. They use closed hashing, where values are stored directly into a memory array, avoiding memory indirections. By using parallel SSE2 instructions, these hashmaps are able to look up items by checking 16 slots in parallel,  allowing the implementation to remain fast even when the table is filled up to 87.5% capacity.
+The hashmaps and btree provided here are built upon those open sourced by Google in the Abseil library. The hashmaps use closed hashing, where values are stored directly into a memory array, avoiding memory indirections. By using parallel SSE2 instructions, these hashmaps are able to look up items by checking 16 slots in parallel,  allowing the implementation to remain fast even when the table is filled up to 87.5% capacity.
 
 > **IMPORTANT:** This repository borrows code from the [abseil-cpp](https://github.com/abseil/abseil-cpp) repository, with modifications, and may behave differently from the original. This repository is an independent work, with no guarantees implied or provided by the authors. Please visit [abseil-cpp](https://github.com/abseil/abseil-cpp) for the official Abseil libraries.
 
@@ -121,6 +121,8 @@ Btree containers will usually be preferable to the default red-black trees of th
 - pointer stability or iterator stability is required
 - the value_type is large and expensive to move
 
+When an ordering is not needed, a hash container is typically a better choice than a btree one.
+
 ## Changes to Abseil's hashmaps
 
 - The default hash framework is std::hash, not absl::Hash. However, if you prefer the default to be the Abseil hash framework, include the Abseil headers before `phmap.h` and define the preprocessor macro `PHMAP_USE_ABSL_HASH`.
@@ -151,9 +153,9 @@ Btree containers will usually be preferable to the default red-black trees of th
 - the additional peak memory usage (when resizing) corresponds the the old bucket array (half the size of the new one, hence the 0.5), which contains the values to be copied to the new bucket array, and which is freed when the values have been copied.
 - the *parallel* hashmaps, when created with a template parameter N=4, create 16 submaps. When the hash values are well distributed, and in single threaded mode, only one of these 16 submaps resizes at any given time, hence the factor `0.03` roughly equal to `0.5 / 16`
 
-## Iterator invalidation
+## Iterator invalidation for hash containers
 
-The rules are the same as for std::unordered_map, and are valid for all the phmap containers:
+The rules are the same as for std::unordered_map, and are valid for all the phmap hash containers:
 
 
 |    Operations	                            | Invalidated                |
@@ -162,6 +164,18 @@ The rules are the same as for std::unordered_map, and are valid for all the phma
 | clear, rehash, reserve, operator=         | Always                     |
 | insert, emplace, emplace_hint, operator[] | Only if rehash triggered   |
 | erase                                     | Only to the element erased |
+
+## Iterator invalidation for btree containers
+
+Unlike for `std::map` and `std::set`, any mutating operation may invalidate existing iterators.
+
+
+|    Operations	                            | Invalidated                |
+|-------------------------------------------|----------------------------|
+| All read only operations, swap, std::swap | Never                      |
+| clear, operator=                          | Always                     |
+| insert, emplace, emplace_hint, operator[] | Yes                        |
+| erase                                     | Yes                        |
 
 ## Example 2 - providing a hash function for a user-defined class
 
