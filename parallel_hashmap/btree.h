@@ -246,7 +246,7 @@ namespace phmap {
 #define PHMAP_COMPARE_INLINE_BASECLASS_DECL(name)
 
 #define PHMAP_COMPARE_INLINE_SUBCLASS_DECL(type, name)  \
-        static const type name
+        static const type name;
 
 #define PHMAP_COMPARE_INLINE_INIT(type, name, init) \
         inline constexpr type type::name(init)
@@ -313,8 +313,8 @@ namespace phmap {
         friend struct compare_internal::weak_equality_base<weak_equality>;
 
     public:
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_equality, equivalent);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_equality, nonequivalent);
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_equality, equivalent)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_equality, nonequivalent)
 
         // Comparisons
         friend constexpr bool operator==(
@@ -349,10 +349,10 @@ namespace phmap {
         friend struct compare_internal::strong_equality_base<strong_equality>;
 
     public:
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, equal);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, nonequal);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, equivalent);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, nonequivalent);
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, equal)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, nonequal)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, equivalent)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_equality, nonequivalent)
 
         // Conversion
         constexpr operator weak_equality() const noexcept {  // NOLINT
@@ -405,10 +405,10 @@ namespace phmap {
         }
 
     public:
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, less);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, equivalent);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, greater);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, unordered);
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, less)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, equivalent)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, greater)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(partial_ordering, unordered)
 
         // Conversion
         constexpr operator weak_equality() const noexcept {  // NOLINT
@@ -486,9 +486,9 @@ namespace phmap {
         friend struct compare_internal::weak_ordering_base<weak_ordering>;
 
     public:
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, less);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, equivalent);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, greater);
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, less)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, equivalent)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(weak_ordering, greater)
 
         // Conversions
         constexpr operator weak_equality() const noexcept {  // NOLINT
@@ -569,10 +569,10 @@ namespace phmap {
         friend struct compare_internal::strong_ordering_base<strong_ordering>;
 
     public:
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, less);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, equal);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, equivalent);
-        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, greater);
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, less)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, equal)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, equivalent)
+        PHMAP_COMPARE_INLINE_SUBCLASS_DECL(strong_ordering, greater)
 
         // Conversions
         constexpr operator weak_equality() const noexcept {  // NOLINT
