@@ -33,7 +33,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ---------------------------------------------------------------------------
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -59,10 +58,12 @@
     #pragma warning(push)  
 
     #pragma warning(disable : 4127) // conditional expression is constant
+    #pragma warning(disable : 4324) // structure was padded due to alignment specifier
     #pragma warning(disable : 4514) // unreferenced inline function has been removed
     #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
     #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
     #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4710) // function not inlined
     #pragma warning(disable : 4711) //  selected for automatic inline expansion
     #pragma warning(disable : 4820) // '6' bytes padding added after data member
     #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
@@ -430,7 +431,7 @@ struct GroupPortableImpl
 
     uint32_t CountLeadingEmptyOrDeleted() const {
         constexpr uint64_t gaps = 0x00FEFEFEFEFEFEFEULL;
-        return (TrailingZeros(((~ctrl & (ctrl >> 7)) | gaps) + 1) + 7) >> 3;
+        return (uint32_t)((TrailingZeros(((~ctrl & (ctrl >> 7)) | gaps) + 1) + 7) >> 3);
     }
 
     void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
