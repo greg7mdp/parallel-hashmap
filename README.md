@@ -19,7 +19,7 @@ This repository aims to provide a set of excellent **hash map** implementations,
 
 - Supports **heterogeneous lookup**
 
-- Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers
+- Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers [note: this does not work currently for hash maps with pointer keys]
 
 - **Dump/load** feature: when a hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`. _(hash map/set only)_
 
@@ -155,7 +155,7 @@ When an ordering is not needed, a hash container is typically a better choice th
 
 ## Iterator invalidation for hash containers
 
-The rules are the same as for std::unordered_map, and are valid for all the phmap hash containers:
+The rules are the same as for `std::unordered_map`, and are valid for all the phmap hash containers:
 
 
 |    Operations	                            | Invalidated                |
@@ -167,7 +167,7 @@ The rules are the same as for std::unordered_map, and are valid for all the phma
 
 ## Iterator invalidation for btree containers
 
-Unlike for `std::map` and `std::set`, any mutating operation may invalidate existing iterators.
+Unlike for `std::map` and `std::set`, any mutating operation may invalidate existing iterators to btree containers.
 
 
 |    Operations	                            | Invalidated                |
