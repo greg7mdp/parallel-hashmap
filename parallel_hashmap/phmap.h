@@ -55,6 +55,12 @@
     #include <string_view>
 #endif
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    //  warning C4820: '6' bytes padding added after data member
+    #pragma warning(disable : 4820)
+#endif
+
 namespace phmap {
 
 namespace container_internal {
@@ -268,7 +274,7 @@ inline size_t H1(size_t hash, const ctrl_t* ) {
 #endif
 
 
-inline ctrl_t H2(size_t hash)          { return hash & 0x7F; }
+inline ctrl_t H2(size_t hash)          { return (ctrl_t)(hash & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
 inline bool IsFull(ctrl_t c)           { return c >= 0; }
@@ -313,7 +319,7 @@ struct GroupSse2Impl
     // Returns a bitmask representing the positions of slots that match hash.
     // ----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> Match(h2_t hash) const {
-        auto match = _mm_set1_epi8(hash);
+        auto match = _mm_set1_epi8((char)hash);
         return BitMask<uint32_t, kWidth>(
             _mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl)));
     }
@@ -461,6 +467,12 @@ inline size_t NormalizeCapacity(size_t n)
     return n ? ~size_t{} >> LeadingZeros(n) : 1;
 }
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    // warning C4127: conditional expression is constant
+    #pragma warning(disable : 4127)
+#endif
+
 // --------------------------------------------------------------------------
 // We use 7/8th as maximum load factor.
 // For 16-wide groups, that gives an average of two empty slots per group.
@@ -469,7 +481,7 @@ inline size_t CapacityToGrowth(size_t capacity)
 {
     assert(IsValidCapacity(capacity));
     // `capacity*7/8`
-    if (Group::kWidth == 8 && capacity == 7) {
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && capacity == 7) {
         // x-x/8 does not work when x==7.
         return 6;
     }
@@ -483,12 +495,16 @@ inline size_t CapacityToGrowth(size_t capacity)
 inline size_t GrowthToLowerboundCapacity(size_t growth) 
 {
     // `growth*8/7`
-    if (Group::kWidth == 8 && growth == 7) {
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && growth == 7) {
         // x+(x-1)/7 does not work when x==7.
         return 8;
     }
     return growth + static_cast<size_t>((static_cast<int64_t>(growth) - 1) / 7);
 }
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 namespace hashtable_debug_internal {
 
@@ -4346,5 +4362,10 @@ public:
 };
 
 }  // namespace phmap
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
 
 #endif // phmap_h_guard_

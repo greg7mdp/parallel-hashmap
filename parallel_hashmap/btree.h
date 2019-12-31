@@ -1197,10 +1197,10 @@ namespace container_internal {
         void clear_child(size_type i) {
             phmap::container_internal::SanitizerPoisonObject(&mutable_child(i));
         }
-        void set_child(int i, btree_node *c) {
+        void set_child(size_type i, btree_node *c) {
             phmap::container_internal::SanitizerUnpoisonObject(&mutable_child(i));
             mutable_child(i) = c;
-            c->set_position(i);
+            c->set_position((field_type)i);
         }
         void init_child(int i, btree_node *c) {
             set_child(i, c);

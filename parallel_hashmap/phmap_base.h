@@ -246,17 +246,6 @@ struct is_trivially_destructible
     : std::integral_constant<bool, __has_trivial_destructor(T) &&
                                    std::is_destructible<T>::value> 
 {
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
-private:
-    static constexpr bool compliant = std::is_trivially_destructible<T>::value ==
-        is_trivially_destructible::value;
-    static_assert(compliant || std::is_trivially_destructible<T>::value,
-                  "Not compliant with std::is_trivially_destructible; "
-                  "Standard: false, Implementation: true");
-    static_assert(compliant || !std::is_trivially_destructible<T>::value,
-                  "Not compliant with std::is_trivially_destructible; "
-                  "Standard: true, Implementation: false");
-#endif 
 };
 
 // ---------------------------------------------------------------------------
@@ -2846,6 +2835,12 @@ struct KeyArg<false>
     using type = key_type;
 };
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    //  warning C4820: '6' bytes padding added after data member
+    #pragma warning(disable : 4820)
+#endif
+
 // The node_handle concept from C++17.
 // We specialize node_handle for sets and maps. node_handle_base holds the
 // common API of both.
@@ -2900,6 +2895,9 @@ protected:
         PolicyTraits::transfer(alloc(), slot(), s);
     }
 
+    node_handle_base(const node_handle_base&) = delete;
+    node_handle_base& operator=(const node_handle_base&) = delete;
+
     void destroy() {
         if (!empty()) {
             PolicyTraits::destroy(alloc(), slot());
@@ -2921,9 +2919,12 @@ protected:
 
 private:
     phmap::optional<allocator_type> alloc_;
-    mutable phmap::aligned_storage_t<sizeof(slot_type), alignof(slot_type)>
-    slot_space_;
+    mutable phmap::aligned_storage_t<sizeof(slot_type), alignof(slot_type)> slot_space_;
 };
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 // For sets.
 // ---------
@@ -4436,6 +4437,11 @@ class PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTuple<> {};
 namespace phmap {
 namespace container_internal {
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    // warning warning C4324: structure was padded due to alignment specifier
+    #pragma warning(disable : 4324)
+#endif
 
 
 // ----------------------------------------------------------------------------
@@ -4476,6 +4482,10 @@ void Deallocate(Alloc* alloc, void* p, size_t n) {
   AT::deallocate(mem_alloc, static_cast<M*>(p),
                  (n + sizeof(M) - 1) / sizeof(M));
 }
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 // Helper functions for asan and msan.
 // ----------------------------------------------------------------------------
@@ -4714,6 +4724,9 @@ union map_slot_type
 {
     map_slot_type() {}
     ~map_slot_type() = delete;
+    map_slot_type(const map_slot_type&) = delete;
+    map_slot_type& operator=(const map_slot_type&) = delete;
+
     using value_type = std::pair<const K, V>;
     using mutable_value_type = std::pair<K, V>;
 

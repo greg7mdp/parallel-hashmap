@@ -1412,7 +1412,7 @@ namespace {
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set3)>(), 3);
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set61)>(), 61);
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set100)>(), 100);
-        if (sizeof(void *) == 8) {
+        PHMAP_IF_CONSTEXPR (sizeof(void *) == 8) {
             EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<phmap::btree_set<int32_t>>(),
                       BtreeNodePeer::GetNumValuesPerNode<decltype(set61)>());
         }
@@ -1467,7 +1467,7 @@ namespace {
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set3)>(), 3);
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set61)>(), 61);
         EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<decltype(set100)>(), 100);
-        if (sizeof(void *) == 8) {
+        PHMAP_IF_CONSTEXPR (sizeof(void *) == 8) {
             EXPECT_EQ(BtreeNodePeer::GetNumValuesPerNode<phmap::btree_set<int32_t>>(),
                       BtreeNodePeer::GetNumValuesPerNode<decltype(set61)>());
         }
