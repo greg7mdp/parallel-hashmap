@@ -54,6 +54,7 @@
 #include <initializer_list>
 #include <iterator>
 
+#include "phmap_fwd_decl.h"
 #include "phmap_base.h"
 
 #if PHMAP_HAVE_STD_STRING_VIEW
@@ -3808,8 +3809,9 @@ namespace container_internal {
 
 
     // ----------------------------------------------------------------------
-    template <typename Key, typename Compare = std::less<Key>,
-              typename Alloc = std::allocator<Key>>
+    //  btree_set - default values in phmap_fwd_decl.h
+    // ----------------------------------------------------------------------
+    template <typename Key, typename Compare, typename Alloc>
     class btree_set : public container_internal::btree_set_container<
         container_internal::btree<container_internal::set_params<
             Key, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ false>>> 
@@ -3864,8 +3866,9 @@ namespace container_internal {
     }
 
     // ----------------------------------------------------------------------
-    template <typename Key, typename Compare = std::less<Key>,
-              typename Alloc = std::allocator<Key>>
+    //  btree_multiset - default values in phmap_fwd_decl.h
+    // ----------------------------------------------------------------------
+    template <typename Key, typename Compare,  typename Alloc>
         class btree_multiset : public container_internal::btree_multiset_container<
         container_internal::btree<container_internal::set_params<
              Key, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ true>>> 
@@ -3921,8 +3924,9 @@ namespace container_internal {
 
 
     // ----------------------------------------------------------------------
-    template <typename Key, typename Value, typename Compare = std::less<Key>,
-              typename Alloc = std::allocator<std::pair<const Key, Value>>>
+    //  btree_map - default values in phmap_fwd_decl.h
+    // ----------------------------------------------------------------------
+    template <typename Key, typename Value, typename Compare,  typename Alloc>
         class btree_map : public container_internal::btree_map_container<
         container_internal::btree<container_internal::map_params<
              Key, Value, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ false>>> 
@@ -3979,8 +3983,9 @@ namespace container_internal {
     }
 
     // ----------------------------------------------------------------------
-    template <typename Key, typename Value, typename Compare = std::less<Key>,
-              typename Alloc = std::allocator<std::pair<const Key, Value>>>
+    //  btree_multimap - default values in phmap_fwd_decl.h
+    // ----------------------------------------------------------------------
+    template <typename Key, typename Value, typename Compare, typename Alloc>
         class btree_multimap : public container_internal::btree_multimap_container<
         container_internal::btree<container_internal::map_params<
               Key, Value, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ true>>> 

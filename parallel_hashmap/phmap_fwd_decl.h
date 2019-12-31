@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <utility>
+#include <functional>
 
 #if defined(PHMAP_USE_ABSL_HASH)
     namespace absl { template <class T> struct Hash; };
@@ -58,6 +59,7 @@ namespace phmap {
 
     }  // namespace container_internal
 
+    // ------------- forward declarations for hash containers ----------------------------------
     template <class T, 
               class Hash  = phmap::container_internal::hash_default_hash<T>,
               class Eq    = phmap::container_internal::hash_default_eq<T>,
@@ -118,7 +120,22 @@ namespace phmap {
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_node_hash_map;
 
+    // ------------- forward declarations for btree containers ----------------------------------
+    template <typename Key, typename Compare = std::less<Key>,
+              typename Alloc = phmap::Allocator<Key>>
+        class btree_set;
 
+    template <typename Key, typename Compare = std::less<Key>,
+              typename Alloc = phmap::Allocator<Key>>
+        class btree_multiset;
+
+    template <typename Key, typename Value, typename Compare = std::less<Key>,
+              typename Alloc = phmap::Allocator<phmap::container_internal::Pair<const Key, Value>>>
+        class btree_map;
+    
+    template <typename Key, typename Value, typename Compare = std::less<Key>,
+              typename Alloc = phmap::Allocator<phmap::container_internal::Pair<const Key, Value>>>
+        class btree_multimap;
 
 }  // namespace phmap
 
