@@ -63,6 +63,7 @@
     #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
     #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
     #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4711) //  selected for automatic inline expansion
     #pragma warning(disable : 4820) // '6' bytes padding added after data member
     #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
     #pragma warning(disable : 5027) // move assignment operator was implicitly defined as deleted
@@ -1524,7 +1525,7 @@ public:
     //   s.count("abc");
     template <class K = key_type>
     size_t count(const key_arg<K>& key) const {
-        return find(key) == end() ? 0 : 1;
+        return find(key) == end() ? size_t(0) : size_t(1);
     }
 
     // Issues CPU prefetch instructions for the memory needed to find or insert
