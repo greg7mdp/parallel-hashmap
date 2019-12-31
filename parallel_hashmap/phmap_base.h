@@ -60,6 +60,7 @@
     #pragma warning(disable : 4582) // constructor is not implicitly called
     #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
     #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4710) // function not inlined
     #pragma warning(disable : 4711) //  selected for automatic inline expansion
     #pragma warning(disable : 4820) // '6' bytes padding added after data member
 #endif  // _MSC_VER
