@@ -116,7 +116,7 @@ if (PHMAP_BUILD_TESTS)
 
     ## --------------- btree -----------------------------------------------
     phmap_cc_test(NAME btree SRCS "tests/btree_test.cc"
-                  DEPS gmock_main)
+                  CWOPTS "/W0" CLOPTS "-w" DEPS gmock_main)
 
 
 endif()

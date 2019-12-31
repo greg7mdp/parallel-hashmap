@@ -10,7 +10,7 @@ function(phmap_cc_test)
   cmake_parse_arguments(PHMAP_CC_TEST
     ""
     "NAME"
-    "SRCS;COPTS;DEFINES;LINKOPTS;DEPS"
+    "SRCS;COPTS;CWOPTS;CLOPTS;DEFINES;LINKOPTS;DEPS"
     ${ARGN}
   )
 
@@ -24,6 +24,15 @@ function(phmap_cc_test)
   target_compile_definitions(${_NAME}
     PUBLIC ${PHMAP_CC_TEST_DEFINES}
   )
+if(MSVC)
+  target_compile_options(${_NAME}
+    PRIVATE ${PHMAP_CC_TEST_CWOPTS}
+  )
+else()
+  target_compile_options(${_NAME}
+    PRIVATE ${PHMAP_CC_TEST_CLOPTS}
+  )
+endif()
   target_compile_options(${_NAME}
     PRIVATE ${PHMAP_CC_TEST_COPTS}
   )
