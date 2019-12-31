@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string>
+#include "btree_fwd.h"
 #include <parallel_hashmap/btree.h>
 
 int main()
@@ -21,7 +21,7 @@ int main()
     for (auto& p: map)
         std::cout << p.first <<  ", " << p.second << '\n';
 
-    phmap::btree_map<int, std::string> map2;
+    IntString map2; // IntString is declared in btree_fwd.h
 
     map2.emplace(std::piecewise_construct, std::forward_as_tuple(0), std::forward_as_tuple(10, 'c'));
     map2.try_emplace(1, 10, 'a'); // phmap::btree_map supports c++17 API
