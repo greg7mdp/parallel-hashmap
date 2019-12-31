@@ -50,6 +50,11 @@
 #include <cstdint>
 #include "phmap_config.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+#endif
+
 // -----------------------------------------------------------------------------
 // unaligned APIs
 // -----------------------------------------------------------------------------
@@ -650,5 +655,9 @@ inline void Store64(void *p, uint64_t v) {
 }  // namespace big_endian
 
 }  // namespace phmap
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 #endif // phmap_bits_h_guard_

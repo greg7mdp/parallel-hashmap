@@ -26,6 +26,11 @@
 #include <tuple>
 #include "phmap_bits.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+#endif
+
 namespace phmap
 {
 
@@ -356,5 +361,8 @@ private:
 
 }  // namespace phmap
 
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 #endif // phmap_utils_h_guard_

@@ -57,8 +57,16 @@
 
 #ifdef _MSC_VER
     #pragma warning(push)  
-    //  warning C4820: '6' bytes padding added after data member
-    #pragma warning(disable : 4820)
+
+    #pragma warning(disable : 4127) // conditional expression is constant
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+    #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
+    #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
+    #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4820) // '6' bytes padding added after data member
+    #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
+    #pragma warning(disable : 5027) // move assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 #endif
 
 namespace phmap {
@@ -283,6 +291,11 @@ inline bool IsEmptyOrDeleted(ctrl_t c) { return c < kSentinel; }
 
 #if PHMAP_HAVE_SSE2
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4365) // conversion from 'int' to 'T', signed/unsigned mismatch
+#endif
+
 // --------------------------------------------------------------------------
 // https://github.com/abseil/abseil-cpp/issues/209
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87853
@@ -368,6 +381,11 @@ struct GroupSse2Impl
 
     __m128i ctrl;
 };
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
 #endif  // PHMAP_HAVE_SSE2
 
 // --------------------------------------------------------------------------
@@ -467,12 +485,6 @@ inline size_t NormalizeCapacity(size_t n)
     return n ? ~size_t{} >> LeadingZeros(n) : 1;
 }
 
-#ifdef _MSC_VER
-    #pragma warning(push)  
-    // warning C4127: conditional expression is constant
-    #pragma warning(disable : 4127)
-#endif
-
 // --------------------------------------------------------------------------
 // We use 7/8th as maximum load factor.
 // For 16-wide groups, that gives an average of two empty slots per group.
@@ -501,10 +513,6 @@ inline size_t GrowthToLowerboundCapacity(size_t growth)
     }
     return growth + static_cast<size_t>((static_cast<int64_t>(growth) - 1) / 7);
 }
-
-#ifdef _MSC_VER
-     #pragma warning(pop)  
-#endif
 
 namespace hashtable_debug_internal {
 
@@ -1550,11 +1558,11 @@ public:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hash))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset(i)))))
-                    return iterator_at(seq.offset(i));
+                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+                    return iterator_at(seq.offset((size_t)i));
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) 
                 return end();
@@ -1725,7 +1733,7 @@ private:
     void erase_meta_only(const_iterator it) {
         assert(IsFull(*it.inner_.ctrl_) && "erasing a dangling iterator");
         --size_;
-        const size_t index = it.inner_.ctrl_ - ctrl_;
+        const size_t index = (size_t)(it.inner_.ctrl_ - ctrl_);
         const size_t index_before = (index - Group::kWidth) & capacity_;
         const auto empty_after = Group(it.inner_.ctrl_).MatchEmpty();
         const auto empty_before = Group(ctrl_ + index_before).MatchEmpty();
@@ -1884,8 +1892,8 @@ private:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
-                if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset(i)) ==
+            for (int i : g.Match((h2_t)H2(hash))) {
+                if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) ==
                                       elem))
                     return true;
             }
@@ -1921,7 +1929,7 @@ private:
             Group g{ctrl_ + seq.offset()};
             auto mask = g.MatchEmptyOrDeleted();
             if (mask) {
-                return {seq.offset(mask.LowestBitSet()), seq.index()};
+                return {seq.offset((size_t)mask.LowestBitSet()), seq.index()};
             }
             assert(seq.index() < capacity_ && "full table!");
             seq.next();
@@ -1946,11 +1954,11 @@ protected:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hash))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset(i)))))
-                    return {seq.offset(i), false};
+                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+                    return {seq.offset((size_t)i), false};
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
             seq.next();
@@ -3844,7 +3852,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
-                        Traits::element(set.slots_ + seq.offset(i))))
+                        Traits::element(set.slots_ + seq.offset((size_t)i))))
                     return num_probes;
                 ++num_probes;
             }

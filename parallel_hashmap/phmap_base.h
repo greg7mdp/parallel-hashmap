@@ -54,6 +54,15 @@
     #include <shared_mutex>  // after "phmap_config.h"
 #endif
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+    #pragma warning(disable : 4582) // constructor is not implicitly called
+    #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
+    #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4820) // '6' bytes padding added after data member
+#endif  // _MSC_VER
+
 namespace phmap {
 
 template <class T> using Allocator = typename std::allocator<T>;
@@ -213,166 +222,31 @@ struct disjunction<T> : T {};
 template <>
 struct disjunction<> : std::false_type {};
 
-// ---------------------------------------------------------------------------
-// negation
-//
-// Performs a compile-time logical NOT operation on the passed type (which
-// must have  `::value` members convertible to `bool`.
-//
-// This metafunction is designed to be a drop-in replacement for the C++17
-// `std::negation` metafunction.
-// ---------------------------------------------------------------------------
 template <typename T>
 struct negation : std::integral_constant<bool, !T::value> {};
 
-// ---------------------------------------------------------------------------
-// is_trivially_destructible()
-//
-// Determines whether the passed type `T` is trivially destructable.
-//
-// This metafunction is designed to be a drop-in replacement for the C++11
-// `std::is_trivially_destructible()` metafunction for platforms that have
-// incomplete C++11 support (such as libstdc++ 4.x). On any platforms that do
-// fully support C++11, we check whether this yields the same result as the std
-// implementation.
-//
-// NOTE: the extensions (__has_trivial_xxx) are implemented in gcc (version >=
-// 4.3) and clang. Since we are supporting libstdc++ > 4.7, they should always
-// be present. These  extensions are documented at
-// https://gcc.gnu.org/onlinedocs/gcc/Type-Traits.html#Type-Traits.
-// ---------------------------------------------------------------------------
 template <typename T>
 struct is_trivially_destructible
     : std::integral_constant<bool, __has_trivial_destructor(T) &&
-                                   std::is_destructible<T>::value> 
-{
-};
+      std::is_destructible<T>::value> {};
 
-// ---------------------------------------------------------------------------
-// is_trivially_default_constructible()
-//
-// Determines whether the passed type `T` is trivially default constructible.
-//
-// This metafunction is designed to be a drop-in replacement for the C++11
-// `std::is_trivially_default_constructible()` metafunction for platforms that
-// have incomplete C++11 support (such as libstdc++ 4.x). On any platforms that
-// do fully support C++11, we check whether this yields the same result as the
-// std implementation.
-//
-// NOTE: according to the C++ standard, Section: 20.15.4.3 [meta.unary.prop]
-// "The predicate condition for a template specialization is_constructible<T,
-// Args...> shall be satisfied if and only if the following variable
-// definition would be well-formed for some invented variable t:
-//
-// T t(declval<Args>()...);
-//
-// is_trivially_constructible<T, Args...> additionally requires that the
-// variable definition does not call any operation that is not trivial.
-// For the purposes of this check, the call to std::declval is considered
-// trivial."
-//
-// Notes from https://en.cppreference.com/w/cpp/types/is_constructible:
-// In many implementations, is_nothrow_constructible also checks if the
-// destructor throws because it is effectively noexcept(T(arg)). Same
-// applies to is_trivially_constructible, which, in these implementations, also
-// requires that the destructor is trivial.
-// GCC bug 51452: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=51452
-// LWG issue 2116: http://cplusplus.github.io/LWG/lwg-active.html#2116.
-//
-// "T obj();" need to be well-formed and not call any nontrivial operation.
-// Nontrivially destructible types will cause the expression to be nontrivial.
-// ---------------------------------------------------------------------------
 template <typename T>
 struct is_trivially_default_constructible
     : std::integral_constant<bool, __has_trivial_constructor(T) &&
                                    std::is_default_constructible<T>::value &&
-                                   is_trivially_destructible<T>::value> 
-{
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE
-private:
-    static constexpr bool compliant =
-        std::is_trivially_default_constructible<T>::value ==
-        is_trivially_default_constructible::value;
-    static_assert(compliant || std::is_trivially_default_constructible<T>::value,
-                  "Not compliant with std::is_trivially_default_constructible; "
-                  "Standard: false, Implementation: true");
-    static_assert(compliant || !std::is_trivially_default_constructible<T>::value,
-                  "Not compliant with std::is_trivially_default_constructible; "
-                  "Standard: true, Implementation: false");
-#endif
-};
+      is_trivially_destructible<T>::value> {};
 
-// ---------------------------------------------------------------------------
-// is_trivially_copy_constructible()
-//
-// Determines whether the passed type `T` is trivially copy constructible.
-//
-// This metafunction is designed to be a drop-in replacement for the C++11
-// `std::is_trivially_copy_constructible()` metafunction for platforms that have
-// incomplete C++11 support (such as libstdc++ 4.x). On any platforms that do
-// fully support C++11, we check whether this yields the same result as the std
-// implementation.
-//
-// NOTE: `T obj(declval<const T&>());` needs to be well-formed and not call any
-// nontrivial operation.  Nontrivially destructible types will cause the
-// expression to be nontrivial.
-// ---------------------------------------------------------------------------
 template <typename T>
 struct is_trivially_copy_constructible
     : std::integral_constant<bool, __has_trivial_copy(T) &&
                                    std::is_copy_constructible<T>::value &&
-                                   is_trivially_destructible<T>::value> 
-{
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE
-private:
-    static constexpr bool compliant =
-        std::is_trivially_copy_constructible<T>::value ==
-        is_trivially_copy_constructible::value;
-    static_assert(compliant || std::is_trivially_copy_constructible<T>::value,
-                  "Not compliant with std::is_trivially_copy_constructible; "
-                  "Standard: false, Implementation: true");
-    static_assert(compliant || !std::is_trivially_copy_constructible<T>::value,
-                  "Not compliant with std::is_trivially_copy_constructible; "
-                  "Standard: true, Implementation: false");
-#endif
-};
+      is_trivially_destructible<T>::value> {};
 
-// ---------------------------------------------------------------------------
-// is_trivially_copy_assignable()
-//
-// Determines whether the passed type `T` is trivially copy assignable.
-//
-// This metafunction is designed to be a drop-in replacement for the C++11
-// `std::is_trivially_copy_assignable()` metafunction for platforms that have
-// incomplete C++11 support (such as libstdc++ 4.x). On any platforms that do
-// fully support C++11, we check whether this yields the same result as the std
-// implementation.
-//
-// NOTE: `is_assignable<T, U>::value` is `true` if the expression
-// `declval<T>() = declval<U>()` is well-formed when treated as an unevaluated
-// operand. `is_trivially_assignable<T, U>` requires the assignment to call no
-// operation that is not trivial. `is_trivially_copy_assignable<T>` is simply
-// `is_trivially_assignable<T&, const T&>`.
-// ---------------------------------------------------------------------------
 template <typename T>
 struct is_trivially_copy_assignable
     : std::integral_constant<
           bool, __has_trivial_assign(typename std::remove_reference<T>::type) &&
-                    phmap::is_copy_assignable<T>::value> 
-{
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE
-private:
-    static constexpr bool compliant =
-        std::is_trivially_copy_assignable<T>::value ==
-        is_trivially_copy_assignable::value;
-    static_assert(compliant || std::is_trivially_copy_assignable<T>::value,
-                  "Not compliant with std::is_trivially_copy_assignable; "
-                  "Standard: false, Implementation: true");
-    static_assert(compliant || !std::is_trivially_copy_assignable<T>::value,
-                  "Not compliant with std::is_trivially_copy_assignable; "
-                  "Standard: true, Implementation: false");
-#endif
-};
+      phmap::is_copy_assignable<T>::value> {};
 
 // -----------------------------------------------------------------------------
 // C++14 "_t" trait aliases
@@ -1216,6 +1090,11 @@ auto apply(Functor&& functor, Tuple&& t)
           typename std::remove_reference<Tuple>::type>::value>{});
 }
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4365) // '=': conversion from 'T' to 'T', signed/unsigned mismatch
+#endif  // _MSC_VER
+
 // exchange
 //
 // Replaces the value of `obj` with `new_value` and returns the old value of
@@ -1236,6 +1115,11 @@ T exchange(T& obj, U&& new_value)
     obj = phmap::forward<U>(new_value);
     return old_value;
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif  // _MSC_VER
+
 
 }  // namespace phmap
 
@@ -2895,8 +2779,8 @@ protected:
         PolicyTraits::transfer(alloc(), slot(), s);
     }
 
-    node_handle_base(const node_handle_base&) = delete;
-    node_handle_base& operator=(const node_handle_base&) = delete;
+    //node_handle_base(const node_handle_base&) = delete;
+    //node_handle_base& operator=(const node_handle_base&) = delete;
 
     void destroy() {
         if (!empty()) {
@@ -5263,5 +5147,10 @@ public:
 
 
 }  // phmap
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
 
 #endif // phmap_base_h_guard_
