@@ -5,11 +5,11 @@
 
 ## Overview
 
-This repository aims to provide an set of excellent hash map implementations, with the following characteristics:
+This repository aims to provide a set of excellent hash map implementations, as well as a btree alternative to std::map and std::set, with the following characteristics:
 
 - **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
-- **drop-in replacement** for std::unordered_map and std::unordered_set
+- **drop-in replacement** for `std::unordered_map`, `std::unordered_set`, `std::map` and `std::set`
 
 - Compiler with **C++11 support** required, **C++14 and C++17 APIs are provided (such as `try_emplace`)**
 
@@ -19,7 +19,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Supports **heterogeneous lookup**
 
-- Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers. 
+- Easy to **forward declare**: just include `phmap_fwd_decl.h` in your header files to forward declare Parallel Hashmap containers
 
 - **Dump/load** feature: when a hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`.
 
@@ -27,7 +27,7 @@ This repository aims to provide an set of excellent hash map implementations, wi
 
 - Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`). Also default hash support for `std::pair` and `std::tuple`.
 
-- **natvis** visualization support in Visual Studio.
+- **natvis** visualization support in Visual Studio _(hash map/set only)_
 
 
 ## Fast *and*  memory friendly
@@ -91,19 +91,35 @@ The header `parallel_hashmap/phmap.h` provides the implementation for the follow
 - phmap::parallel_node_hash_set
 - phmap::parallel_node_hash_map
 
+The header `parallel_hashmap/btree.h` provides the implementation for the following btree-based ordered containers:
+- phmap::btree_set
+- phmap::btree_map
+- phmap::btree_multiset
+- phmap::btree_multimap
+
+When btrees are mutated, values stored within can be moved in memory. This means that pointers or iterators to values stored in btree containers can be invalidated when that btree is modified. This is a significant difference with `std::map` and `std::set` which offer a guarantee of pointer stability. The same is true for the 'flat' hash maps and sets.
+
 The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessary.
 
-**Key decision points:**
+**Key decision points for hash containers:**
 
-- The `flat` hash maps may move the keys and values in memory. So if you keep a pointer to something inside a `flat` hash map, this pointer may become invalid when the map is mutated. The `node` hash maps don't, and should be used instead if this is a problem.
+- The `flat` hash maps will move the keys and values in memory. So if you keep a pointer to something inside a `flat` hash map, this pointer may become invalid when the map is mutated. The `node` hash maps don't, and should be used instead if this is a problem.
 
-- The `flat` hash maps will use less memory, and usually be faster than the `node` hash maps, so use them if you can. A possible exception is when the values inserted in the hash map are large (say more than 100 bytes [*needs testing*]).
+- The `flat` hash maps will use less memory, and usually be faster than the `node` hash maps, so use them if you can. the exception is when the values inserted in the hash map are large (say more than 100 bytes [*needs testing*]) and costly to move.
 
 - The `parallel` hash maps are preferred when you have a few hash maps that will store a very large number of values. The `non-parallel` hash maps are preferred if you have a large number of hash maps, each storing a relatively small number of values.
 
 - The benefits of the `parallel` hash maps are:  
    a. reduced peak memory usage (when resizing), and  
    b. multithreading support (and inherent internal parallelism)
+
+**Key decision points for btree containers:**
+
+Btree containers are ordered containers, which can be used as alternatives to `std::map` and `std::set`. They store multiple values in each tree node, and are therefore more cache friendly and use significantly less memory.
+
+Btree containers will usually be preferable to the default red-black trees of the STL, except when:
+- pointer stability or iterator stability is required
+- the value_type is large and expensive to move
 
 ## Changes to Abseil's hashmaps
 
@@ -266,3 +282,6 @@ While C++ is the native language of the Parallel Hashmap, we welcome bindings ma
 
 - [GetPy - A Simple, Fast, and Small Hash Map for Python](https://github.com/atom-moyer/getpy): GetPy is a thin and robust binding to The Parallel Hashmap (https://github.com/greg7mdp/parallel-hashmap.git) which is the current state of the art for minimal memory overhead and fast runtime speed. The binding layer is supported by PyBind11 (https://github.com/pybind/pybind11.git) which is fast to compile and simple to extend. Serialization is handled by Cereal (https://github.com/USCiLab/cereal.git) which supports streaming binary serialization, a critical feature for the large hash maps this package is designed to support.
 
+## Acknowledgements
+
+Many thanks to the Abseil developers for implementing the swiss table and btree data structures (see [abseil-cpp](https://github.com/abseil/abseil-cpp)) upon which this work is based, and to Google for releasing it as open-source. 
