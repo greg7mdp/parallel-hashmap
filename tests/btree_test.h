@@ -60,11 +60,11 @@ namespace phmap {
 
 namespace test_internal {
 
-// A type that counts number of occurrences of the type, the live occurrences of
-// the type, as well as the number of copies, moves, swaps, and comparisons that
-// have occurred on the type. This is used as a base class for the copyable,
-// copyable+movable, and movable types below that are used in actual tests. Use
-// InstanceTracker in tests to track the number of instances.
+    // A type that counts number of occurrences of the type, the live occurrences of
+    // the type, as well as the number of copies, moves, swaps, and comparisons that
+    // have occurred on the type. This is used as a base class for the copyable,
+    // copyable+movable, and movable types below that are used in actual tests. Use
+    // InstanceTracker in tests to track the number of instances.
     class BaseCountedInstance {
     public:
         explicit BaseCountedInstance(int x) : value_(x) {

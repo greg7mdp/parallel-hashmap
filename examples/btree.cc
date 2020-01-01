@@ -15,6 +15,9 @@ int main()
     map["lucy"]  = 18;
     map["Andre"] = 20;
 
+    auto it = map.find("Joe");
+    map.erase(it);
+
     map.insert(std::make_pair("Alex", 16));
     map.emplace("Emily", 18); // emplace uses pair template constructor
     
