@@ -27,11 +27,20 @@
     #include <any>
 #endif
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable: 4710 4711)
+#endif
+
 #include "hash_generator_testing.h"
 #include "unordered_map_constructor_test.h"
 #include "unordered_map_lookup_test.h"
 #include "unordered_map_members_test.h"
 #include "unordered_map_modifiers_test.h"
+
+#ifdef _MSC_VER
+    #pragma warning(pop) 
+#endif
 
 namespace phmap {
 namespace container_internal {

@@ -19,10 +19,18 @@
 #include <vector>
 #include <unordered_map>
 
+#ifdef _MSC_VER
+    #pragma warning(push, 0) 
+#endif
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "hash_generator_testing.h"
 #include "hash_policy_testing.h"
+
+#ifdef _MSC_VER
+    #pragma warning(pop) 
+#endif
 
 namespace phmap {
 namespace container_internal {

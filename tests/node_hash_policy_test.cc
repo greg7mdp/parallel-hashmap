@@ -29,12 +29,12 @@ struct Policy : node_hash_policy<int&, Policy> {
   using init_type = int;
 
   template <class Alloc>
-  static int* new_element(Alloc* alloc, int value) {
+  static int* new_element(Alloc*, int value) {
     return new int(value);
   }
 
   template <class Alloc>
-  static void delete_element(Alloc* alloc, int* elem) {
+  static void delete_element(Alloc* , int* elem) {
     delete elem;
   }
 };

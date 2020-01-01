@@ -34,6 +34,26 @@
 #ifndef PHMAP_BTREE_BTREE_CONTAINER_H_
 #define PHMAP_BTREE_BTREE_CONTAINER_H_
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+
+    #pragma warning(disable : 4127) // conditional expression is constant
+    #pragma warning(disable : 4324) // structure was padded due to alignment specifier
+    #pragma warning(disable : 4355) // 'this': used in base member initializer list
+    #pragma warning(disable : 4365) // conversion from 'int' to 'const unsigned __int64', signed/unsigned mismatch
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+    #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
+    #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
+    #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4710) // function not inlined
+    #pragma warning(disable : 4711) //  selected for automatic inline expansion
+    #pragma warning(disable : 4820) // '6' bytes padding added after data member
+    #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
+    #pragma warning(disable : 5026) // move constructor was implicitly defined as deleted
+    #pragma warning(disable : 5027) // move assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+#endif
+
 #include <initializer_list>
 #include <iterator>
 #include <utility>
@@ -65,25 +85,6 @@
 // implementations should not use them as a source-of-truth.
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
     #define PHMAP_META_INTERNAL_STD_CONSTRUCTION_TRAITS_DONT_CHECK_DESTRUCTION 1
-#endif
-
-#ifdef _MSC_VER
-    #pragma warning(push)  
-
-    #pragma warning(disable : 4127) // conditional expression is constant
-    #pragma warning(disable : 4324) // structure was padded due to alignment specifier
-    #pragma warning(disable : 4355) // 'this': used in base member initializer list
-    #pragma warning(disable : 4514) // unreferenced inline function has been removed
-    #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
-    #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
-    #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
-    #pragma warning(disable : 4710) // function not inlined
-    #pragma warning(disable : 4711) //  selected for automatic inline expansion
-    #pragma warning(disable : 4820) // '6' bytes padding added after data member
-    #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
-    #pragma warning(disable : 5026) // move constructor was implicitly defined as deleted
-    #pragma warning(disable : 5027) // move assignment operator was implicitly defined as deleted
-    #pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 #endif
 
 namespace phmap {

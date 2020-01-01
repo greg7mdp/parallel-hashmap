@@ -11,6 +11,13 @@
 //      https://www.apache.org/licenses/LICENSE-2.0
 // ---------------------------------------------------------------------------
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+    #pragma warning(disable : 4710) // function not inlined
+    #pragma warning(disable : 4711) // selected for automatic inline expansion
+#endif
+
 #include <memory>
 #include <utility>
 #include <functional>
@@ -139,5 +146,9 @@ namespace phmap {
 
 }  // namespace phmap
 
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 #endif // phmap_fwd_decl_h_guard_
