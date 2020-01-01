@@ -97,7 +97,7 @@ The header `parallel_hashmap/btree.h` provides the implementation for the follow
 - phmap::btree_multiset
 - phmap::btree_multimap
 
-When btrees are mutated, values stored within can be moved in memory. This means that pointers or iterators to values stored in btree containers can be invalidated when that btree is modified. This is a significant difference with `std::map` and `std::set` which offer a guarantee of pointer stability. The same is true for the 'flat' hash maps and sets.
+When btrees are mutated, values stored within can be moved in memory. This means that pointers or iterators to values stored in btree containers can be invalidated when that btree is modified. This is a significant difference with `std::map` and `std::set`, as the std containers do offer a guarantee of pointer stability. The same is true for the 'flat' hash maps and sets.
 
 The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessary.
 
@@ -133,7 +133,7 @@ When an ordering is not needed, a hash container is typically a better choice th
 
 - The Abseil hash tables internally randomize a hash seed, so that the table iteration order is non-deterministic. This can be useful to prevent *Denial Of Service*  attacks when a hash table is used for a customer facing web service, but it can make debugging more difficult. The *phmap* hashmaps by default do **not** implement this randomization, but it can be enabled by adding `#define PHMAP_NON_DETERMINISTIC 1` before including the header `phmap.h` (as is done in raw_hash_set_test.cc).
 
-- Unlike the Abseil hash maps, we do an internal mixing of the hash value provided. This prevents serious degradation of the hash table performance when the hash function provided by the user has poor entropy distribution. The cost in performance is very minimal, and this helps provide reliable performance even with *not so good* hash functions. 
+- Unlike the Abseil hash maps, we do an internal mixing of the hash value provided. This prevents serious degradation of the hash table performance when the hash function provided by the user has poor entropy distribution. The cost in performance is very minimal, and this helps provide reliable performance even with *imperfect* hash functions. 
 
 
 ## Memory usage
