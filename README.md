@@ -97,6 +97,8 @@ The header `parallel_hashmap/btree.h` provides the implementation for the follow
 - phmap::btree_multiset
 - phmap::btree_multimap
 
+The btree containers are direct ports from Abseil, and should behave exactly the same as the Abseil ones, modulo small differences (such as supporting std::string_view instead of absl::string_view, and being forward declarable).
+
 When btrees are mutated, values stored within can be moved in memory. This means that pointers or iterators to values stored in btree containers can be invalidated when that btree is modified. This is a significant difference with `std::map` and `std::set`, as the std containers do offer a guarantee of pointer stability. The same is true for the 'flat' hash maps and sets.
 
 The full types with template parameters can be found in the [parallel_hashmap/phmap_fwd_decl.h](https://raw.githubusercontent.com/greg7mdp/parallel-hashmap/master/parallel_hashmap/phmap_fwd_decl.h) header, which is useful for forward declaring the Parallel Hashmaps when necessary.
