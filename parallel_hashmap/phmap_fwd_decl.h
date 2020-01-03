@@ -20,7 +20,6 @@
 
 #include <memory>
 #include <utility>
-#include <functional>
 
 #if defined(PHMAP_USE_ABSL_HASH)
     namespace absl { template <class T> struct Hash; };
@@ -35,6 +34,7 @@ namespace phmap {
 #endif
 
     template <class T> struct EqualTo;
+    template <class T> struct Less;
     template <class T> using Allocator      = typename std::allocator<T>;
     template<class T1, class T2> using Pair = typename std::pair<T1, T2>;
 
@@ -128,19 +128,19 @@ namespace phmap {
         class parallel_node_hash_map;
 
     // ------------- forward declarations for btree containers ----------------------------------
-    template <typename Key, typename Compare = std::less<Key>,
+    template <typename Key, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<Key>>
         class btree_set;
 
-    template <typename Key, typename Compare = std::less<Key>,
+    template <typename Key, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<Key>>
         class btree_multiset;
 
-    template <typename Key, typename Value, typename Compare = std::less<Key>,
+    template <typename Key, typename Value, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<phmap::container_internal::Pair<const Key, Value>>>
         class btree_map;
     
-    template <typename Key, typename Value, typename Compare = std::less<Key>,
+    template <typename Key, typename Value, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<phmap::container_internal::Pair<const Key, Value>>>
         class btree_multimap;
 

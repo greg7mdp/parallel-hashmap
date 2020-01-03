@@ -80,6 +80,15 @@ struct EqualTo
     }
 };
 
+template <class T>
+struct Less
+{
+    inline bool operator()(const T& a, const T& b) const
+    {
+        return std::less<T>()(a, b);
+    }
+};
+
 namespace type_traits_internal {
 
 template <typename... Ts>

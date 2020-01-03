@@ -755,6 +755,7 @@ namespace container_internal {
         StringBtreeDefaultLess(std::less<std::string>) {}       // NOLINT
 #if PHMAP_HAVE_STD_STRING_VIEW
         StringBtreeDefaultLess(std::less<std::string_view>) {}  // NOLINT
+        StringBtreeDefaultLess(phmap::Less<std::string_view>) {}  // NOLINT
 
         phmap::weak_ordering operator()(std::string_view lhs,
                                         std::string_view rhs) const {
@@ -811,6 +812,11 @@ namespace container_internal {
     };
 
     template <>
+    struct key_compare_to_adapter<phmap::Less<std::string>> {
+        using type = StringBtreeDefaultLess;
+    };
+
+    template <>
     struct key_compare_to_adapter<std::greater<std::string>> {
         using type = StringBtreeDefaultGreater;
     };
@@ -818,6 +824,11 @@ namespace container_internal {
 #if PHMAP_HAVE_STD_STRING_VIEW
     template <>
     struct key_compare_to_adapter<std::less<std::string_view>> {
+        using type = StringBtreeDefaultLess;
+    };
+
+    template <>
+    struct key_compare_to_adapter<phmap::Less<std::string_view>> {
         using type = StringBtreeDefaultLess;
     };
 
@@ -1071,7 +1082,8 @@ namespace container_internal {
         using use_linear_search = std::integral_constant<
             bool,
             std::is_arithmetic<key_type>::value &&
-            (std::is_same<std::less<key_type>, key_compare>::value ||
+            (std::is_same<phmap::Less<key_type>, key_compare>::value ||
+             std::is_same<std::less<key_type>, key_compare>::value ||
              std::is_same<std::greater<key_type>, key_compare>::value)>;
 
 
