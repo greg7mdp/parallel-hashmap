@@ -199,7 +199,6 @@
 <a class="sourceLine" id="cb2-5" title="5">    <span class="bu">std::</span>unique_ptr&lt;<span class="bu">std::</span>thread&gt; threads[num_threads];</a>
 <a class="sourceLine" id="cb2-6" title="6"></a>
 <a class="sourceLine" id="cb2-7" title="7">    <span class="kw">auto</span> thread_fn = [&amp;hash, cnt, num_threads](<span class="dt">int64_t</span> thread_idx, RSU rsu) {</a>
-<a class="sourceLine" id="cb2-8" title="8">        <span class="kw">typename</span> HT::hasher hasher;                         <span class="co">// get hasher object from the hash table</span></a>
 <a class="sourceLine" id="cb2-9" title="9">        <span class="dt">size_t</span> modulo = hash.subcnt() / num_threads;        <span class="co">// subcnt() returns the number of submaps</span></a>
 <a class="sourceLine" id="cb2-10" title="10"></a>
 <a class="sourceLine" id="cb2-11" title="11">        <span class="cf">for</span> (<span class="dt">int64_t</span> i=<span class="dv">0</span>; i&lt;cnt; ++i)                       <span class="co">// iterate over all values</span></a>
