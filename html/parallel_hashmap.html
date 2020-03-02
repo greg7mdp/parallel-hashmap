@@ -197,7 +197,7 @@
 <a class="sourceLine" id="cb2-11" title="11">        <span class="cf">for</span> (<span class="dt">int64_t</span> i=<span class="dv">0</span>; i&lt;cnt; ++i)                       <span class="co">// iterate over all values</span></a>
 <a class="sourceLine" id="cb2-12" title="12">        {</a>
 <a class="sourceLine" id="cb2-13" title="13">            <span class="dt">unsigned</span> <span class="dt">int</span> key = rsu.next();                  <span class="co">// get next key to insert</span></a>
-<a class="sourceLine" id="cb2-14" title="14">            <span class="dt">size_t</span> hashval = hasher(key);                   <span class="co">// compute its hash</span></a>
+<a class="sourceLine" id="cb2-14" title="14">            <span class="dt">size_t</span> hashval = hash.hash(key);                <span class="co">// compute its hash</span></a>
 <a class="sourceLine" id="cb2-15" title="15">            <span class="dt">size_t</span> idx  = hash.subidx(hashval);             <span class="co">// compute the submap index for this hash</span></a>
 <a class="sourceLine" id="cb2-16" title="16">            <span class="cf">if</span> (idx / modulo == thread_idx)                 <span class="co">// if the submap is suitable for this thread</span></a>
 <a class="sourceLine" id="cb2-17" title="17">            {</a>

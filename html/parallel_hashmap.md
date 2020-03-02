@@ -144,13 +144,12 @@ void _fill_random_inner_mt(int64_t cnt, HT &hash, RSU &rsu)
     std::unique_ptr<std::thread> threads[num_threads];
 
     auto thread_fn = [&hash, cnt, num_threads](int64_t thread_idx, RSU rsu) {
-        typename HT::hasher hasher;                         // get hasher object from the hash table
         size_t modulo = hash.subcnt() / num_threads;        // subcnt() returns the number of submaps
 
         for (int64_t i=0; i<cnt; ++i)                       // iterate over all values
         {
             unsigned int key = rsu.next();                  // get next key to insert
-            size_t hashval = hasher(key);                   // compute its hash
+            size_t hashval = hash.hash(key);                // compute its hash
             size_t idx  = hash.subidx(hashval);             // compute the submap index for this hash
             if (idx / modulo == thread_idx)                 // if the submap is suitable for this thread
             {
