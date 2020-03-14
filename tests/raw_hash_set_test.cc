@@ -166,7 +166,7 @@ TEST(Group, EmptyGroup) {
 }
 
 TEST(Group, Match) {
-  if (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.Match(0), ElementsAre());
@@ -174,7 +174,7 @@ TEST(Group, Match) {
     EXPECT_THAT(Group{group}.Match(3), ElementsAre(3, 10));
     EXPECT_THAT(Group{group}.Match(5), ElementsAre(5, 9));
     EXPECT_THAT(Group{group}.Match(7), ElementsAre(7, 8));
-  } else if (Group::kWidth == 8) {
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
     ctrl_t group[] = {kEmpty, 1, 2, kDeleted, 2, 1, kSentinel, 1};
     EXPECT_THAT(Group{group}.Match(0), ElementsAre());
     EXPECT_THAT(Group{group}.Match(1), ElementsAre(1, 5, 7));
@@ -185,11 +185,11 @@ TEST(Group, Match) {
 }
 
 TEST(Group, MatchEmpty) {
-  if (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.MatchEmpty(), ElementsAre(0, 4));
-  } else if (Group::kWidth == 8) {
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
     ctrl_t group[] = {kEmpty, 1, 2, kDeleted, 2, 1, kSentinel, 1};
     EXPECT_THAT(Group{group}.MatchEmpty(), ElementsAre(0));
   } else {
@@ -198,11 +198,11 @@ TEST(Group, MatchEmpty) {
 }
 
 TEST(Group, MatchEmptyOrDeleted) {
-  if (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.MatchEmptyOrDeleted(), ElementsAre(0, 2, 4));
-  } else if (Group::kWidth == 8) {
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
     ctrl_t group[] = {kEmpty, 1, 2, kDeleted, 2, 1, kSentinel, 1};
     EXPECT_THAT(Group{group}.MatchEmptyOrDeleted(), ElementsAre(0, 3));
   } else {
@@ -239,7 +239,7 @@ TEST(Group, CountLeadingEmptyOrDeleted) {
 
   for (ctrl_t empty : empty_examples) {
     std::vector<ctrl_t> e(Group::kWidth, empty);
-    EXPECT_EQ(Group::kWidth, Group{e.data()}.CountLeadingEmptyOrDeleted());
+    EXPECT_EQ(Group::kWidth, (int)Group{e.data()}.CountLeadingEmptyOrDeleted());
     for (ctrl_t full : full_examples) {
       for (size_t i = 0; i != Group::kWidth; ++i) {
         std::vector<ctrl_t> f(Group::kWidth, empty);
@@ -250,7 +250,7 @@ TEST(Group, CountLeadingEmptyOrDeleted) {
       f[Group::kWidth * 2 / 3] = full;
       f[Group::kWidth / 2] = full;
       EXPECT_EQ(
-          Group::kWidth / 2, Group{f.data()}.CountLeadingEmptyOrDeleted());
+          Group::kWidth / 2, (int)Group{f.data()}.CountLeadingEmptyOrDeleted());
     }
   }
 }
