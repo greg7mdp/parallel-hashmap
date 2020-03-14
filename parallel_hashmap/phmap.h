@@ -496,9 +496,12 @@ inline size_t CapacityToGrowth(size_t capacity)
 {
     assert(IsValidCapacity(capacity));
     // `capacity*7/8`
-    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && capacity == 7) {
-        // x-x/8 does not work when x==7.
-        return 6;
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
+        if (capacity == 7)
+        {
+            // x-x/8 does not work when x==7.
+            return 6;
+        }
     }
     return capacity - capacity / 8;
 }
@@ -510,9 +513,12 @@ inline size_t CapacityToGrowth(size_t capacity)
 inline size_t GrowthToLowerboundCapacity(size_t growth) 
 {
     // `growth*8/7`
-    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && growth == 7) {
-        // x+(x-1)/7 does not work when x==7.
-        return 8;
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
+        if (growth == 7)
+        {
+            // x+(x-1)/7 does not work when x==7.
+            return 8;
+        }
     }
     return growth + static_cast<size_t>((static_cast<int64_t>(growth) - 1) / 7);
 }
