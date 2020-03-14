@@ -3783,9 +3783,6 @@ struct HashEq<std::string> : StringHashEqT<char> {};
 template <>
 struct HashEq<std::string_view> : StringHashEqT<char> {};
 
-template <>
-struct HashEq<std::basic_string_view<char>> : StringHashEqT<char> {};
-
 // char16_t
 template <>
 struct HashEq<std::u16string> : StringHashEqT<char16_t> {};
