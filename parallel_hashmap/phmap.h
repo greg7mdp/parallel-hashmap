@@ -1498,7 +1498,7 @@ public:
 
 #ifndef PHMAP_NON_DETERMINISTIC
     template<typename OutputArchive>
-    bool dump(OutputArchive&);
+    bool dump(OutputArchive&) const;
 
     template<typename InputArchive>
     bool load(InputArchive&);
@@ -3113,7 +3113,7 @@ public:
 
 #ifndef PHMAP_NON_DETERMINISTIC
     template<typename OutputArchive>
-    bool dump(OutputArchive& ar);
+    bool dump(OutputArchive& ar) const;
 
     template<typename InputArchive>
     bool load(InputArchive& ar);
