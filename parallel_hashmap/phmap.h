@@ -95,7 +95,7 @@ public:
         offset_ &= mask_;
     }
     // 0-based probe index. The i-th probe in the probe sequence.
-    size_t index() const { return index_; }
+    size_t getindex() const { return index_; }
 
 private:
     size_t mask_;
@@ -1908,7 +1908,7 @@ private:
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) return false;
             seq.next();
-            assert(seq.index() < capacity_ && "full table!");
+            assert(seq.getindex() < capacity_ && "full table!");
         }
         return false;
     }
@@ -1938,9 +1938,9 @@ private:
             Group g{ctrl_ + seq.offset()};
             auto mask = g.MatchEmptyOrDeleted();
             if (mask) {
-                return {seq.offset((size_t)mask.LowestBitSet()), seq.index()};
+                return {seq.offset((size_t)mask.LowestBitSet()), seq.getindex()};
             }
-            assert(seq.index() < capacity_ && "full table!");
+            assert(seq.getindex() < capacity_ && "full table!");
             seq.next();
         }
     }
