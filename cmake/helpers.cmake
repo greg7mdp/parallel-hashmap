@@ -26,7 +26,7 @@ function(phmap_cc_test)
   )
 if(MSVC)
   target_compile_options(${_NAME}
-    PRIVATE ${PHMAP_CC_TEST_CWOPTS} /W4
+    PRIVATE ${PHMAP_CC_TEST_CWOPTS} /W4 /Zc:__cplusplus /std:c++latest
   )
 else()
   target_compile_options(${_NAME}
