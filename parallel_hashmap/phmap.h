@@ -2325,7 +2325,7 @@ protected:
     using Lockable = phmap::LockableImpl<Mtx_>;
 
     // --------------------------------------------------------------------
-    struct alignas(64) Inner : public Lockable
+    struct Inner : public Lockable
     {
         bool operator==(const Inner& o) const
         {
