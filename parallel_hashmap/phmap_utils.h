@@ -123,7 +123,7 @@ private:
     typedef std::true_type yes;
     typedef std::false_type no;
 
-    template<typename U> static auto test(int) -> decltype(hash_value(std::declval<U&>()) == 1, yes());
+    template<typename U> static auto test(int) -> decltype(hash_value(std::declval<const U&>()) == 1, yes());
 
     template<typename> static no test(...);
 

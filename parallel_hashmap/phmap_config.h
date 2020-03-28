@@ -296,7 +296,8 @@
 #endif
 
 #ifdef __has_include
-    #if __has_include(<string_view>) && __cplusplus >= 201703L
+    #if __has_include(<string_view>) && __cplusplus >= 201703L && \
+        (!defined(_MSC_VER) || _MSC_VER >= 1920) // vs2019
         #define PHMAP_HAVE_STD_STRING_VIEW 1
     #endif
 #endif
@@ -308,7 +309,9 @@
     // #define PHMAP_HAVE_STD_ANY 1
     #define PHMAP_HAVE_STD_OPTIONAL 1
     #define PHMAP_HAVE_STD_VARIANT 1
-    #define PHMAP_HAVE_STD_STRING_VIEW 1
+    #if !defined(PHMAP_HAVE_STD_STRING_VIEW) && _MSC_VER >= 1920
+        #define PHMAP_HAVE_STD_STRING_VIEW 1
+    #endif
 #endif
 
 #if (defined(_MSVC_LANG) && _MSVC_LANG >= 201703) || __cplusplus >= 201703
