@@ -244,6 +244,7 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
   m.insert(std::move(node));
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 17), Pair(2, 9)));
 }
+
 #if !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__) && defined(PHMAP_HAVE_STD_ANY)
 TEST(THIS_TEST_NAME, Any) {
   ThisMap<int, std::any> m;

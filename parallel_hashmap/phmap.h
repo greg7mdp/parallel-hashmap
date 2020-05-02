@@ -3408,6 +3408,16 @@ public:
         return true;
     }
 
+    template <class K = key_type, class F>
+    bool if_contains(const key_arg<K>& key, F&& f) {
+        typename Lockable::SharedLock m;
+        auto it = const_cast<parallel_hash_map*>(this)->find(key, hash(key), m);
+        if (it == this->end())
+            return false;
+        std::forward<F>(f)(Policy::value(&*it));
+        return true;
+    }
+
     template <class K = key_type, class P = Policy, K* = nullptr>
     MappedReference<P> operator[](key_arg<K>&& key) {
         return Policy::value(&*try_emplace(std::forward<K>(key)).first);
