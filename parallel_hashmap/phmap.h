@@ -3393,23 +3393,11 @@ public:
         return Policy::value(&*it);
     }
 
-    template <class K = key_type, class V = mapped_type>
-    typename std::enable_if<std::is_assignable<mapped_type&, V>::value 
-        , bool>::type if_contains(const key_arg<K>& key, V& v) const {
-        typename Lockable::SharedLock m;
-        auto it = const_cast<parallel_hash_map *>(this)->find(key, this->hash(key), m);
-        if (it == this->end())
-            return false;
-        v = Policy::value(&*it);
-        return true;
-    }
-
     template <class K = key_type, class F>
-    typename std::enable_if<!std::is_assignable<mapped_type&, F>::value
+    bool if_contains(const key_arg<K>& key, F&& f) const {
 #if __cplusplus >= 201703L
-        && std::is_invocable<F, mapped_type&>::value
+        static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
-        , bool>::type if_contains(const key_arg<K>& key, F&& f) const {
         typename Lockable::SharedLock m;
         auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
         if (it == this->end())
