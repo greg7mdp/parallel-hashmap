@@ -3,6 +3,8 @@
     #define THIS_TEST_NAME ParallelFlatHashMap
 #endif
 
+#include "flat_hash_map_test.cc"
+
 namespace phmap {
 namespace container_internal {
 namespace {
@@ -12,10 +14,10 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     // Test that the nodes have the proper API.
     ThisMap<int, int> m = { {1, 7}, {2, 9} };
     auto val = 0;
-    EXPECT_TRUE(m.contains(1, val));
+    EXPECT_TRUE(m.if_contains(1, val));
     EXPECT_EQ(val, 7);
 
-    EXPECT_FALSE(m.contains(3, val));
+    EXPECT_FALSE(m.if_contains(3, val));
 
 #if __cplusplus > 199711L
     auto func = [&val](int& v) { val = v; };

@@ -3393,15 +3393,11 @@ public:
         return Policy::value(&*it);
     }
 
-    template <class K = key_type>
-    bool contains(const key_arg<K>& key) const {
-        return Base::contains(key);
-    }
-
     template <class K = key_type, class V = mapped_type>
-    bool contains(const key_arg<K>& key, V& v) const {
+    std::enable_if_t<std::is_assignable<mapped_type&, V>::value, 
+        bool> if_contains(const key_arg<K>& key, V& v) const {
         typename Lockable::SharedLock m;
-        auto it = const_cast<parallel_hash_map *>(this)->find(key, Base::hash(key), m);
+        auto it = const_cast<parallel_hash_map *>(this)->find(key, this->hash(key), m);
         if (it == this->end())
             return false;
         v = Policy::value(&*it);
@@ -3409,9 +3405,10 @@ public:
     }
 
     template <class K = key_type, class F>
-    bool if_contains(const key_arg<K>& key, F&& f) const {
+    std::enable_if_t<!std::is_assignable<mapped_type&, F>::value && std::is_invocable<F, mapped_type&>::value,
+        bool> if_contains(const key_arg<K>& key, F&& f) const {
         typename Lockable::SharedLock m;
-        auto it = const_cast<parallel_hash_map*>(this)->find(key, Base::hash(key), m);
+        auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
         if (it == this->end())
             return false;
         std::forward<F>(f)(Policy::value(&*it));
