@@ -2866,7 +2866,7 @@ public:
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
-        return make_iterator(&inner, set.lazy_emplace(key, hashval, std::forward<F>(f)));
+        return make_iterator(&inner, set.lazy_emplace_with_hash(key, hashval, std::forward<F>(f)));
     }
 
     // Extension API: support for heterogeneous keys.
@@ -3032,11 +3032,8 @@ public:
     // --------------------------------------------------------------------
     template <class K = key_type>
     iterator find(const key_arg<K>& key, size_t hashval) {
-        Inner& inner = sets_[subidx(hashval)];
-        auto&  set   = inner.set_;
-        typename Lockable::SharedLock m(inner);
-        auto  it = set.find(key, hashval);
-        return make_iterator(&inner, it);
+        typename Lockable::SharedLock m;
+        return find(key, hashval, m);
     }
 
     template <class K = key_type>
@@ -3194,6 +3191,15 @@ private:
     }
 
 protected:
+    template <class K = key_type>
+    iterator find(const key_arg<K>& key, size_t hashval, typename Lockable::SharedLock &mutexlock) {
+        Inner& inner = sets_[subidx(hashval)];
+        auto&  set = inner.set_;
+        mutexlock = std::move(typename Lockable::SharedLock(inner));
+        auto  it = set.find(key, hashval);
+        return make_iterator(&inner, it);
+    }
+
     template <class K>
     std::tuple<Inner*, size_t, bool> 
     find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
@@ -3219,7 +3225,7 @@ protected:
     }
 
     template <class K>
-    size_t hash(const K& key) {
+    size_t hash(const K& key) const {
         return HashElement{hash_ref()}(key);
     }
 
@@ -3385,6 +3391,19 @@ public:
         if (it == this->end()) 
             phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
+    }
+
+    template <class K = key_type, class F>
+    bool if_contains(const key_arg<K>& key, F&& f) const {
+#if __cplusplus >= 201703L
+        static_assert(std::is_invocable<F, mapped_type&>::value);
+#endif
+        typename Lockable::SharedLock m;
+        auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
+        if (it == this->end())
+            return false;
+        std::forward<F>(f)(Policy::value(&*it));
+        return true;
     }
 
     template <class K = key_type, class P = Policy, K* = nullptr>
