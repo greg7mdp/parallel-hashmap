@@ -440,8 +440,9 @@ namespace container_internal {
     class CountingAllocator : public std::allocator<T> {
     public:
         using Alloc = std::allocator<T>;
-        using pointer = typename Alloc::pointer;
-        using size_type = typename Alloc::size_type;
+        using AllocTraits = typename std::allocator_traits<Alloc>;
+        using pointer = typename AllocTraits::pointer;
+        using size_type = typename AllocTraits::size_type;
 
         CountingAllocator() : bytes_used_(nullptr) {}
         explicit CountingAllocator(int64_t* b) : bytes_used_(b) {}
@@ -451,14 +452,14 @@ namespace container_internal {
             : Alloc(x), bytes_used_(x.bytes_used_) {}
 
         pointer allocate(size_type n,
-                         std::allocator<void>::const_pointer hint = nullptr) {
+                         std::allocator_traits<std::allocator<void>>::const_pointer hint = nullptr) {
             assert(bytes_used_ != nullptr);
             *bytes_used_ += n * sizeof(T);
-            return Alloc::allocate(n, hint);
+            return AllocTraits::allocate(*this, n, hint);
         }
 
         void deallocate(pointer p, size_type n) {
-            Alloc::deallocate(p, n);
+            AllocTraits::deallocate(*this, p, n);
             assert(bytes_used_ != nullptr);
             *bytes_used_ -= n * sizeof(T);
         }

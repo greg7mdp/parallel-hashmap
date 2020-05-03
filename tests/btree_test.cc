@@ -1269,7 +1269,7 @@ namespace {
                       "key_compare_to_adapter should have adapted this comparator.");
         static_assert(
             std::is_same<phmap::weak_ordering,
-            phmap::result_of_t<Adapted(const K &, const K &)>>::value,
+            phmap::invoke_result_t<Adapted, const K &, const K &>>::value,
             "Adapted comparator should be a key-compare-to comparator.");
     }
     template <typename Compare, typename K>
@@ -1280,7 +1280,7 @@ namespace {
             "key_compare_to_adapter shouldn't have adapted this comparator.");
         static_assert(
             std::is_same<bool,
-            phmap::result_of_t<Unadapted(const K &, const K &)>>::value,
+            phmap::invoke_result_t<Unadapted, const K &, const K &>>::value,
             "Un-adapted comparator should return bool.");
     }
 
