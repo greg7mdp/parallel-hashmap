@@ -328,8 +328,12 @@ using common_type_t = typename std::common_type<T...>::type;
 template <typename T>
 using underlying_type_t = typename std::underlying_type<T>::type;
 
-template <typename T>
-using result_of_t = typename std::result_of<T>::type;
+template< class F, class... ArgTypes>
+#if __cplusplus >= 201703L
+using invoke_result_t = typename std::invoke_result_t<F, ArgTypes...>;
+#else
+using invoke_result_t = typename std::result_of<F(ArgTypes...)>::type;
+#endif
 
 namespace type_traits_internal {
 
