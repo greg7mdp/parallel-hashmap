@@ -3394,8 +3394,8 @@ public:
     }
 
     template <class K = key_type, class V = mapped_type>
-    std::enable_if_t<std::is_assignable<mapped_type&, V>::value, 
-        bool> if_contains(const key_arg<K>& key, V& v) const {
+    std::enable_if_t<std::is_assignable<mapped_type&, V>::value 
+        , bool> if_contains(const key_arg<K>& key, V& v) const {
         typename Lockable::SharedLock m;
         auto it = const_cast<parallel_hash_map *>(this)->find(key, this->hash(key), m);
         if (it == this->end())
@@ -3405,8 +3405,11 @@ public:
     }
 
     template <class K = key_type, class F>
-    std::enable_if_t<!std::is_assignable<mapped_type&, F>::value && std::is_invocable<F, mapped_type&>::value,
-        bool> if_contains(const key_arg<K>& key, F&& f) const {
+    std::enable_if_t<!std::is_assignable<mapped_type&, F>::value
+#if __cplusplus >= 201703L
+        && std::is_invocable<F, mapped_type&>::value
+#endif
+        , bool> if_contains(const key_arg<K>& key, F&& f) const {
         typename Lockable::SharedLock m;
         auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
         if (it == this->end())
