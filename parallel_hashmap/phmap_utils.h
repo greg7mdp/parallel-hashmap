@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-    #pragma warning(push)  
+    #pragma warning(push)
     #pragma warning(disable : 4514) // unreferenced inline function has been removed
     #pragma warning(disable : 4710) // function not inlined
     #pragma warning(disable : 4711) // selected for automatic inline expansion
@@ -38,7 +38,7 @@ namespace phmap
 
 // ---------------------------------------------------------------
 // ---------------------------------------------------------------
-template<int n> 
+template<int n>
 struct phmap_mix
 {
     inline size_t operator()(size_t) const;
@@ -89,7 +89,7 @@ struct phmap_mix<4>
 #endif
 
 // --------------------------------------------
-template<int n> 
+template<int n>
 struct fold_if_needed
 {
     inline size_t operator()(uint64_t) const;
@@ -133,8 +133,8 @@ public:
 
 #if defined(PHMAP_USE_ABSL_HASH) && !defined(phmap_fwd_decl_h_guard_)
     namespace absl { template <class T> struct Hash; };
-    template <class T> using Hash = absl::Hash<T>;
-#else
+    template <class T> using Hash = ::absl::Hash<T>;
+#elif !defined(PHMAP_USE_ABSL_HASH)
 // ---------------------------------------------------------------
 //               phmap::Hash
 // ---------------------------------------------------------------
@@ -146,13 +146,13 @@ struct Hash
     {
         return hash_value(val);
     }
- 
+
     template <class U, typename std::enable_if<!has_hash_value<U>::value, int>::type = 0>
     size_t _hash(const T& val) const
     {
         return std::hash<T>()(val);
     }
- 
+
     inline size_t operator()(const T& val) const
     {
         return _hash<T>(val);
@@ -164,7 +164,7 @@ struct Hash<T *>
 {
     inline size_t operator()(const T *val) const noexcept
     {
-        return static_cast<size_t>(reinterpret_cast<const uintptr_t>(val)); 
+        return static_cast<size_t>(reinterpret_cast<const uintptr_t>(val));
     }
 };
 
@@ -259,7 +259,7 @@ struct Hash<float> : public phmap_unary_function<float, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint32_t *as_int = reinterpret_cast<uint32_t *>(&val);
-        return (val == 0) ? static_cast<size_t>(0) : 
+        return (val == 0) ? static_cast<size_t>(0) :
                             static_cast<size_t>(*as_int);
     }
 };
@@ -271,7 +271,7 @@ struct Hash<double> : public phmap_unary_function<double, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint64_t *as_int = reinterpret_cast<uint64_t *>(&val);
-        return (val == 0) ? static_cast<size_t>(0) : 
+        return (val == 0) ? static_cast<size_t>(0) :
                             fold_if_needed<sizeof(size_t)>()(*as_int);
     }
 };
@@ -315,7 +315,7 @@ template <typename T, typename... Ts>
 H HashStateBase<H>::combine(H seed, const T& v, const Ts&... vs)
 {
     return HashStateBase<H>::combine(Combiner<H, sizeof(H)>()(
-                                         seed, phmap::Hash<T>()(v)), 
+                                         seed, phmap::Hash<T>()(v)),
                                      vs...);
 }
 
@@ -327,7 +327,7 @@ using HashState = HashStateBase<size_t>;
 
 // define Hash for std::pair
 // -------------------------
-template<class T1, class T2> 
+template<class T1, class T2>
 struct Hash<std::pair<T1, T2>> {
     size_t operator()(std::pair<T1, T2> const& p) const noexcept {
         return phmap::HashState().combine(phmap::Hash<T1>()(p.first), p.second);
@@ -336,7 +336,7 @@ struct Hash<std::pair<T1, T2>> {
 
 // define Hash for std::tuple
 // --------------------------
-template<class... T> 
+template<class... T>
 struct Hash<std::tuple<T...>> {
     size_t operator()(std::tuple<T...> const& t) const noexcept {
         return _hash_helper(t);
@@ -364,7 +364,7 @@ private:
 }  // namespace phmap
 
 #ifdef _MSC_VER
-     #pragma warning(pop)  
+     #pragma warning(pop)
 #endif
 
 #endif // phmap_utils_h_guard_
