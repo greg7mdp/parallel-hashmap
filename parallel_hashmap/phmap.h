@@ -3215,7 +3215,7 @@ protected:
     }
 
     static size_t subidx(size_t hashval) {
-        return (hashval ^ (hashval >> N)) & mask;
+        return ((hashval >> 8) ^ (hashval >> 16) ^ (hashval >> 24)) & mask;
     }
 
     template <class K>
