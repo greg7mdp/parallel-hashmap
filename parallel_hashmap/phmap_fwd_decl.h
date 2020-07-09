@@ -21,14 +21,14 @@
 #include <memory>
 #include <utility>
 
-#if defined(PHMAP_USE_ABSL_HASH)
+#if defined(PHMAP_USE_ABSL_HASH) && !defined(ABSL_HASH_HASH_H_)
     namespace absl { template <class T> struct Hash; };
 #endif
 
 namespace phmap {
 
 #if defined(PHMAP_USE_ABSL_HASH)
-    template <class T> using Hash = absl::Hash<T>;
+    template <class T> using Hash = ::absl::Hash<T>;
 #else
     template <class T> struct Hash;
 #endif
