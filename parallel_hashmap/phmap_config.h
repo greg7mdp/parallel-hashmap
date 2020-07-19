@@ -126,6 +126,8 @@
     #define PHMAP_HAVE_CC17 0
 #endif
 
+#define PHMAP_BRANCHLESS 1
+
 // ----------------------------------------------------------------
 // Checks whether `std::is_trivially_destructible<T>` is supported.
 // ----------------------------------------------------------------

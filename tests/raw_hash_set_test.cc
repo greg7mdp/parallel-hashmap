@@ -1112,8 +1112,7 @@ ExpectedStats XorSeedExpectedStats() {
 
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
-  switch (container_internal::Group::kWidth) {
-  case 8:
+  PHMAP_IF_CONSTEXPR (container_internal::Group::kWidth == 8) {
       if (kRandomizesInserts) {
           return {0.05,
                   1.0,
@@ -1125,8 +1124,8 @@ ExpectedStats XorSeedExpectedStats() {
                   {{0.95, 0.1}},
                   {{0.95, 0}, {0.99, 2}, {0.999, 4}, {0.9999, 10}}};
       }
-  case 16:
-  default:
+  }
+  else {
       if (kRandomizesInserts) {
           return {0.1,
                   1.0,
@@ -1217,8 +1216,7 @@ ExpectedStats LinearTransformExpectedStats() {
 
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
-  switch (container_internal::Group::kWidth) {
-  case 8:
+  PHMAP_IF_CONSTEXPR (container_internal::Group::kWidth == 8) {
       if (kRandomizesInserts) {
           return {0.1,
                   0.5,
@@ -1230,8 +1228,7 @@ ExpectedStats LinearTransformExpectedStats() {
                   {{0.95, 0.3}},
                   {{0.95, 0}, {0.99, 3}, {0.999, 15}, {0.9999, 25}}};
       }
-  case 16:
-  default:
+  } else {
       if (kRandomizesInserts) {
           return {0.1,
                   0.4,

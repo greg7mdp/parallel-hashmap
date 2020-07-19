@@ -15,6 +15,7 @@
 #ifndef THIS_HASH_MAP
     #define THIS_HASH_MAP   flat_hash_map
     #define THIS_TEST_NAME  FlatHashMap
+    #define ORIG_FLAT_HASH_MAP 1
 #endif
 
 #ifndef THIS_EXTRA_TPL_PARAMS
@@ -198,14 +199,16 @@ TEST(THIS_TEST_NAME, LazyKeyPattern) {
   m.try_emplace(LazyInt(2, &conversions), 3);
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 2), Pair(2, 3)));
   EXPECT_EQ(conversions, 2);
-#ifdef NDEBUG
+#if defined(NDEBUG) && ORIG_FLAT_HASH_MAP
+  // for parallel maps, the reserve(3) above is not sufficient to guarantee that a submap will not resize and therefore rehash
   EXPECT_EQ(hashes, 3);
 #endif
 
   m.try_emplace(LazyInt(2, &conversions), 4);
   EXPECT_THAT(m, UnorderedElementsAre(Pair(1, 2), Pair(2, 3)));
   EXPECT_EQ(conversions, 2);
-#ifdef NDEBUG
+#if defined(NDEBUG) && ORIG_FLAT_HASH_MAP
+  // for parallel maps, the reserve(3) above is not sufficient to guarantee that a submap will not resize and therefore rehash
   EXPECT_EQ(hashes, 4);
 #endif
 }
