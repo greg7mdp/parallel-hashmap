@@ -329,10 +329,10 @@ template <typename T>
 using underlying_type_t = typename std::underlying_type<T>::type;
 
 template< class F, class... ArgTypes>
-#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-using invoke_result_t = typename std::invoke_result_t<F, ArgTypes...>;
+#ifdef PHMAP_HAVE_CC17
+    using invoke_result_t = typename std::invoke_result_t<F, ArgTypes...>;
 #else
-using invoke_result_t = typename std::result_of<F(ArgTypes...)>::type;
+    using invoke_result_t = typename std::result_of<F(ArgTypes...)>::type;
 #endif
 
 namespace type_traits_internal {
