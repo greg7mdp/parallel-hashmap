@@ -22,19 +22,6 @@ environment:
     CONFIG: Debug
     TEST: ON
 
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-    VS: 2017
-    CONFIG: Release
-    TEST: OFF
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-    VS: 2017
-    CONFIG: Release
-    TEST: ON
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-    VS: 2017
-    CONFIG: Debug
-    TEST: ON
-
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     VS: 2015
     CONFIG: Release
