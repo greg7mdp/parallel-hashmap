@@ -329,7 +329,7 @@ template <typename T>
 using underlying_type_t = typename std::underlying_type<T>::type;
 
 template< class F, class... ArgTypes>
-#ifdef PHMAP_HAVE_CC17
+#if PHMAP_HAVE_CC17
     using invoke_result_t = typename std::invoke_result_t<F, ArgTypes...>;
 #else
     using invoke_result_t = typename std::result_of<F(ArgTypes...)>::type;
