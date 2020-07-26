@@ -88,10 +88,16 @@ int main()
         std::shuffle(order.begin(), order.end(), g); 
     };
 
-    test<phmap::flat_hash_set<uint64_t>, 10000000>("ordered", 
-                                                   [](std::vector<uint64_t> &) {});
+    auto noop = [](std::vector<uint64_t> &) {};
+
+    test<phmap::flat_hash_set<uint64_t>, 10000000>("ordered", noop);
 
     test<phmap::flat_hash_set<uint64_t>, 10000000>("shuffled", shuffle);
+
+    test<phmap::parallel_flat_hash_set<uint64_t>, 10000000>("parallel ordered", noop);
+
+    test<phmap::parallel_flat_hash_set<uint64_t>, 10000000>("parallel shuffled", shuffle);
+
 }
     
     
