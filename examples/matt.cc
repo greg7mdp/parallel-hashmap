@@ -78,6 +78,13 @@ void test(const char *name, std::function<void (std::vector<uint64_t> &)> pertur
     Set c(order.begin(), order.end());
 }
 
+template <class T, size_t N>
+using pset = phmap::parallel_flat_hash_set<T, 
+                                           phmap::container_internal::hash_default_hash<T>,
+                                           phmap::container_internal::hash_default_eq<T>,
+                                           phmap::container_internal::Allocator<T>, // alias for std::allocator
+                                           N>;
+
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 int main()
@@ -97,30 +104,17 @@ int main()
 
     test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set shuffled", shuffle);
 
-    test<phmap::parallel_flat_hash_set<T>, num_keys>("parallel (16) ordered ", noop);
+    test<pset<T, 4>, num_keys>("parallel (16) ordered ", noop);
 
-    test<phmap::parallel_flat_hash_set<T>, num_keys>("parallel (16) shuffled", shuffle);
+    test<pset<T, 4>, num_keys>("parallel (16) shuffled", shuffle);
 
-    using pset_6 = phmap::parallel_flat_hash_set<T, 
-                                                 phmap::container_internal::hash_default_hash<T>,
-                                                 phmap::container_internal::hash_default_eq<T>,
-                                                 phmap::container_internal::Allocator<T>, // alias for std::allocator
-                                                 6>;
+    test<pset<T, 6>, num_keys>("parallel (64) ordered ", noop);
 
-    test<pset_6, num_keys>("parallel (64) ordered ", noop);
+    test<pset<T, 6>, num_keys>("parallel (64) shuffled", shuffle);
 
-    test<pset_6, num_keys>("parallel (64) shuffled", shuffle);
+    test<pset<T, 8>, num_keys>("parallel (128) ordered ", noop);
 
-
-    using pset_8 = phmap::parallel_flat_hash_set<T, 
-                                                 phmap::container_internal::hash_default_hash<T>,
-                                                 phmap::container_internal::hash_default_eq<T>,
-                                                 phmap::container_internal::Allocator<T>, // alias for std::allocator
-                                                 8>;
-
-    test<pset_8, num_keys>("parallel (128) ordered ", noop);
-
-    test<pset_8, num_keys>("parallel (128) shuffled", shuffle);
+    test<pset<T, 8>, num_keys>("parallel (128) shuffled", shuffle);
 }
     
     
