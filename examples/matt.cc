@@ -112,9 +112,9 @@ int main()
 
     test<pset<T, 6>, num_keys>("parallel (64) shuffled", shuffle);
 
-    test<pset<T, 8>, num_keys>("parallel (128) ordered ", noop);
+    test<pset<T, 8>, num_keys>("parallel (256) ordered ", noop);
 
-    test<pset<T, 8>, num_keys>("parallel (128) shuffled", shuffle);
+    test<pset<T, 8>, num_keys>("parallel (256) shuffled", shuffle);
 }
     
     
