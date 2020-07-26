@@ -90,14 +90,37 @@ int main()
 
     auto noop = [](std::vector<uint64_t> &) {};
 
-    test<phmap::flat_hash_set<uint64_t>, 10000000>("ordered", noop);
+    constexpr uint32_t num_keys = 10000000;
+    using T = uint64_t;
 
-    test<phmap::flat_hash_set<uint64_t>, 10000000>("shuffled", shuffle);
+    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set ordered ", noop);
 
-    test<phmap::parallel_flat_hash_set<uint64_t>, 10000000>("parallel ordered", noop);
+    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set shuffled", shuffle);
 
-    test<phmap::parallel_flat_hash_set<uint64_t>, 10000000>("parallel shuffled", shuffle);
+    test<phmap::parallel_flat_hash_set<T>, num_keys>("parallel (16) ordered ", noop);
 
+    test<phmap::parallel_flat_hash_set<T>, num_keys>("parallel (16) shuffled", shuffle);
+
+    using pset_6 = phmap::parallel_flat_hash_set<T, 
+                                                 phmap::container_internal::hash_default_hash<T>,
+                                                 phmap::container_internal::hash_default_eq<T>,
+                                                 phmap::container_internal::Allocator<T>, // alias for std::allocator
+                                                 6>;
+
+    test<pset_6, num_keys>("parallel (64) ordered ", noop);
+
+    test<pset_6, num_keys>("parallel (64) shuffled", shuffle);
+
+
+    using pset_8 = phmap::parallel_flat_hash_set<T, 
+                                                 phmap::container_internal::hash_default_hash<T>,
+                                                 phmap::container_internal::hash_default_eq<T>,
+                                                 phmap::container_internal::Allocator<T>, // alias for std::allocator
+                                                 8>;
+
+    test<pset_8, num_keys>("parallel (128) ordered ", noop);
+
+    test<pset_8, num_keys>("parallel (128) shuffled", shuffle);
 }
     
     
