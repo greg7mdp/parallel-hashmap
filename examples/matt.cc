@@ -74,12 +74,16 @@ void test(const char *name, Perturb perturb1, Perturb perturb2)
 
     std::vector<uint64_t> order(s.begin(), s.end()); // contains sorted, randomly generated keys
 
-    perturb1(order);
+    perturb1(order);                                 // either keep them sorted, or shuffle them
+
+#if 0
     order.resize(N/4);
     perturb2(order);
+#endif
 
     Timer t(name); // start timer
-    Set c(order.begin(), order.end());
+    Set c(order.begin(), order.end());               // time for inserting the same keys into the set
+                                                     // should not depend on them being sorted or not.
 }
 
 template <class T, size_t N>
@@ -101,24 +105,26 @@ int main()
 
     auto noop = [](std::vector<uint64_t> &) {};
 
+    auto perturb2 = noop;
+
     constexpr uint32_t num_keys = 10000000;
     using T = uint64_t;
 
-    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set ordered ", noop, shuffle);
+    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set ordered ", noop, perturb2);
 
-    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set shuffled", shuffle, shuffle);
+    test<phmap::flat_hash_set<T>, num_keys>("flat_hash_set shuffled", shuffle, perturb2);
 
-    test<pset<T, 4>, num_keys>("parallel (16) ordered ", noop, shuffle);
+    test<pset<T, 4>, num_keys>("parallel (16) ordered ", noop, perturb2);
 
-    test<pset<T, 4>, num_keys>("parallel (16) shuffled", shuffle, shuffle);
+    test<pset<T, 4>, num_keys>("parallel (16) shuffled", shuffle, perturb2);
 
-    test<pset<T, 6>, num_keys>("parallel (64) ordered ", noop, shuffle);
+    test<pset<T, 6>, num_keys>("parallel (64) ordered ", noop, perturb2);
 
-    test<pset<T, 6>, num_keys>("parallel (64) shuffled", shuffle, shuffle);
+    test<pset<T, 6>, num_keys>("parallel (64) shuffled", shuffle, perturb2);
 
-    test<pset<T, 8>, num_keys>("parallel (256) ordered ", noop, shuffle);
+    test<pset<T, 8>, num_keys>("parallel (256) ordered ", noop, perturb2);
 
-    test<pset<T, 8>, num_keys>("parallel (256) shuffled", shuffle, shuffle);
+    test<pset<T, 8>, num_keys>("parallel (256) shuffled", shuffle, perturb2);
 }
     
     
