@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <parallel_hashmap/phmap.h>
+#include <parallel_hashmap/btree.h>
 
 // -------------------------------------------------------------------
 // -------------------------------------------------------------------
@@ -64,6 +65,7 @@ using Perturb = std::function<void (std::vector<uint64_t> &)>;
 template<class Set, size_t N>
 void test(const char *name, Perturb perturb1, Perturb perturb2)
 {
+    //phmap::btree_set<uint64_t> s;
     Set s;
 
     unsigned int seed = 76687;
@@ -72,9 +74,10 @@ void test(const char *name, Perturb perturb1, Perturb perturb2)
     for (uint32_t i=0; i<N; ++i)
         s.insert(rsu.next());
 
-    std::vector<uint64_t> order(s.begin(), s.end()); // contains sorted, randomly generated keys
+    std::vector<uint64_t> order(s.begin(), s.end()); // contains sorted, randomly generated keys (when using phmap::btree_set)
+                                                     // or keys in the final order of a Set (when using Set).
 
-    perturb1(order);                                 // either keep them sorted, or shuffle them
+    perturb1(order);                      // either keep them in same order, or shuffle them
 
 #if 0
     order.resize(N/4);
@@ -82,10 +85,14 @@ void test(const char *name, Perturb perturb1, Perturb perturb2)
 #endif
 
     Timer t(name); // start timer
-    Set c(order.begin(), order.end());               // time for inserting the same keys into the set
-                                                     // should not depend on them being sorted or not.
+    Set c;
+    c.reserve(order.size());               // whether this "reserve()" is present or not makes a huge difference
+    c.insert(order.begin(), order.end());  // time for inserting the same keys into the set
+                                           // should not depend on them being sorted or not.
 }
 
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 template <class T, size_t N>
 using pset = phmap::parallel_flat_hash_set<T, 
                                            phmap::priv::hash_default_hash<T>,
