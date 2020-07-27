@@ -50,7 +50,7 @@ namespace phmap {
 static const size_t test_values = 10000;
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
     using ::phmap::test_internal::CopyableMovableInstance;
@@ -2368,5 +2368,5 @@ namespace {
     }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

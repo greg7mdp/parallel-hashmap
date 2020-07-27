@@ -265,8 +265,8 @@
 </table>
 <p>It is about time we provide the complete parallel_flat_hash_map class declaration (the declaration for parallel_flat_hash_set is similar):</p>
 <pre><code>template &lt;class K, class V,
-          class Hash      = absl::container_internal::hash_default_hash&lt;K&gt;,
-          class Eq        = absl::container_internal::hash_default_eq&lt;K&gt;,
+          class Hash      = absl::priv::hash_default_hash&lt;K&gt;,
+          class Eq        = absl::priv::hash_default_eq&lt;K&gt;,
           class Allocator = std::allocator&lt;std::pair&lt;const K, V&gt;&gt;,
           size_t N        = 4,                 // 2**N submaps
           class Mutex     = absl::NullMutex&gt;   // use absl::Mutex to enable internal locks

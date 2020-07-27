@@ -417,7 +417,7 @@ inline void AssertHashEnabled
 //          hash_policy_traits
 // -----------------------------------------------------------------------------
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 // Defines how slots are initialized/destroyed/moved.
 template <class Policy, class = void>
@@ -581,7 +581,7 @@ private:
     }
 };
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 // -----------------------------------------------------------------------------
@@ -2710,7 +2710,7 @@ struct hash<phmap::optional<T> >
 //          common.h
 // -----------------------------------------------------------------------------
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 template <class, class = void>
 struct IsTransparent : std::false_type {};
@@ -2920,7 +2920,7 @@ struct InsertReturnType
     NodeType node;
 };
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 
@@ -3690,7 +3690,7 @@ constexpr Span<const T> MakeConstSpan(const T (&array)[N]) noexcept {
 #endif
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 // A type wrapper that instructs `Layout` to use the specific alignment for the
 // array. `Layout<..., Aligned<T, N>, ...>` has exactly the same API
@@ -4161,7 +4161,7 @@ public:
         : internal_layout::LayoutType<sizeof...(Ts), Ts...>(sizes...) {}
 };
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 // ---------------------------------------------------------------------------
@@ -4177,7 +4177,7 @@ public:
 #endif  // _MSC_VER
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 template <typename... Ts>
 class CompressedTuple;
@@ -4277,7 +4277,7 @@ struct PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC
 // To access the members, use member .get<N>() function.
 //
 // Eg:
-//   phmap::container_internal::CompressedTuple<int, T1, T2, T3> value(7, t1, t2,
+//   phmap::priv::CompressedTuple<int, T1, T2, T3> value(7, t1, t2,
 //                                                                    t3);
 //   assert(value.get<0>() == 7);
 //   T1& t1 = value.get<1>();
@@ -4329,12 +4329,12 @@ public:
 template <>
 class PHMAP_INTERNAL_COMPRESSED_TUPLE_DECLSPEC CompressedTuple<> {};
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 #ifdef _MSC_VER
     #pragma warning(push)  
@@ -4420,7 +4420,7 @@ inline void SanitizerUnpoisonObject(const T* object) {
     SanitizerUnpoisonMemoryRegion(object, sizeof(T));
 }
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 
@@ -4534,7 +4534,7 @@ inline T& ts_unchecked_read(T& v) PHMAP_NO_THREAD_SAFETY_ANALYSIS {
 
 }  // namespace thread_safety_analysis
 
-namespace container_internal {
+namespace priv {
 
 namespace memory_internal {
 
@@ -4747,7 +4747,7 @@ public:
     }
 };
 
-}  // namespace container_internal
+}  // namespace priv
 }  // phmap
 
 

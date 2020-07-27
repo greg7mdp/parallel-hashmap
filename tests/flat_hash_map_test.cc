@@ -44,10 +44,10 @@
 #endif
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
-using ::phmap::container_internal::hash_internal::Enum;
-using ::phmap::container_internal::hash_internal::EnumClass;
+using ::phmap::priv::hash_internal::Enum;
+using ::phmap::priv::hash_internal::EnumClass;
 using ::testing::_;
 using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
@@ -57,10 +57,10 @@ using Map = THIS_HASH_MAP<K, V, StatefulTestingHash, StatefulTestingEqual,
                           Alloc<std::pair<const K, V>> THIS_EXTRA_TPL_PARAMS>;
 
 
-template <class K, class V, class H = phmap::container_internal::hash_default_hash<K>,
-          class Eq = phmap::container_internal::hash_default_eq<K>,
-          class Alloc =  phmap::container_internal::Allocator<
-              phmap::container_internal::Pair<const K, V>>>
+template <class K, class V, class H = phmap::priv::hash_default_hash<K>,
+          class Eq = phmap::priv::hash_default_eq<K>,
+          class Alloc =  phmap::priv::Allocator<
+              phmap::priv::Pair<const K, V>>>
 using ThisMap = THIS_HASH_MAP<K, V, H, Eq, Alloc THIS_EXTRA_TPL_PARAMS>;
 
 static_assert(!std::is_standard_layout<NonStandardLayout>(), "");
@@ -282,5 +282,5 @@ TEST(THIS_TEST_NAME, Any) {
 #endif  // __ANDROID__
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

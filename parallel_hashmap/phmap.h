@@ -74,7 +74,7 @@
 
 namespace phmap {
 
-namespace container_internal {
+namespace priv {
 
 // --------------------------------------------------------------------------
 template <size_t Width>
@@ -183,10 +183,10 @@ public:
     explicit operator bool() const { return mask_ != 0; }
     int operator*() const { return LowestBitSet(); }
     int LowestBitSet() const {
-        return container_internal::TrailingZeros(mask_) >> Shift;
+        return priv::TrailingZeros(mask_) >> Shift;
     }
     int HighestBitSet() const {
-        return (sizeof(T) * CHAR_BIT - container_internal::LeadingZeros(mask_) -
+        return (sizeof(T) * CHAR_BIT - priv::LeadingZeros(mask_) -
                 1) >>
             Shift;
     }
@@ -195,13 +195,13 @@ public:
     BitMask end() const { return BitMask(0); }
 
     int TrailingZeros() const {
-        return container_internal::TrailingZeros(mask_) >> Shift;
+        return priv::TrailingZeros(mask_) >> Shift;
     }
 
     int LeadingZeros() const {
         constexpr int total_significant_bits = SignificantBits << Shift;
         constexpr int extra_bits = sizeof(T) * 8 - total_significant_bits;
-        return container_internal::LeadingZeros(mask_ << extra_bits) >> Shift;
+        return priv::LeadingZeros(mask_ << extra_bits) >> Shift;
     }
 
 private:
@@ -796,7 +796,7 @@ private:
     auto KeyTypeCanBeHashed(const Hash& h, const key_type& k) -> decltype(h(k));
     auto KeyTypeCanBeEq(const Eq& eq, const key_type& k) -> decltype(eq(k, k));
 
-    using Layout = phmap::container_internal::Layout<ctrl_t, slot_type>;
+    using Layout = phmap::priv::Layout<ctrl_t, slot_type>;
 
     static Layout MakeLayout(size_t capacity) {
         assert(IsValidCapacity(capacity));
@@ -1652,7 +1652,7 @@ public:
 
 private:
     template <class Container, typename Enabler>
-    friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
+    friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
 
     struct FindElement 
     {
@@ -2100,7 +2100,7 @@ private:
     size_t size_ = 0;                // number of full slots
     size_t capacity_ = 0;            // total number of slots
     HashtablezInfoHandle infoz_;
-    phmap::container_internal::CompressedTuple<size_t /* growth_left */, hasher,
+    phmap::priv::CompressedTuple<size_t /* growth_left */, hasher,
                                               key_equal, allocator_type>
     settings_{0, hasher{}, key_equal{}, allocator_type{}};
 };
@@ -3124,7 +3124,7 @@ public:
 
 private:
     template <class Container, typename Enabler>
-    friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
+    friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
 
     struct FindElement 
     {
@@ -3583,10 +3583,10 @@ struct FlatHashSetPolicy
     static T& element(slot_type* slot) { return *slot; }
 
     template <class F, class... Args>
-    static decltype(phmap::container_internal::DecomposeValue(
+    static decltype(phmap::priv::DecomposeValue(
                         std::declval<F>(), std::declval<Args>()...))
     apply(F&& f, Args&&... args) {
-        return phmap::container_internal::DecomposeValue(
+        return phmap::priv::DecomposeValue(
             std::forward<F>(f), std::forward<Args>(args)...);
     }
 
@@ -3598,7 +3598,7 @@ struct FlatHashSetPolicy
 template <class K, class V>
 struct FlatHashMapPolicy 
 {
-    using slot_policy = container_internal::map_slot_policy<K, V>;
+    using slot_policy = priv::map_slot_policy<K, V>;
     using slot_type = typename slot_policy::slot_type;
     using key_type = K;
     using mapped_type = V;
@@ -3621,10 +3621,10 @@ struct FlatHashMapPolicy
     }
 
     template <class F, class... Args>
-    static decltype(phmap::container_internal::DecomposePair(
+    static decltype(phmap::priv::DecomposePair(
                         std::declval<F>(), std::declval<Args>()...))
     apply(F&& f, Args&&... args) {
-        return phmap::container_internal::DecomposePair(std::forward<F>(f),
+        return phmap::priv::DecomposePair(std::forward<F>(f),
                                                         std::forward<Args>(args)...);
     }
 
@@ -3680,7 +3680,7 @@ struct node_hash_policy {
 // --------------------------------------------------------------------------
 template <class T>
 struct NodeHashSetPolicy
-    : phmap::container_internal::node_hash_policy<T&, NodeHashSetPolicy<T>> 
+    : phmap::priv::node_hash_policy<T&, NodeHashSetPolicy<T>> 
 {
     using key_type = T;
     using init_type = T;
@@ -3707,10 +3707,10 @@ struct NodeHashSetPolicy
     }
 
     template <class F, class... Args>
-        static decltype(phmap::container_internal::DecomposeValue(
+        static decltype(phmap::priv::DecomposeValue(
                             std::declval<F>(), std::declval<Args>()...))
         apply(F&& f, Args&&... args) {
-        return phmap::container_internal::DecomposeValue(
+        return phmap::priv::DecomposeValue(
             std::forward<F>(f), std::forward<Args>(args)...);
     }
 
@@ -3721,7 +3721,7 @@ struct NodeHashSetPolicy
 // --------------------------------------------------------------------------
 template <class Key, class Value>
 class NodeHashMapPolicy
-    : public phmap::container_internal::node_hash_policy<
+    : public phmap::priv::node_hash_policy<
           std::pair<const Key, Value>&, NodeHashMapPolicy<Key, Value>> 
 {
     using value_type = std::pair<const Key, Value>;
@@ -3753,10 +3753,10 @@ public:
     }
 
     template <class F, class... Args>
-        static decltype(phmap::container_internal::DecomposePair(
+        static decltype(phmap::priv::DecomposePair(
                             std::declval<F>(), std::declval<Args>()...))
         apply(F&& f, Args&&... args) {
-        return phmap::container_internal::DecomposePair(std::forward<F>(f),
+        return phmap::priv::DecomposePair(std::forward<F>(f),
                                                         std::forward<Args>(args)...);
     }
 
@@ -3881,8 +3881,8 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
         size_t hash = typename Set::HashElement{set.hash_ref()}(key); 
         auto seq = set.probe(hash);
         while (true) {
-            container_internal::Group g{set.ctrl_ + seq.offset()};
-            for (int i : g.Match(container_internal::H2(hash))) {
+            priv::Group g{set.ctrl_ + seq.offset()};
+            for (int i : g.Match(priv::H2(hash))) {
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
@@ -3907,7 +3907,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
             m += per_slot * c.size();
         } else {
             for (size_t i = 0; i != capacity; ++i) {
-                if (container_internal::IsFull(c.ctrl_[i])) {
+                if (priv::IsFull(c.ctrl_[i])) {
                     m += Traits::space_used(c.slots_ + i);
                 }
             }
@@ -3929,7 +3929,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 };
 
 }  // namespace hashtable_debug_internal
-}  // namespace container_internal
+}  // namespace priv
 
 // -----------------------------------------------------------------------------
 // phmap::flat_hash_set
@@ -3950,8 +3950,8 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 // -----------------------------------------------------------------------------
 template <class T, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class flat_hash_set
-    : public phmap::container_internal::raw_hash_set<
-          phmap::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Alloc> 
+    : public phmap::priv::raw_hash_set<
+          phmap::priv::FlatHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
     using Base = typename flat_hash_set::raw_hash_set;
 
@@ -4011,8 +4011,8 @@ public:
 // * Returns `void` from the `_erase(iterator)` overload.
 // -----------------------------------------------------------------------------
 template <class K, class V, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
-class flat_hash_map : public phmap::container_internal::raw_hash_map<
-                          phmap::container_internal::FlatHashMapPolicy<K, V>,
+class flat_hash_map : public phmap::priv::raw_hash_map<
+                          phmap::priv::FlatHashMapPolicy<K, V>,
                           Hash, Eq, Alloc> {
     using Base = typename flat_hash_map::raw_hash_map;
 
@@ -4074,8 +4074,8 @@ public:
 // -----------------------------------------------------------------------------
 template <class T, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class node_hash_set
-    : public phmap::container_internal::raw_hash_set<
-          phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
+    : public phmap::priv::raw_hash_set<
+          phmap::priv::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
     using Base = typename node_hash_set::raw_hash_set;
 
@@ -4136,8 +4136,8 @@ public:
 // -----------------------------------------------------------------------------
 template <class Key, class Value, class Hash, class Eq, class Alloc>  // default values in phmap_fwd_decl.h
 class node_hash_map
-    : public phmap::container_internal::raw_hash_map<
-          phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
+    : public phmap::priv::raw_hash_map<
+          phmap::priv::NodeHashMapPolicy<Key, Value>, Hash, Eq,
           Alloc> 
 {
     using Base = typename node_hash_map::raw_hash_map;
@@ -4190,9 +4190,9 @@ public:
 // -----------------------------------------------------------------------------
 template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_> // default values in phmap_fwd_decl.h
 class parallel_flat_hash_set
-    : public phmap::container_internal::parallel_hash_set<
-         N, phmap::container_internal::raw_hash_set, Mtx_,
-         phmap::container_internal::FlatHashSetPolicy<T>, 
+    : public phmap::priv::parallel_hash_set<
+         N, phmap::priv::raw_hash_set, Mtx_,
+         phmap::priv::FlatHashSetPolicy<T>, 
          Hash, Eq, Alloc> 
 {
     using Base = typename parallel_flat_hash_set::parallel_hash_set;
@@ -4241,9 +4241,9 @@ public:
 // phmap::parallel_flat_hash_map - default values in phmap_fwd_decl.h
 // -----------------------------------------------------------------------------
 template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
-class parallel_flat_hash_map : public phmap::container_internal::parallel_hash_map<
-                N, phmap::container_internal::raw_hash_set, Mtx_,
-                phmap::container_internal::FlatHashMapPolicy<K, V>,
+class parallel_flat_hash_map : public phmap::priv::parallel_hash_map<
+                N, phmap::priv::raw_hash_set, Mtx_,
+                phmap::priv::FlatHashMapPolicy<K, V>,
                 Hash, Eq, Alloc> 
 {
     using Base = typename parallel_flat_hash_map::parallel_hash_map;
@@ -4297,9 +4297,9 @@ public:
 // -----------------------------------------------------------------------------
 template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
 class parallel_node_hash_set
-    : public phmap::container_internal::parallel_hash_set<
-             N, phmap::container_internal::raw_hash_set, Mtx_,
-             phmap::container_internal::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
+    : public phmap::priv::parallel_hash_set<
+             N, phmap::priv::raw_hash_set, Mtx_,
+             phmap::priv::NodeHashSetPolicy<T>, Hash, Eq, Alloc> 
 {
     using Base = typename parallel_node_hash_set::parallel_hash_set;
 
@@ -4350,9 +4350,9 @@ public:
 // -----------------------------------------------------------------------------
 template <class Key, class Value, class Hash, class Eq, class Alloc, size_t N, class Mtx_>
 class parallel_node_hash_map
-    : public phmap::container_internal::parallel_hash_map<
-          N, phmap::container_internal::raw_hash_set, Mtx_,
-          phmap::container_internal::NodeHashMapPolicy<Key, Value>, Hash, Eq,
+    : public phmap::priv::parallel_hash_map<
+          N, phmap::priv::raw_hash_set, Mtx_,
+          phmap::priv::NodeHashMapPolicy<Key, Value>, Hash, Eq,
           Alloc> 
 {
     using Base = typename parallel_node_hash_map::parallel_hash_map;

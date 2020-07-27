@@ -6,7 +6,7 @@
 #include "flat_hash_map_test.cc"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 TEST(THIS_TEST_NAME, ThreadSafeContains) {
@@ -23,5 +23,5 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

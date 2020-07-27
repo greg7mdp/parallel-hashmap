@@ -44,16 +44,16 @@
         // create the parallel_flat_hash_map without internal mutexes, for when 
         // we programatically ensure that each thread uses different internal submaps
         // --------------------------------------------------------------------------
-        #define EXTRAARGS , NMSP::container_internal::hash_default_hash<K>, \
-                            NMSP::container_internal::hash_default_eq<K>, \
+        #define EXTRAARGS , NMSP::priv::hash_default_hash<K>, \
+                            NMSP::priv::hash_default_eq<K>, \
                             std::allocator<std::pair<const K, V>>, 4, NMSP::NullMutex
     #elif MT_SUPPORT == 2
         // create the parallel_flat_hash_map with internal mutexes, for when 
         // we read/write the same parallel_flat_hash_map from multiple threads, 
         // without any special precautions.
         // --------------------------------------------------------------------------
-        #define EXTRAARGS , NMSP::container_internal::hash_default_hash<K>, \
-                            NMSP::container_internal::hash_default_eq<K>, \
+        #define EXTRAARGS , NMSP::priv::hash_default_hash<K>, \
+                            NMSP::priv::hash_default_eq<K>, \
                             std::allocator<std::pair<const K, V>>, 4, MTX
     #else
         #define EXTRAARGS

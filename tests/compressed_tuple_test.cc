@@ -21,7 +21,7 @@
 #include "gtest/gtest.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 enum class CallType { kConstRef, kConstMove };
@@ -197,5 +197,5 @@ TEST(CompressedTupleTest, EmptyFinalClass) {
 #endif
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

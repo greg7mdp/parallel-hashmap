@@ -15,8 +15,8 @@
 // Utilities to help tests verify that hash tables properly handle stateful
 // allocators and hash functions.
 
-#ifndef PHMAP_CONTAINER_INTERNAL_HASH_POLICY_TESTING_H_
-#define PHMAP_CONTAINER_INTERNAL_HASH_POLICY_TESTING_H_
+#ifndef PHMAP_PRIV_HASH_POLICY_TESTING_H_
+#define PHMAP_PRIV_HASH_POLICY_TESTING_H_
 
 #include <cstdlib>
 #include <limits>
@@ -27,7 +27,7 @@
 #include <vector>
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace hash_testing_internal {
 
 template <class Derived>
@@ -92,7 +92,7 @@ struct NonStandardLayout
 };
 
 struct StatefulTestingHash
-    : phmap::container_internal::hash_testing_internal::WithId<
+    : phmap::priv::hash_testing_internal::WithId<
           StatefulTestingHash> 
 {
     template <class T>
@@ -102,7 +102,7 @@ struct StatefulTestingHash
 };
 
 struct StatefulTestingEqual
-    : phmap::container_internal::hash_testing_internal::WithId<
+    : phmap::priv::hash_testing_internal::WithId<
           StatefulTestingEqual> {
   template <class T, class U>
   bool operator()(const T& t, const U& u) const {
@@ -160,7 +160,7 @@ auto keys(const Set& s)
   return res;
 }
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 namespace std
@@ -168,9 +168,9 @@ namespace std
     // inject specialization of std::hash for NonStandardLayout into namespace std
     // ----------------------------------------------------------------
     template<> 
-    struct hash<phmap::container_internal::NonStandardLayout>
+    struct hash<phmap::priv::NonStandardLayout>
     {
-        std::size_t operator()(phmap::container_internal::NonStandardLayout const &p) const
+        std::size_t operator()(phmap::priv::NonStandardLayout const &p) const
         {
             return std::hash<std::string>()(p.value);
         }
@@ -192,4 +192,4 @@ namespace std
     #define PHMAP_UNORDERED_SUPPORTS_ALLOC_CTORS 1
 #endif
 
-#endif  // PHMAP_CONTAINER_INTERNAL_HASH_POLICY_TESTING_H_
+#endif  // PHMAP_PRIV_HASH_POLICY_TESTING_H_

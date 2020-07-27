@@ -40,7 +40,7 @@ struct IsTriviallyCopyable<std::pair<T1, T2>> {
 };
 }
 
-namespace container_internal {
+namespace priv {
 
 // ------------------------------------------------------------------------
 // dump/load for raw_hash_set
@@ -166,7 +166,7 @@ bool parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc>::load(InputArch
     }
     return true;
 }
-} // namespace container_internal
+} // namespace priv
 
 
 

@@ -49,19 +49,19 @@
       </Expand>  
   </Type>  
     
-  <Type Name="phmap::container_internal::map_slot_type&lt;*,*&gt;">
+  <Type Name="phmap::priv::map_slot_type&lt;*,*&gt;">
     <DisplayString>{value}</DisplayString>
   </Type>
 
   <!-- flat map iterators -->
-  <Type Name="phmap::container_internal::raw_hash_set&lt;*,*,*,*&gt;::iterator">
+  <Type Name="phmap::priv::raw_hash_set&lt;*,*,*,*&gt;::iterator">
        <DisplayString Condition="ctrl_ == 0">unset</DisplayString>
        <DisplayString Condition="!(*ctrl_ >= 0)">end()</DisplayString>
        <DisplayString>{*slot_,na}</DisplayString>
   </Type>
 
   <!-- node map iterators  - only difference is the **slot_ instead of * -->
-  <Type Name="phmap::container_internal::raw_hash_set&lt;phmap::container_internal::NodeHashSetPolicy&lt;*&gt;,*,*,*&gt;::iterator">
+  <Type Name="phmap::priv::raw_hash_set&lt;phmap::priv::NodeHashSetPolicy&lt;*&gt;,*,*,*&gt;::iterator">
        <DisplayString Condition="ctrl_ == 0">unset</DisplayString>
        <DisplayString Condition="!(*ctrl_ >= 0)">end()</DisplayString>
        <DisplayString>{**slot_,na}</DisplayString>
@@ -133,7 +133,7 @@
       </Expand>  
   </Type>  
 
-  <Type Name="phmap::container_internal::parallel_hash_set&lt;*,*,*,*,*,*,*&gt;::iterator">
+  <Type Name="phmap::priv::parallel_hash_set&lt;*,*,*,*,*,*,*&gt;::iterator">
        <DisplayString>{it_,na}</DisplayString>
   </Type>
 

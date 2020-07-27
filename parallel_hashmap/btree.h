@@ -737,7 +737,7 @@ namespace phmap {
 
 namespace phmap {
 
-namespace container_internal {
+namespace priv {
 
     // A helper class that indicates if the Compare parameter is a key-compare-to
     // comparator.
@@ -921,7 +921,7 @@ namespace container_internal {
     template <typename Key, typename Data, typename Compare, typename Alloc,
               int TargetNodeSize, bool Multi>
     struct map_params : common_params<Key, Compare, Alloc, TargetNodeSize, Multi,
-                                      phmap::container_internal::map_slot_policy<Key, Data>> {
+                                      phmap::priv::map_slot_policy<Key, Data>> {
         using super_type = typename map_params::common_params;
         using mapped_type = Data;
         // This type allows us to move keys when it is safe to do so. It is safe
@@ -952,7 +952,7 @@ namespace container_internal {
     };
 
     // This type implements the necessary functions from the
-    // btree::container_internal::slot_type interface.
+    // btree::priv::slot_type interface.
     template <typename Key>
     struct set_slot_policy {
         using slot_type = Key;
@@ -1102,7 +1102,7 @@ namespace container_internal {
         btree_node() = default;
 
     private:
-        using layout_type = phmap::container_internal::Layout<btree_node *, field_type,
+        using layout_type = phmap::priv::Layout<btree_node *, field_type,
                                                                slot_type, btree_node *>;
         constexpr static size_type SizeWithNValues(size_type n) {
             return (size_type)layout_type(/*parent*/ 1,
@@ -1227,10 +1227,10 @@ namespace container_internal {
         btree_node *child(size_type i) const { return GetField<3>()[i]; }
         btree_node *&mutable_child(size_type i) { return GetField<3>()[i]; }
         void clear_child(size_type i) {
-            phmap::container_internal::SanitizerPoisonObject(&mutable_child(i));
+            phmap::priv::SanitizerPoisonObject(&mutable_child(i));
         }
         void set_child(size_type i, btree_node *c) {
-            phmap::container_internal::SanitizerUnpoisonObject(&mutable_child(i));
+            phmap::priv::SanitizerUnpoisonObject(&mutable_child(i));
             mutable_child(i) = c;
             c->set_position((field_type)i);
         }
@@ -1396,7 +1396,7 @@ namespace container_internal {
             n->set_start(0);
             n->set_count(0);
             n->set_max_count((field_type)max_count);
-            phmap::container_internal::SanitizerPoisonMemoryRegion(
+            phmap::priv::SanitizerPoisonMemoryRegion(
                 n->slot(0), max_count * sizeof(slot_type));
             return n;
         }
@@ -1405,7 +1405,7 @@ namespace container_internal {
             // Set `max_count` to a sentinel value to indicate that this node is
             // internal.
             n->set_max_count(kInternalNodeMaxCount);
-            phmap::container_internal::SanitizerPoisonMemoryRegion(
+            phmap::priv::SanitizerPoisonMemoryRegion(
                 &n->mutable_child(0), (kNodeValues + 1) * sizeof(btree_node *));
             return n;
         }
@@ -1424,12 +1424,12 @@ namespace container_internal {
     private:
         template <typename... Args>
         void value_init(const size_type i, allocator_type *alloc, Args &&... args) {
-            phmap::container_internal::SanitizerUnpoisonObject(slot(i));
+            phmap::priv::SanitizerUnpoisonObject(slot(i));
             params_type::construct(alloc, slot(i), std::forward<Args>(args)...);
         }
         void value_destroy(const size_type i, allocator_type *alloc) {
             params_type::destroy(alloc, slot(i));
-            phmap::container_internal::SanitizerPoisonObject(slot(i));
+            phmap::priv::SanitizerPoisonObject(slot(i));
         }
 
         // Move n values starting at value i in this node into the values starting at
@@ -1437,7 +1437,7 @@ namespace container_internal {
         void uninitialized_move_n(const size_type n, const size_type i,
                                   const size_type j, btree_node *x,
                                   allocator_type *alloc) {
-            phmap::container_internal::SanitizerUnpoisonMemoryRegion(
+            phmap::priv::SanitizerUnpoisonMemoryRegion(
                 x->slot(j), n * sizeof(slot_type));
             for (slot_type *src = slot(i), *end = src + n, *dest = x->slot(j);
                  src != end; ++src, ++dest) {
@@ -1982,7 +1982,7 @@ namespace container_internal {
         // allocator.
         node_type *allocate(const size_type size) {
             return reinterpret_cast<node_type *>(
-                phmap::container_internal::Allocate<node_type::Alignment()>(
+                phmap::priv::Allocate<node_type::Alignment()>(
                     mutable_allocator(), (size_t)size));
         }
 
@@ -2007,7 +2007,7 @@ namespace container_internal {
 
         // Deallocates a node of a certain size in bytes using the allocator.
         void deallocate(const size_type size, node_type *node) {
-            phmap::container_internal::Deallocate<node_type::Alignment()>(
+            phmap::priv::Deallocate<node_type::Alignment()>(
                 mutable_allocator(), node, (size_t)size);
         }
 
@@ -2119,7 +2119,7 @@ namespace container_internal {
     private:
         // We use compressed tuple in order to save space because key_compare and
         // allocator_type are usually empty.
-        phmap::container_internal::CompressedTuple<key_compare, allocator_type,
+        phmap::priv::CompressedTuple<key_compare, allocator_type,
                                                     node_type *>
         root_;
 
@@ -3817,7 +3817,7 @@ namespace container_internal {
         btree_multimap_container() {}
     };
 
-}  // namespace container_internal
+}  // namespace priv
 
 
 
@@ -3825,8 +3825,8 @@ namespace container_internal {
     //  btree_set - default values in phmap_fwd_decl.h
     // ----------------------------------------------------------------------
     template <typename Key, typename Compare, typename Alloc>
-    class btree_set : public container_internal::btree_set_container<
-        container_internal::btree<container_internal::set_params<
+    class btree_set : public priv::btree_set_container<
+        priv::btree<priv::set_params<
             Key, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ false>>> 
     {
         using Base = typename btree_set::btree_set_container;
@@ -3882,8 +3882,8 @@ namespace container_internal {
     //  btree_multiset - default values in phmap_fwd_decl.h
     // ----------------------------------------------------------------------
     template <typename Key, typename Compare,  typename Alloc>
-        class btree_multiset : public container_internal::btree_multiset_container<
-        container_internal::btree<container_internal::set_params<
+        class btree_multiset : public priv::btree_multiset_container<
+        priv::btree<priv::set_params<
              Key, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ true>>> 
     {
         using Base = typename btree_multiset::btree_multiset_container;
@@ -3940,8 +3940,8 @@ namespace container_internal {
     //  btree_map - default values in phmap_fwd_decl.h
     // ----------------------------------------------------------------------
     template <typename Key, typename Value, typename Compare,  typename Alloc>
-        class btree_map : public container_internal::btree_map_container<
-        container_internal::btree<container_internal::map_params<
+        class btree_map : public priv::btree_map_container<
+        priv::btree<priv::map_params<
              Key, Value, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ false>>> 
     {
         using Base = typename btree_map::btree_map_container;
@@ -3999,8 +3999,8 @@ namespace container_internal {
     //  btree_multimap - default values in phmap_fwd_decl.h
     // ----------------------------------------------------------------------
     template <typename Key, typename Value, typename Compare, typename Alloc>
-        class btree_multimap : public container_internal::btree_multimap_container<
-        container_internal::btree<container_internal::map_params<
+        class btree_multimap : public priv::btree_multimap_container<
+        priv::btree<priv::map_params<
               Key, Value, Compare, Alloc, /*TargetNodeSize=*/ 256, /*Multi=*/ true>>> 
     {
         using Base = typename btree_multimap::btree_multimap_container;

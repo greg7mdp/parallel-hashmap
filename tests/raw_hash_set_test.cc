@@ -42,7 +42,7 @@
 #include "gtest/gtest.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 struct RawHashSetTestOnlyAccess {
   template <typename C>
@@ -212,7 +212,7 @@ TEST(Group, MatchEmptyOrDeleted) {
 
 TEST(Batch, DropDeletes) {
   constexpr size_t kCapacity = 63;
-  constexpr size_t kGroupWidth = container_internal::Group::kWidth;
+  constexpr size_t kGroupWidth = priv::Group::kWidth;
   std::vector<ctrl_t> ctrl(kCapacity + 1 + kGroupWidth);
   ctrl[kCapacity] = kSentinel;
   std::vector<ctrl_t> pattern = {kEmpty, 2, kDeleted, 2, kEmpty, 1, kDeleted};
@@ -349,7 +349,7 @@ struct StringTable
 #endif
 
 struct IntTable
-    : raw_hash_set<IntPolicy, container_internal::hash_default_hash<int64_t>,
+    : raw_hash_set<IntPolicy, priv::hash_default_hash<int64_t>,
                    std::equal_to<int64_t>, std::allocator<int64_t>> {
   using Base = typename IntTable::raw_hash_set;
   IntTable() {}
@@ -369,7 +369,7 @@ struct CustomAlloc : std::allocator<T> {
 };
 
 struct CustomAllocIntTable
-    : raw_hash_set<IntPolicy, container_internal::hash_default_hash<int64_t>,
+    : raw_hash_set<IntPolicy, priv::hash_default_hash<int64_t>,
                    std::equal_to<int64_t>, CustomAlloc<int64_t>> {
     using Base = typename CustomAllocIntTable::raw_hash_set;
     using Base::Base;	
@@ -850,7 +850,7 @@ TEST(Table, EnsureNonQuadraticAsInRust) {
 
 TEST(Table, ClearBug) {
   IntTable t;
-  constexpr size_t capacity = container_internal::Group::kWidth - 1;
+  constexpr size_t capacity = priv::Group::kWidth - 1;
   constexpr size_t max_size = capacity / 2 + 1;
   for (size_t i = 0; i < max_size; ++i) {
     t.insert(i);
@@ -1112,7 +1112,7 @@ ExpectedStats XorSeedExpectedStats() {
 
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
-  PHMAP_IF_CONSTEXPR (container_internal::Group::kWidth == 8) {
+  PHMAP_IF_CONSTEXPR (priv::Group::kWidth == 8) {
       if (kRandomizesInserts) {
           return {0.05,
                   1.0,
@@ -1216,7 +1216,7 @@ ExpectedStats LinearTransformExpectedStats() {
 
   // The effective load factor is larger in non-opt mode because we insert
   // elements out of order.
-  PHMAP_IF_CONSTEXPR (container_internal::Group::kWidth == 8) {
+  PHMAP_IF_CONSTEXPR (priv::Group::kWidth == 8) {
       if (kRandomizesInserts) {
           return {0.1,
                   0.5,
@@ -1433,7 +1433,7 @@ TEST(Table, CopyConstructWithAlloc) {
 }
 
 struct ExplicitAllocIntTable
-    : raw_hash_set<IntPolicy, container_internal::hash_default_hash<int64_t>,
+    : raw_hash_set<IntPolicy, priv::hash_default_hash<int64_t>,
                    std::equal_to<int64_t>, Alloc<int64_t>> {
   ExplicitAllocIntTable() {}
 };
@@ -1606,11 +1606,11 @@ TEST(Table, NoThrowMoveAssign) {
 
 TEST(Table, NoThrowSwappable) {
   ASSERT_TRUE(
-      container_internal::IsNoThrowSwappable<phmap::Hash<std::string_view>>());
-  ASSERT_TRUE(container_internal::IsNoThrowSwappable<
+      priv::IsNoThrowSwappable<phmap::Hash<std::string_view>>());
+  ASSERT_TRUE(priv::IsNoThrowSwappable<
               std::equal_to<std::string_view>>());
-  ASSERT_TRUE(container_internal::IsNoThrowSwappable<std::allocator<int>>());
-  EXPECT_TRUE(container_internal::IsNoThrowSwappable<StringTable>());
+  ASSERT_TRUE(priv::IsNoThrowSwappable<std::allocator<int>>());
+  EXPECT_TRUE(priv::IsNoThrowSwappable<StringTable>());
 }
 #endif
 
@@ -1695,8 +1695,8 @@ TEST(Table, HeterogeneousLookupOverloads) {
 
   using TransparentTable = raw_hash_set<
       StringPolicy,
-      phmap::container_internal::hash_default_hash<std::string_view>,
-      phmap::container_internal::hash_default_eq<std::string_view>,
+      phmap::priv::hash_default_hash<std::string_view>,
+      phmap::priv::hash_default_eq<std::string_view>,
       std::allocator<int>>;
 
   EXPECT_TRUE((VerifyResultOf<CallFind, TransparentTable>()));
@@ -1958,5 +1958,5 @@ TEST(Sanitizer, PoisoningOnErase) {
 #endif  // ADDRESS_SANITIZER
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

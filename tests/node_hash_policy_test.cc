@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 using ::testing::Pointee;
@@ -61,5 +61,5 @@ TEST_F(NodeTest, transfer) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

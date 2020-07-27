@@ -15,8 +15,8 @@
 // Generates random values for testing. Specialized only for the few types we
 // care about.
 
-#ifndef PHMAP_CONTAINER_INTERNAL_HASH_GENERATOR_TESTING_H_
-#define PHMAP_CONTAINER_INTERNAL_HASH_GENERATOR_TESTING_H_
+#ifndef PHMAP_PRIV_HASH_GENERATOR_TESTING_H_
+#define PHMAP_PRIV_HASH_GENERATOR_TESTING_H_
 
 #include <stdint.h>
 #include <algorithm>
@@ -36,7 +36,7 @@
 #include "hash_policy_testing.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace hash_internal {
 namespace generator_internal {
 
@@ -194,13 +194,13 @@ using GeneratedType = decltype(
                                   typename Container::key_type>::type>&>()());
 
 }  // namespace hash_internal
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
 namespace std
 {
-    using phmap::container_internal::hash_internal::EnumClass;
-    using phmap::container_internal::hash_internal::Enum;
+    using phmap::priv::hash_internal::EnumClass;
+    using phmap::priv::hash_internal::Enum;
 
     template<> 
     struct hash<EnumClass>
@@ -215,4 +215,4 @@ namespace std
 }
 
 
-#endif  // PHMAP_CONTAINER_INTERNAL_HASH_GENERATOR_TESTING_H_
+#endif  // PHMAP_PRIV_HASH_GENERATOR_TESTING_H_

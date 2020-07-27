@@ -84,9 +84,9 @@ void test(const char *name, Perturb perturb1, Perturb perturb2)
 
 template <class T, size_t N>
 using pset = phmap::parallel_flat_hash_set<T, 
-                                           phmap::container_internal::hash_default_hash<T>,
-                                           phmap::container_internal::hash_default_eq<T>,
-                                           phmap::container_internal::Allocator<T>, // alias for std::allocator
+                                           phmap::priv::hash_default_hash<T>,
+                                           phmap::priv::hash_default_eq<T>,
+                                           phmap::priv::Allocator<T>, // alias for std::allocator
                                            N>;
 
 // --------------------------------------------------------------------------

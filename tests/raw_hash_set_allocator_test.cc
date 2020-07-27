@@ -20,7 +20,7 @@
 #include "tracked.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 enum AllocSpec {
@@ -424,5 +424,5 @@ TEST_F(PropagateOnAll, Swap) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PHMAP_CONTAINER_INTERNAL_TRACKED_H_
-#define PHMAP_CONTAINER_INTERNAL_TRACKED_H_
+#ifndef PHMAP_PRIV_TRACKED_H_
+#define PHMAP_PRIV_TRACKED_H_
 
 #include <stddef.h>
 #include <memory>
 #include <utility>
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 // A class that tracks its copies and moves so that it can be queried in tests.
 template <class T>
@@ -72,7 +72,7 @@ class Tracked {
   std::shared_ptr<size_t> num_copies_ = std::make_shared<size_t>(0);
 };
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
-#endif  // PHMAP_CONTAINER_INTERNAL_TRACKED_H_
+#endif  // PHMAP_PRIV_TRACKED_H_

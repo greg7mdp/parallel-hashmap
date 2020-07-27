@@ -25,10 +25,10 @@
 #include "unordered_set_modifiers_test.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
-using ::phmap::container_internal::hash_internal::Enum;
-using ::phmap::container_internal::hash_internal::EnumClass;
+using ::phmap::priv::hash_internal::Enum;
+using ::phmap::priv::hash_internal::EnumClass;
 using ::testing::Pointee;
 using ::testing::UnorderedElementsAre;
 
@@ -106,5 +106,5 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

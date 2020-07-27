@@ -209,9 +209,9 @@ It is about time we provide the complete parallel_flat_hash_map class declaratio
 
 ```
 template <class K, class V,
-          class Hash      = phmap::container_internal::hash_default_hash<K>,
-          class Eq        = phmap::container_internal::hash_default_eq<K>,
-          class Allocator = phmap::container_internal::Allocator<std::pair<const K, V>>, // alias for std::allocator
+          class Hash      = phmap::priv::hash_default_hash<K>,
+          class Eq        = phmap::priv::hash_default_eq<K>,
+          class Allocator = phmap::priv::Allocator<std::pair<const K, V>>, // alias for std::allocator
           size_t N        = 4,                 // 2**N submaps
           class Mutex     = phmap::NullMutex>   // use std::mutex to enable internal locks
 class parallel_flat_hash_map;

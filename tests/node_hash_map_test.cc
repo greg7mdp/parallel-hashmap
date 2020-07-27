@@ -26,7 +26,7 @@
 #include "unordered_map_modifiers_test.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 using ::testing::Field;
@@ -221,5 +221,5 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

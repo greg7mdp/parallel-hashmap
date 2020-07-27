@@ -26,7 +26,7 @@
 #include "gtest/gtest.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 using ::testing::Pair;
@@ -189,5 +189,5 @@ TEST(DecomposePair, NotDecomposable) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

@@ -306,7 +306,7 @@ namespace test_internal {
 }  // namespace test_internal
 
 
-namespace container_internal {
+namespace priv {
 
     // Like remove_const but propagates the removal through std::pair.
     template <typename T>
@@ -427,9 +427,9 @@ namespace container_internal {
         return vec;
     }
 
-}  // namespace container_internal
+}  // namespace priv
 
-namespace container_internal {
+namespace priv {
 
     // This is a stateful allocator, but the state lives outside of the
     // allocator (in whatever test is using the allocator). This is odd
@@ -483,7 +483,7 @@ namespace container_internal {
         int64_t* bytes_used_;
     };
 
-}  // namespace container_internal
+}  // namespace priv
 
 }  // namespace phmap
 

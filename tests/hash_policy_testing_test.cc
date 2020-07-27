@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 TEST(_, Hash) {
@@ -40,5 +40,5 @@ TEST(_, Hash) {
 }
 
 }  // namespace
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap

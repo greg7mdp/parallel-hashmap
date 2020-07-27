@@ -5,7 +5,7 @@
 #include "parallel_hashmap/phmap_dump.h"
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 namespace {
 
 TEST(DumpLoad, FlatHashSet_uin32) {

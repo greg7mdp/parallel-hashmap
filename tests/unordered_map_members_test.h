@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_MEMBERS_TEST_H_
-#define PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_MEMBERS_TEST_H_
+#ifndef PHMAP_PRIV_UNORDERED_MAP_MEMBERS_TEST_H_
+#define PHMAP_PRIV_UNORDERED_MAP_MEMBERS_TEST_H_
 
 #include <type_traits>
 
@@ -31,7 +31,7 @@
 #endif
 
 namespace phmap {
-namespace container_internal {
+namespace priv {
 
 template <class UnordMap>
 class MembersTest : public ::testing::Test {};
@@ -89,7 +89,7 @@ TYPED_TEST_P(MembersTest, BeginEnd) {
 
 REGISTER_TYPED_TEST_SUITE_P(MembersTest, Typedefs, SimpleFunctions, BeginEnd);
 
-}  // namespace container_internal
+}  // namespace priv
 }  // namespace phmap
 
-#endif  // PHMAP_CONTAINER_INTERNAL_UNORDERED_MAP_MEMBERS_TEST_H_
+#endif  // PHMAP_PRIV_UNORDERED_MAP_MEMBERS_TEST_H_
