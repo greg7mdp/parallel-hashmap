@@ -86,7 +86,7 @@ void test(const char *name, Perturb perturb1, Perturb perturb2)
 
     Timer t(name); // start timer
     Set c;
-    c.reserve(order.size());               // whether this "reserve()" is present or not makes a huge difference
+    //c.reserve(order.size());               // whether this "reserve()" is present or not makes a huge difference
     c.insert(order.begin(), order.end());  // time for inserting the same keys into the set
                                            // should not depend on them being sorted or not.
 }

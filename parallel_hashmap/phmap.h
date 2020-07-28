@@ -1209,9 +1209,8 @@ public:
     // TODO(romanp): Once we stop supporting gcc 5.1 and below, replace
     // RequiresInsertable<T> with RequiresInsertable<const T&>.
     // We are hitting this bug: https://godbolt.org/g/1Vht4f.
-    template <
-        class T, RequiresInsertable<T> = 0,
-        typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
+    template <class T, RequiresInsertable<T> = 0,
+              typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
     std::pair<iterator, bool> insert(const T& value) {
         return emplace(value);
     }
@@ -1235,9 +1234,8 @@ public:
     // TODO(romanp): Once we stop supporting gcc 5.1 and below, replace
     // RequiresInsertable<T> with RequiresInsertable<const T&>.
     // We are hitting this bug: https://godbolt.org/g/1Vht4f.
-    template <
-        class T, RequiresInsertable<T> = 0,
-        typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
+    template <class T, RequiresInsertable<T> = 0,
+              typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
     iterator insert(const_iterator, const T& value) {
         return insert(value).first;
     }
@@ -1246,9 +1244,36 @@ public:
         return insert(std::move(value)).first;
     }
 
-    template <class InputIt>
+    template <typename It>
+    using IsRandomAccess = std::is_same<typename std::iterator_traits<It>::iterator_category,
+                                        std::random_access_iterator_tag>;
+
+
+    template<typename T>
+    struct has_difference_operator
+    {
+    private:
+        using yes = std::true_type;
+        using no  = std::false_type;
+ 
+        template<typename U> static auto test(int) -> decltype(std::declval<U>() - std::declval<U>() == 1, yes());
+        template<typename>   static no   test(...);
+ 
+    public:
+        static constexpr bool value = std::is_same<decltype(test<T>(0)), yes>::value;
+    };
+
+    template <class InputIt, typename phmap::enable_if_t<has_difference_operator<InputIt>::value, int> = 0>
     void insert(InputIt first, InputIt last) {
-        for (; first != last; ++first) insert(*first);
+        this->reserve(this->size() + (last - first));
+        for (; first != last; ++first) 
+            insert(*first);
+    }
+
+    template <class InputIt, typename phmap::enable_if_t<!has_difference_operator<InputIt>::value, int> = 0>
+    void insert(InputIt first, InputIt last) {
+        for (; first != last; ++first) 
+            insert(*first);
     }
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<const T&> = 0>
