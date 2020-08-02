@@ -48,7 +48,7 @@ If you are using Visual Studio, you probably want to add `phmap.natvis` to your 
 
 ## Example
 
-```
+```c++
 #include <iostream>
 #include <string>
 #include <parallel_hashmap/phmap.h>
