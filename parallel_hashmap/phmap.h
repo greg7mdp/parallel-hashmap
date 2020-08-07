@@ -3433,9 +3433,24 @@ public:
         auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
         if (it == this->end())
             return false;
+        std::forward<F>(f)((const mapped_type&)Policy::value(&*it));
+        return true;
+    }
+
+    template <class K = key_type, class F>
+    bool if_contains(const key_arg<K>& key, F&& f) {
+#if __cplusplus >= 201703L
+        static_assert(std::is_invocable<F, mapped_type&>::value);
+#endif
+        typename Lockable::UniqueLock m;
+        auto it = this->find(key, this->hash(key), m);
+        if (it == this->end())
+            return false;
         std::forward<F>(f)(Policy::value(&*it));
         return true;
     }
+
+    
 
     template <class K = key_type, class P = Policy, K* = nullptr>
     MappedReference<P> operator[](key_arg<K>&& key) {
