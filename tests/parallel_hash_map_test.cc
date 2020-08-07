@@ -23,8 +23,10 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     EXPECT_FALSE(m.if_contains(3, get_value));
 
     auto set_value = [&val](int& v) { v = 11; };
-    EXPECT_TRUE(m.if_contains(2, set_value));
+    EXPECT_TRUE(m. modify_if(2, set_value));
     EXPECT_EQ(m[2], 11);
+
+    EXPECT_FALSE(m.modify_if(3, set_value));
 }
 
 }  // namespace

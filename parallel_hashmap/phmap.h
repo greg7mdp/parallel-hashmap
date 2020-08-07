@@ -3438,7 +3438,7 @@ public:
     }
 
     template <class K = key_type, class F>
-    bool if_contains(const key_arg<K>& key, F&& f) {
+    bool modify_if(const key_arg<K>& key, F&& f) {
 #if __cplusplus >= 201703L
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
