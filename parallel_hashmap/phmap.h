@@ -3222,11 +3222,11 @@ private:
     }
 
 protected:
-    template <class K = key_type>
-    iterator find(const key_arg<K>& key, size_t hashval, typename Lockable::SharedLock &mutexlock) {
+    template <class K = key_type, class L = Lockable::SharedLock>
+    iterator find(const key_arg<K>& key, size_t hashval, L &mutexlock) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set = inner.set_;
-        mutexlock = std::move(typename Lockable::SharedLock(inner));
+        mutexlock = std::move(L(inner));
         auto  it = set.find(key, hashval);
         return make_iterator(&inner, it);
     }
@@ -3426,15 +3426,12 @@ public:
 
     template <class K = key_type, class F>
     bool if_contains(const key_arg<K>& key, F&& f) const {
-#if __cplusplus >= 201703L
-        static_assert(std::is_invocable<F, mapped_type&>::value);
-#endif
-        typename Lockable::SharedLock m;
-        auto it = const_cast<parallel_hash_map*>(this)->find(key, this->hash(key), m);
-        if (it == this->end())
-            return false;
-        std::forward<F>(f)(Policy::value(&*it));
-        return true;
+        return const_cast<parallel_hash_map*>(this)->if_modify_impl<K, F, Lockable::SharedLock>(key, std::forward<F>(f));
+    }
+
+    template <class K = key_type, class F>
+    bool modify_if(const key_arg<K>& key, F&& f) {
+        return modify_if_impl<K, F, Lockable::UniqueLock>(key, std::forward<F>(f));
     }
 
     template <class K = key_type, class P = Policy, K* = nullptr>
@@ -3448,6 +3445,19 @@ public:
     }
 
 private:
+    template <class K = key_type, class F, class L>
+    bool modify_if_impl(const key_arg<K>& key, F&& f) {
+#if __cplusplus >= 201703L
+        static_assert(std::is_invocable<F, mapped_type&>::value);
+#endif
+        L m;
+        auto it = find<K, L>(key, this->hash(key), m);
+        if (it == this->end())
+            return false;
+        std::forward<F>(f)(Policy::value(&*it));
+        return true;
+    }
+
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
         typename Lockable::UniqueLock m;
