@@ -54,25 +54,12 @@
     #pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 #endif
 
-#include <initializer_list>
-#include <iterator>
-#include <utility>
 
-#include <algorithm>
-#include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <functional>
-#include <iterator>
 #include <limits>
 #include <new>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <initializer_list>
-#include <iterator>
 
 #include "phmap_fwd_decl.h"
 #include "phmap_base.h"
