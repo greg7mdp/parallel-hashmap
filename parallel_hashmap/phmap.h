@@ -244,7 +244,7 @@ static_assert(kEmpty == -128,
               "existence efficient (psignb xmm, xmm)");
 static_assert(~kEmpty & ~kDeleted & kSentinel & 0x7F,
               "kEmpty and kDeleted must share an unset bit that is not shared "
-              "by kSentinel to make the scalar test for MatchEmptyOrDceleted() "
+              "by kSentinel to make the scalar test for MatchEmptyOrDeleted() "
               "efficient");
 static_assert(kDeleted == -2,
               "kDeleted must be -2 to make the implementation of "
