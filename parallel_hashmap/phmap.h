@@ -244,7 +244,7 @@ static_assert(kEmpty == -128,
               "existence efficient (psignb xmm, xmm)");
 static_assert(~kEmpty & ~kDeleted & kSentinel & 0x7F,
               "kEmpty and kDeleted must share an unset bit that is not shared "
-              "by kSentinel to make the scalar test for MatchEmptyOrDeleted() "
+              "by kSentinel to make the scalar test for MatchEmptyOrDceleted() "
               "efficient");
 static_assert(kDeleted == -2,
               "kDeleted must be -2 to make the implementation of "
@@ -3222,7 +3222,7 @@ private:
     }
 
 protected:
-    template <class K = key_type, class L = Lockable::SharedLock>
+    template <class K = key_type, class L = typename Lockable::SharedLock>
     iterator find(const key_arg<K>& key, size_t hashval, L &mutexlock) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set = inner.set_;
@@ -3426,15 +3426,13 @@ public:
 
     template <class K = key_type, class F>
     bool if_contains(const key_arg<K>& key, F&& f) const {
-        return const_cast<parallel_hash_map*>(this)->if_modify_impl<K, F, Lockable::SharedLock>(key, std::forward<F>(f));
+        return const_cast<parallel_hash_map*>(this)->template modify_if_impl<K, F, typename Lockable::SharedLock>(key, std::forward<F>(f));
     }
 
     template <class K = key_type, class F>
     bool modify_if(const key_arg<K>& key, F&& f) {
-        return modify_if_impl<K, F, Lockable::UniqueLock>(key, std::forward<F>(f));
+        return modify_if_impl<K, F, typename Lockable::UniqueLock>(key, std::forward<F>(f));
     }
-
-    
 
     template <class K = key_type, class P = Policy, K* = nullptr>
     MappedReference<P> operator[](key_arg<K>&& key) {
@@ -3453,7 +3451,7 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto it = find<K, L>(key, this->hash(key), m);
+        auto it = this->template find<K, L>(key, this->hash(key), m);
         if (it == this->end())
             return false;
         std::forward<F>(f)(Policy::value(&*it));
