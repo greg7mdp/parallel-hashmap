@@ -3434,6 +3434,8 @@ public:
         return modify_if_impl<K, F, Lockable::UniqueLock>(key, std::forward<F>(f));
     }
 
+    
+
     template <class K = key_type, class P = Policy, K* = nullptr>
     MappedReference<P> operator[](key_arg<K>&& key) {
         return Policy::value(&*try_emplace(std::forward<K>(key)).first);
