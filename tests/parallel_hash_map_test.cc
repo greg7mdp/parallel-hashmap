@@ -32,13 +32,13 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     m.try_emplace_l(2, [](int& v) { v = 5; });
     EXPECT_EQ(m[2], 5);
 
-    // insert a valye that is not already present
-    m.try_emplace_l(3, [](int& v) { assert(v == 0); v = 6; });
-    EXPECT_EQ(m[3], 6);
+    // insert a valye that is not already present. Will be default initialised to 0 and lambda not called
+    m.try_emplace_l(3, [](int& v) { assert(v == 0); /* should not be called when value constructed */ v = 6; });
+    EXPECT_EQ(m[3], 0);
     
     // insert a valye that is not already present, provide argument to value-construct it
-    m.try_emplace_l(4, [](int& v) { assert(v == 999); v = 5; }, 999);
-    EXPECT_EQ(m[4], 5);
+    m.try_emplace_l(4, [](int& ) { assert(0); /* should not be called when value constructed */ }, 999);
+    EXPECT_EQ(m[4], 999);
     
     
 }

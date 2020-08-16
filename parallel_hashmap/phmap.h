@@ -3457,8 +3457,10 @@ public:
             inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
                                    std::forward_as_tuple(std::forward<K>(k)),
                                    std::forward_as_tuple(std::forward<Args>(args)...));
-        auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
-        std::forward<F>(f)(Policy::value(&*it));
+        else {
+            auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
+            std::forward<F>(f)(Policy::value(&*it));
+        }
         return std::get<2>(res);
     }
 
