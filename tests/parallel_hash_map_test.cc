@@ -22,11 +22,25 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
 
     EXPECT_FALSE(m.if_contains(3, get_value));
 
-    auto set_value = [&val](int& v) { v = 11; };
-    EXPECT_TRUE(m. modify_if(2, set_value));
+    auto set_value = [](int& v) { v = 11; };
+    EXPECT_TRUE(m.modify_if(2, set_value));
     EXPECT_EQ(m[2], 11);
 
     EXPECT_FALSE(m.modify_if(3, set_value));
+
+    // overwrite an existing value
+    m.try_emplace_l(2, [](int& v) { v = 5; });
+    EXPECT_EQ(m[2], 5);
+
+    // insert a valye that is not already present
+    m.try_emplace_l(3, [](int& v) { assert(v == 0); v = 6; });
+    EXPECT_EQ(m[3], 6);
+    
+    // insert a valye that is not already present, provide argument to value-construct it
+    m.try_emplace_l(4, [](int& v) { assert(v == 999); v = 5; }, 999);
+    EXPECT_EQ(m[4], 5);
+    
+    
 }
 
 }  // namespace
