@@ -880,6 +880,25 @@ public:
             return tmp;
         }
 
+#if PHMAP_BIDIRECTIONAL
+        // PRECONDITION: not a begin() iterator.
+        iterator& operator--() {
+            assert(ctrl_);
+            do {
+                --ctrl_;
+                --slot_;
+            } while (IsEmptyOrDeleted(*ctrl_));
+            return *this;
+        }
+
+        // PRECONDITION: not a begin() iterator.
+        iterator operator--(int) {
+            auto tmp = *this;
+            --*this;
+            return tmp;
+        }
+#endif
+
         friend bool operator==(const iterator& a, const iterator& b) {
             return a.ctrl_ == b.ctrl_;
         }
@@ -904,7 +923,7 @@ public:
         }
 
         ctrl_t* ctrl_ = nullptr;
-        // To avoid uninitialized member warnigs, put slot_ in an anonymous union.
+        // To avoid uninitialized member warnings, put slot_ in an anonymous union.
         // The member is not initialized on singleton and end iterators.
         union {
             slot_type* slot_;
@@ -1143,7 +1162,14 @@ public:
         it.skip_empty_or_deleted();
         return it;
     }
-    iterator end() { return {ctrl_ + capacity_}; }
+    iterator end() 
+    {
+#if PHMAP_BIDIRECTIONAL
+        return iterator_at(capacity_); 
+#else
+        return {ctrl_ + capacity_};
+#endif
+    }
 
     const_iterator begin() const {
         return const_cast<raw_hash_set*>(this)->begin();
