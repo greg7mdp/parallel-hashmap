@@ -618,7 +618,7 @@
 #endif
 
 #ifndef PHMAP_HAVE_SSSE3
-    #if defined(__SSSE3__) || defined(__AVX2__)
+    #ifdef __SSSE3__
         #define PHMAP_HAVE_SSSE3 1
     #else
         #define PHMAP_HAVE_SSSE3 0
