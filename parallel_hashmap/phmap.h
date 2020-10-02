@@ -1600,7 +1600,11 @@ public:
     // specific benchmarks indicating its importance.
     void prefetch_hash(size_t hash) const {
         (void)hash;
-#if defined(__GNUC__)
+#if defined(_MSC_VER)
+        auto seq = probe(hash);
+        _mm_prefetch((const char *)(ctrl_ + seq.offset()), _MM_HINT_NTA);
+        _mm_prefetch((const char *)(slots_ + seq.offset()), _MM_HINT_NTA);
+#elif defined(__GNUC__)
         auto seq = probe(hash);
         __builtin_prefetch(static_cast<const void*>(ctrl_ + seq.offset()));
         __builtin_prefetch(static_cast<const void*>(slots_ + seq.offset()));
@@ -3070,13 +3074,11 @@ public:
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
         (void)key;
-#if 0 && defined(__GNUC__)
         size_t hashval     = HashElement{hash_ref()}(key);
         const Inner& inner = sets_[subidx(hashval)];
         const auto&  set   = inner.set_;
-        typename Lockable::UniqueLock m(inner);
+        typename Lockable::SharedLock m(const_cast<Inner&>(inner));
         set.prefetch_hash(hashval);
-#endif  // __GNUC__
     }
 
     // The API of find() has two extensions.
