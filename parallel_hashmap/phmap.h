@@ -1600,7 +1600,7 @@ public:
     // specific benchmarks indicating its importance.
     void prefetch_hash(size_t hash) const {
         (void)hash;
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
         auto seq = probe(hash);
         _mm_prefetch((const char *)(ctrl_ + seq.offset()), _MM_HINT_NTA);
         _mm_prefetch((const char *)(slots_ + seq.offset()), _MM_HINT_NTA);
