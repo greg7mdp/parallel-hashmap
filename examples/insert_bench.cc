@@ -65,6 +65,7 @@ public:
         uint64_t l = umul128(operator()(), boundExcluded, &h);
         return h;
 #endif
+      return 0;
     }
 
     std::array<uint64_t, 4> state() const {
