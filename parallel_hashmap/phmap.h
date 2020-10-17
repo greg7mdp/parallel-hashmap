@@ -1424,9 +1424,7 @@ public:
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
         auto res = find_or_prepare_insert(key);
         if (res.second) {
-            slot_type* slot = slots_ + res.first;
-            std::forward<F>(f)(constructor(&alloc_ref(), &slot));
-            assert(!slot);
+            lazy_emplace_at(res.first, std::forward<F>(f));
         }
         return iterator_at(res.first);
     }
@@ -1435,11 +1433,16 @@ public:
     iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t &hash, F&& f) {
         auto res = find_or_prepare_insert(key, hash);
         if (res.second) {
-            slot_type* slot = slots_ + res.first;
-            std::forward<F>(f)(constructor(&alloc_ref(), &slot));
-            assert(!slot);
+            lazy_emplace_at(res.first, std::forward<F>(f));
         }
         return iterator_at(res.first);
+    }
+
+    template <class K = key_type, class F>
+    void lazy_emplace_at(size_t& idx, F&& f) {
+        slot_type* slot = slots_ + idx;
+        std::forward<F>(f)(constructor(&alloc_ref(), &slot));
+        assert(!slot);
     }
 
 
@@ -2928,6 +2931,20 @@ public:
         auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
         return make_iterator(&inner, set.lazy_emplace_with_hash(key, hashval, std::forward<F>(f)));
+    }
+
+    template <class K = key_type, class FExists, class FEmplace>
+    bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert(key, m);
+        typename Inner* inner = std::get<0>(res);
+        if (std::get<2>(res))
+            inner->set_.lazy_emplace_at(std::get<1>(res), std::forward<FEmplace>(fEmplace));
+        else {
+            auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
+            std::forward<FExists>(fExists)(Policy::value(&*it));
+        }
+        return std::get<2>(res);
     }
 
     // Extension API: support for heterogeneous keys.
