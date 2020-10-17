@@ -41,13 +41,19 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     EXPECT_EQ(m[4], 999);
 
     // insert a value that is not already present.
-    m.lazy_emplace_l(5, [](int& v) { assert(0); /* should not be called when value constructed */ v = 6; }, [](const auto& ctor) { ctor(5, 13); });
+    m.lazy_emplace_l(5, 
+                     [](int& v) { assert(0); /* should not be called when value constructed */ v = 6; },
+                     [](const auto& ctor) { ctor(5, 13); });
+
     EXPECT_EQ(m[5], 13);
 
+#if PHMAP_HAVE_CC17 // generic lambda
     // change a value that is present
-    m.lazy_emplace_l(5, [](int& v) { v = 6; }, [](const auto& ctor) { assert(0); /* should not be called when value exists */ctor(5, 13); });
+    m.lazy_emplace_l(5, 
+                     [](int& v) { v = 6; },
+                     [](const auto& ctor) { assert(0); /* should not be called when value exists */ctor(5, 13); });
     EXPECT_EQ(m[5], 6);
-    
+#endif
     
 }
 
