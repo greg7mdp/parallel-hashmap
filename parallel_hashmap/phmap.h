@@ -2937,7 +2937,7 @@ public:
     bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
         typename Lockable::UniqueLock m;
         auto res = this->find_or_prepare_insert(key, m);
-        typename Inner* inner = std::get<0>(res);
+        Inner* inner = std::get<0>(res);
         if (std::get<2>(res))
             inner->set_.lazy_emplace_at(std::get<1>(res), std::forward<FEmplace>(fEmplace));
         else {
