@@ -40,6 +40,7 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     m.try_emplace_l(4, [](int& ) { assert(0); /* should not be called when value constructed */ }, 999);
     EXPECT_EQ(m[4], 999);
 
+#if PHMAP_HAVE_CC17 // generic lambda
     // insert a value that is not already present.
     m.lazy_emplace_l(5, 
                      [](int& v) { assert(0); /* should not be called when value constructed */ v = 6; },
@@ -47,7 +48,6 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
 
     EXPECT_EQ(m[5], 13);
 
-#if PHMAP_HAVE_CC17 // generic lambda
     // change a value that is present
     m.lazy_emplace_l(5, 
                      [](int& v) { v = 6; },
