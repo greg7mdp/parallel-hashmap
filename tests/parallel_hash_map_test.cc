@@ -28,31 +28,36 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     EXPECT_TRUE(m.modify_if(2, set_value));
     EXPECT_EQ(m[2], 11);
 
-    EXPECT_FALSE(m.modify_if(3, set_value));
+    EXPECT_FALSE(m.modify_if(3, set_value)); // because m[3] does not exist
 
     // overwrite an existing value
     m.try_emplace_l(2, [](int& v) { v = 5; });
     EXPECT_EQ(m[2], 5);
 
     // insert a value that is not already present. Will be default initialised to 0 and lambda not called
-    m.try_emplace_l(3, [](int& v) { assert(v == 0); /* should not be called when value constructed */ v = 6; });
-    EXPECT_EQ(m[3], 0);
+    m.try_emplace_l(3, 
+                    [](int& v) { v = 6; }, // called only when key was already present
+                    1);                    // argument to construct new value is key not present
+    EXPECT_EQ(m[3], 1);
     
     // insert a value that is not already present, provide argument to value-construct it
-    m.try_emplace_l(4, [](int& ) { assert(0); /* should not be called when value constructed */ }, 999);
+    m.try_emplace_l(4, 
+                    [](int& ) {},          // called only when key was already present
+                    999);                  // argument to construct new value is key not present
     EXPECT_EQ(m[4], 999);
 
     // insert a value that is not already present.
+    // right now m[5] does not exist
     m.lazy_emplace_l(5, 
-                     [](int& v) { assert(0); /* should not be called when value constructed */ v = 6; },
-                     [](const Map::constructor& ctor) { ctor(5, 13); });
+                     [](int& v) { v = 6; },   // called only when key was already present
+                     [](const Map::constructor& ctor) { ctor(5, 13); }); // construct value_type in place when key not present
 
     EXPECT_EQ(m[5], 13);
 
-    // change a value that is present
+    // change a value that is present. Currently m[5] == 13
     m.lazy_emplace_l(5, 
-                     [](int& v) { v = 6; },
-                     [](const Map::constructor& ctor) { assert(0); /* should not be called when value exists */ctor(5, 13); });
+                     [](int& v) { v = 6; },   // called only when key was already present
+                     [](const Map::constructor& ctor) { ctor(5, 13); }); // construct value_type in place when key not present
     EXPECT_EQ(m[5], 6);
 }
 
