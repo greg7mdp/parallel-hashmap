@@ -12,8 +12,10 @@ namespace {
 TEST(THIS_TEST_NAME, ThreadSafeContains) {
     // We can't test mutable keys, or non-copyable keys with ThisMap.
     // Test that the nodes have the proper API.
-    ThisMap<int, int> m = { {1, 7}, {2, 9} };
-    const ThisMap<int, int>& const_m(m);
+    using Map = ThisMap<int, int>;
+
+    Map m = { {1, 7}, {2, 9} };
+    const Map& const_m(m);
     
     auto val = 0; 
     auto get_value = [&val](const int& v) { val = v; };
@@ -40,21 +42,18 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
     m.try_emplace_l(4, [](int& ) { assert(0); /* should not be called when value constructed */ }, 999);
     EXPECT_EQ(m[4], 999);
 
-#if PHMAP_HAVE_CC17 // generic lambda
     // insert a value that is not already present.
     m.lazy_emplace_l(5, 
                      [](int& v) { assert(0); /* should not be called when value constructed */ v = 6; },
-                     [](const auto& ctor) { ctor(5, 13); });
+                     [](const Map::constructor& ctor) { ctor(5, 13); });
 
     EXPECT_EQ(m[5], 13);
 
     // change a value that is present
     m.lazy_emplace_l(5, 
                      [](int& v) { v = 6; },
-                     [](const auto& ctor) { assert(0); /* should not be called when value exists */ctor(5, 13); });
+                     [](const Map::constructor& ctor) { assert(0); /* should not be called when value exists */ctor(5, 13); });
     EXPECT_EQ(m[5], 6);
-#endif
-    
 }
 
 }  // namespace

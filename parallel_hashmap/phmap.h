@@ -2360,6 +2360,7 @@ public:
     using EmbeddedSet     = RefSet<Policy, Hash, Eq, Alloc>;
     using EmbeddedIterator= typename EmbeddedSet::iterator;
     using EmbeddedConstIterator= typename EmbeddedSet::const_iterator;
+    using constructor     = typename EmbeddedSet::constructor;
     using init_type       = typename PolicyTraits::init_type;
     using key_type        = typename PolicyTraits::key_type;
     using slot_type       = typename PolicyTraits::slot_type;
