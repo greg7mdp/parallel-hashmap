@@ -34,6 +34,10 @@
 #include <numeric>
 #include "btree_test.h"
 
+#ifdef _MSC_VER
+    #pragma warning(disable: 4244 4100 4389)
+#endif
+
 namespace phmap {
     namespace test_internal {
         int BaseCountedInstance::num_instances_ = 0;
@@ -207,7 +211,7 @@ public:
 
     int erase(const key_type &key) {
         int size = tree_.size();
-        int res = checker_.erase(key);
+        int res = (int)checker_.erase(key);
         EXPECT_EQ(res, tree_.count(key));
         EXPECT_EQ(res, tree_.erase(key));
         EXPECT_EQ(tree_.count(key), 0);

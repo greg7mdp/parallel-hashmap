@@ -62,10 +62,11 @@ public:
     uint64_t operator()(uint64_t boundExcluded) noexcept {
 #ifdef PHMAP_HAS_UMUL128
         uint64_t h;
-        uint64_t l = umul128(operator()(), boundExcluded, &h);
+        (void)umul128(operator()(), boundExcluded, &h);
         return h;
+#else
+        return 0;
 #endif
-      return 0;
     }
 
     std::array<uint64_t, 4> state() const {
