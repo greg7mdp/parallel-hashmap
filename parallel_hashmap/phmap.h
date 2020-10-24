@@ -1616,7 +1616,7 @@ public:
 
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
-        prefetch_hash(HashElement{hash_ref()}(key));
+        prefetch_hash(this->hash(key));
     }
 
     // The API of find() has two extensions.
@@ -1644,7 +1644,7 @@ public:
     }
     template <class K = key_type>
     iterator find(const key_arg<K>& key) {
-        return find(key, HashElement{hash_ref()}(key));
+        return find(key, this->hash(key));
     }
 
     template <class K = key_type>
@@ -1653,12 +1653,17 @@ public:
     }
     template <class K = key_type>
     const_iterator find(const key_arg<K>& key) const {
-        return find(key, HashElement{hash_ref()}(key));
+        return find(key, this->hash(key));
     }
 
     template <class K = key_type>
     bool contains(const key_arg<K>& key) const {
         return find(key) != end();
+    }
+
+    template <class K = key_type>
+    bool contains(const key_arg<K>& key, size_t hash) const {
+        return find(key, hash) != end();
     }
 
     template <class K = key_type>
@@ -1706,6 +1711,11 @@ public:
     friend void swap(raw_hash_set& a,
                      raw_hash_set& b) noexcept(noexcept(a.swap(b))) {
         a.swap(b);
+    }
+
+    template <class K>
+    size_t hash(const K& key) const {
+        return HashElement{hash_ref()}(key);
     }
 
 private:
@@ -1756,8 +1766,7 @@ private:
     {
         template <class K, class... Args>
         std::pair<iterator, bool> operator()(const K& key, Args&&... args) const {
-            return s.emplace_decomposable(key, typename raw_hash_set::HashElement{s.hash_ref()}(key),
-                                          std::forward<Args>(args)...);
+            return s.emplace_decomposable(key, s.hash(key), std::forward<Args>(args)...);
         }
         raw_hash_set& s;
     };
@@ -2041,7 +2050,7 @@ protected:
 
     template <class K>
     std::pair<size_t, bool> find_or_prepare_insert(const K& key) {
-        return find_or_prepare_insert(key, HashElement{hash_ref()}(key));
+        return find_or_prepare_insert(key, this->hash(key));
     }
 
     size_t prepare_insert(size_t hash) PHMAP_ATTRIBUTE_NOINLINE {
@@ -2826,7 +2835,7 @@ public:
         if (!node) 
             return {end(), false, node_type()};
         auto& key      = node.key();
-        size_t hashval = HashElement{hash_ref()}(key);
+        size_t hashval = this->hash(key);
         Inner& inner   = sets_[subidx(hashval)];
         auto&  set     = inner.set_;
 
@@ -2852,7 +2861,7 @@ public:
     template <class K, class... Args>
     std::pair<iterator, bool> emplace_decomposable(const K& key, Args&&... args)
     {
-        size_t hashval = HashElement{hash_ref()}(key);
+        size_t hashval = this->hash(key);
         Inner& inner   = sets_[subidx(hashval)];
         auto&  set     = inner.set_;
         typename Lockable::UniqueLock m(inner);
@@ -2898,7 +2907,7 @@ public:
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
         const auto& elem = PolicyTraits::element(slot);
-        size_t hashval  = HashElement{hash_ref()}(PolicyTraits::key(slot));
+        size_t hashval  = this->hash(PolicyTraits::key(slot));
         Inner& inner    = sets_[subidx(hashval)];
         auto&  set      = inner.set_;
         typename Lockable::UniqueLock m(inner);
@@ -2927,7 +2936,7 @@ public:
 
     template <class K = key_type, class F>
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
-        auto hashval = HashElement{hash_ref()}(key);
+        auto hashval = this->hash(key);
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
@@ -2960,7 +2969,7 @@ public:
     // --------------------------------------------------------------------
     template <class K = key_type>
     size_type erase(const key_arg<K>& key) {
-        auto hashval = HashElement{hash_ref()}(key);
+        auto hashval = this->hash(key);
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UpgradeLock m(inner);
@@ -3092,7 +3101,7 @@ public:
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
         (void)key;
-        size_t hashval     = HashElement{hash_ref()}(key);
+        size_t hashval     = this->hash(key);
         const Inner& inner = sets_[subidx(hashval)];
         const auto&  set   = inner.set_;
         typename Lockable::SharedLock m(const_cast<Inner&>(inner));
@@ -3115,7 +3124,7 @@ public:
 
     template <class K = key_type>
     iterator find(const key_arg<K>& key) {
-        return find(key, HashElement{hash_ref()}(key));
+        return find(key, this->hash(key));
     }
 
     template <class K = key_type>
@@ -3125,12 +3134,17 @@ public:
 
     template <class K = key_type>
     const_iterator find(const key_arg<K>& key) const {
-        return find(key, HashElement{hash_ref()}(key));
+        return find(key, this->hash(key));
     }
 
     template <class K = key_type>
     bool contains(const key_arg<K>& key) const {
         return find(key) != end();
+    }
+
+    template <class K = key_type>
+    bool contains(const key_arg<K>& key, size_t hashval) const {
+        return find(key, hashval) != end();
     }
 
     template <class K = key_type>
@@ -3183,6 +3197,11 @@ public:
     friend void swap(parallel_hash_set& a,
                      parallel_hash_set& b) noexcept(noexcept(a.swap(b))) {
         a.swap(b);
+    }
+
+    template <class K>
+    size_t hash(const K& key) const {
+        return HashElement{hash_ref()}(key);
     }
 
 #ifndef PHMAP_NON_DETERMINISTIC
@@ -3280,7 +3299,7 @@ protected:
     template <class K>
     std::tuple<Inner*, size_t, bool> 
     find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
-        auto hashval = HashElement{hash_ref()}(key);
+        auto hashval = this->hash(key);
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         mutexlock    = std::move(typename Lockable::UniqueLock(inner));
@@ -3299,11 +3318,6 @@ protected:
 
     static size_t subidx(size_t hashval) {
         return ((hashval >> 8) ^ (hashval >> 16) ^ (hashval >> 24)) & mask;
-    }
-
-    template <class K>
-    size_t hash(const K& key) const {
-        return HashElement{hash_ref()}(key);
     }
 
     static size_t subcnt() {
@@ -3991,7 +4005,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
     static size_t GetNumProbes(const Set& set,
                                const typename Set::key_type& key) {
         size_t num_probes = 0;
-        size_t hash = typename Set::HashElement{set.hash_ref()}(key); 
+        size_t hash = set.hash(key); 
         auto seq = set.probe(hash);
         while (true) {
             priv::Group g{set.ctrl_ + seq.offset()};
