@@ -976,10 +976,10 @@ public:
         std::is_nothrow_default_constructible<key_equal>::value&&
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
-    explicit raw_hash_set(size_t bucket_count, const hasher& hash = hasher(),
+    explicit raw_hash_set(size_t bucket_count, const hasher& hashfn = hasher(),
                           const key_equal& eq = key_equal(),
                           const allocator_type& alloc = allocator_type())
-        : ctrl_(EmptyGroup()), settings_(0, hash, eq, alloc) {
+        : ctrl_(EmptyGroup()), settings_(0, hashfn, eq, alloc) {
         if (bucket_count) {
             capacity_ = NormalizeCapacity(bucket_count);
             reset_growth_left();
@@ -987,9 +987,9 @@ public:
         }
     }
 
-    raw_hash_set(size_t bucket_count, const hasher& hash,
+    raw_hash_set(size_t bucket_count, const hasher& hashfn,
                  const allocator_type& alloc)
-        : raw_hash_set(bucket_count, hash, key_equal(), alloc) {}
+        : raw_hash_set(bucket_count, hashfn, key_equal(), alloc) {}
 
     raw_hash_set(size_t bucket_count, const allocator_type& alloc)
         : raw_hash_set(bucket_count, hasher(), key_equal(), alloc) {}
@@ -999,16 +999,16 @@ public:
 
     template <class InputIter>
     raw_hash_set(InputIter first, InputIter last, size_t bucket_count = 0,
-                 const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                 const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(bucket_count, hash, eq, alloc) {
+        : raw_hash_set(bucket_count, hashfn, eq, alloc) {
         insert(first, last);
     }
 
     template <class InputIter>
     raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
-                 const hasher& hash, const allocator_type& alloc)
-        : raw_hash_set(first, last, bucket_count, hash, key_equal(), alloc) {}
+                 const hasher& hashfn, const allocator_type& alloc)
+        : raw_hash_set(first, last, bucket_count, hashfn, key_equal(), alloc) {}
 
     template <class InputIter>
     raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
@@ -1042,23 +1042,23 @@ public:
     // RequiresNotInit<T> is a workaround for gcc prior to 7.1.
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     raw_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
-                 const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                 const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+        : raw_hash_set(init.begin(), init.end(), bucket_count, hashfn, eq, alloc) {}
 
     raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count = 0,
-                 const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+                 const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+        : raw_hash_set(init.begin(), init.end(), bucket_count, hashfn, eq, alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
-                 const hasher& hash, const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+                 const hasher& hashfn, const allocator_type& alloc)
+        : raw_hash_set(init, bucket_count, hashfn, key_equal(), alloc) {}
 
     raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
-                 const hasher& hash, const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+                 const hasher& hashfn, const allocator_type& alloc)
+        : raw_hash_set(init, bucket_count, hashfn, key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
@@ -1087,11 +1087,11 @@ public:
         // Because the table is guaranteed to be empty, we can do something faster
         // than a full `insert`.
         for (const auto& v : that) {
-            const size_t hash = PolicyTraits::apply(HashElement{hash_ref()}, v);
-            auto target = find_first_non_full(hash);
-            set_ctrl(target.offset, H2(hash));
+            const size_t hashval = PolicyTraits::apply(HashElement{hash_ref()}, v);
+            auto target = find_first_non_full(hashval);
+            set_ctrl(target.offset, H2(hashval));
             emplace_at(target.offset, v);
-            infoz_.RecordInsert(hash, target.probe_length);
+            infoz_.RecordInsert(hashval, target.probe_length);
         }
         size_ = that.size();
         growth_left() -= that.size();
@@ -1878,11 +1878,11 @@ private:
 
         for (size_t i = 0; i != old_capacity; ++i) {
             if (IsFull(old_ctrl[i])) {
-                size_t hash = PolicyTraits::apply(HashElement{hash_ref()},
-                                                  PolicyTraits::element(old_slots + i));
-                auto target = find_first_non_full(hash);
+                size_t hashval = PolicyTraits::apply(HashElement{hash_ref()},
+                                                     PolicyTraits::element(old_slots + i));
+                auto target = find_first_non_full(hashval);
                 size_t new_i = target.offset;
-                set_ctrl(new_i, H2(hash));
+                set_ctrl(new_i, H2(hashval));
                 PolicyTraits::transfer(&alloc_ref(), slots_ + new_i, old_slots + i);
             }
         }
@@ -1920,33 +1920,33 @@ private:
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
         for (size_t i = 0; i != capacity_; ++i) {
             if (!IsDeleted(ctrl_[i])) continue;
-            size_t hash = PolicyTraits::apply(HashElement{hash_ref()},
-                                              PolicyTraits::element(slots_ + i));
-            auto target = find_first_non_full(hash);
+            size_t hashval = PolicyTraits::apply(HashElement{hash_ref()},
+                                                 PolicyTraits::element(slots_ + i));
+            auto target = find_first_non_full(hashval);
             size_t new_i = target.offset;
 
-            // Verify if the old and new i fall within the same group wrt the hash.
+            // Verify if the old and new i fall within the same group wrt the hashval.
             // If they do, we don't need to move the object as it falls already in the
             // best probe we can.
             const auto probe_index = [&](size_t pos) {
-                return ((pos - probe(hash).offset()) & capacity_) / Group::kWidth;
+                return ((pos - probe(hashval).offset()) & capacity_) / Group::kWidth;
             };
 
             // Element doesn't move.
             if (PHMAP_PREDICT_TRUE(probe_index(new_i) == probe_index(i))) {
-                set_ctrl(i, H2(hash));
+                set_ctrl(i, H2(hashval));
                 continue;
             }
             if (IsEmpty(ctrl_[new_i])) {
                 // Transfer element to the empty spot.
                 // set_ctrl poisons/unpoisons the slots so we have to call it at the
                 // right time.
-                set_ctrl(new_i, H2(hash));
+                set_ctrl(new_i, H2(hashval));
                 PolicyTraits::transfer(&alloc_ref(), slots_ + new_i, slots_ + i);
                 set_ctrl(i, kEmpty);
             } else {
                 assert(IsDeleted(ctrl_[new_i]));
-                set_ctrl(new_i, H2(hash));
+                set_ctrl(new_i, H2(hashval));
                 // Until we are done rehashing, DELETED marks previously FULL slots.
                 // Swap i and new_i elements.
                 PolicyTraits::transfer(&alloc_ref(), slot, slots_ + i);
@@ -1987,8 +1987,8 @@ private:
     }
 
     bool has_element(const value_type& elem) const {
-        size_t hash = PolicyTraits::apply(HashElement{hash_ref()}, elem);
-        return has_element(elem, hash);
+        size_t hashval = PolicyTraits::apply(HashElement{hash_ref()}, elem);
+        return has_element(elem, hashval);
     }
 
     // Probes the raw_hash_set with the probe sequence for hash and returns the
@@ -4005,11 +4005,11 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
     static size_t GetNumProbes(const Set& set,
                                const typename Set::key_type& key) {
         size_t num_probes = 0;
-        size_t hash = set.hash(key); 
-        auto seq = set.probe(hash);
+        size_t hashval = set.hash(key); 
+        auto seq = set.probe(hashval);
         while (true) {
             priv::Group g{set.ctrl_ + seq.offset()};
-            for (int i : g.Match(priv::H2(hash))) {
+            for (int i : g.Match(priv::H2(hashval))) {
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
@@ -4365,7 +4365,6 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
-    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4421,7 +4420,6 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
-    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4473,7 +4471,6 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
-    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
@@ -4532,7 +4529,6 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
-    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
