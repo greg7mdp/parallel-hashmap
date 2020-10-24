@@ -81,10 +81,10 @@ template <size_t Width>
 class probe_seq 
 {
 public:
-    probe_seq(size_t hash, size_t mask) {
+    probe_seq(size_t hashval, size_t mask) {
         assert(((mask + 1) & mask) == 0 && "not a mask");
         mask_ = mask;
-        offset_ = hash & mask_;
+        offset_ = hashval & mask_;
     }
     size_t offset() const { return offset_; }
     size_t offset(size_t i) const { return (offset_ + i) & mask_; }
@@ -271,22 +271,22 @@ inline size_t HashSeed(const ctrl_t* ctrl) {
 
 #ifdef PHMAP_NON_DETERMINISTIC
 
-inline size_t H1(size_t hash, const ctrl_t* ctrl) {
+inline size_t H1(size_t hashval, const ctrl_t* ctrl) {
     // use ctrl_ pointer to add entropy to ensure
     // non-deterministic iteration order.
-    return (hash >> 7) ^ HashSeed(ctrl);
+    return (hashval >> 7) ^ HashSeed(ctrl);
 }
 
 #else
 
-inline size_t H1(size_t hash, const ctrl_t* ) {
-    return (hash >> 7);
+inline size_t H1(size_t hashval, const ctrl_t* ) {
+    return (hashval >> 7);
 }
 
 #endif
 
 
-inline ctrl_t H2(size_t hash)          { return (ctrl_t)(hash & 0x7F); }
+inline ctrl_t H2(size_t hashval)       { return (ctrl_t)(hashval & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
 inline bool IsFull(ctrl_t c)           { return c >= 0; }
@@ -1325,11 +1325,11 @@ public:
         }
     }
 
-    insert_return_type insert(node_type&& node, size_t hash) {
+    insert_return_type insert(node_type&& node, size_t hashval) {
         if (!node) return {end(), false, node_type()};
         const auto& elem = PolicyTraits::element(CommonAccess::GetSlot(node));
         auto res = PolicyTraits::apply(
-            InsertSlotWithHash<false>{*this, std::move(*CommonAccess::GetSlot(node)), hash},
+            InsertSlotWithHash<false>{*this, std::move(*CommonAccess::GetSlot(node)), hashval},
             elem);
         if (res.second) {
             CommonAccess::Reset(&node);
@@ -1430,8 +1430,8 @@ public:
     }
 
     template <class K = key_type, class F>
-    iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t &hash, F&& f) {
-        auto res = find_or_prepare_insert(key, hash);
+    iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t &hashval, F&& f) {
+        auto res = find_or_prepare_insert(key, hashval);
         if (res.second) {
             lazy_emplace_at(res.first, std::forward<F>(f));
         }
@@ -1601,14 +1601,14 @@ public:
     //
     // NOTE: This is a very low level operation and should not be used without
     // specific benchmarks indicating its importance.
-    void prefetch_hash(size_t hash) const {
-        (void)hash;
+    void prefetch_hash(size_t hashval) const {
+        (void)hashval;
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
-        auto seq = probe(hash);
+        auto seq = probe(hashval);
         _mm_prefetch((const char *)(ctrl_ + seq.offset()), _MM_HINT_NTA);
         _mm_prefetch((const char *)(slots_ + seq.offset()), _MM_HINT_NTA);
 #elif defined(__GNUC__)
-        auto seq = probe(hash);
+        auto seq = probe(hashval);
         __builtin_prefetch(static_cast<const void*>(ctrl_ + seq.offset()));
         __builtin_prefetch(static_cast<const void*>(slots_ + seq.offset()));
 #endif  // __GNUC__
@@ -1627,11 +1627,11 @@ public:
     // 2. The type of the key argument doesn't have to be key_type. This is so
     // called heterogeneous key support.
     template <class K = key_type>
-    iterator find(const key_arg<K>& key, size_t hash) {
-        auto seq = probe(hash);
+    iterator find(const key_arg<K>& key, size_t hashval) {
+        auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
                                           PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
@@ -1648,8 +1648,8 @@ public:
     }
 
     template <class K = key_type>
-    const_iterator find(const key_arg<K>& key, size_t hash) const {
-        return const_cast<raw_hash_set*>(this)->find(key, hash);
+    const_iterator find(const key_arg<K>& key, size_t hashval) const {
+        return const_cast<raw_hash_set*>(this)->find(key, hashval);
     }
     template <class K = key_type>
     const_iterator find(const key_arg<K>& key) const {
@@ -1662,8 +1662,8 @@ public:
     }
 
     template <class K = key_type>
-    bool contains(const key_arg<K>& key, size_t hash) const {
-        return find(key, hash) != end();
+    bool contains(const key_arg<K>& key, size_t hashval) const {
+        return find(key, hashval) != end();
     }
 
     template <class K = key_type>
@@ -1752,10 +1752,10 @@ private:
     };
 
     template <class K, class... Args>
-    std::pair<iterator, bool> emplace_decomposable(const K& key, size_t hash, 
+    std::pair<iterator, bool> emplace_decomposable(const K& key, size_t hashval, 
                                                    Args&&... args)
     {
-        auto res = find_or_prepare_insert(key, hash);
+        auto res = find_or_prepare_insert(key, hashval);
         if (res.second) {
             emplace_at(res.first, std::forward<Args>(args)...);
         }
@@ -1794,7 +1794,7 @@ private:
     {
         template <class K, class... Args>
         std::pair<iterator, bool> operator()(const K& key, Args&&...) && {
-            auto res = s.find_or_prepare_insert(key, hash);
+            auto res = s.find_or_prepare_insert(key, hashval);
             if (res.second) {
                 PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot);
             } else if (do_destroy) {
@@ -1805,7 +1805,7 @@ private:
         raw_hash_set& s;
         // Constructed slot. Either moved into place or destroyed.
         slot_type&& slot;
-        size_t &hash;
+        size_t &hashval;
     };
 
     // "erases" the object from the container, except that it doesn't actually
@@ -1970,11 +1970,11 @@ private:
         }
     }
 
-    bool has_element(const value_type& elem, size_t hash) const {
-        auto seq = probe(hash);
+    bool has_element(const value_type& elem, size_t hashval) const {
+        auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) ==
                                       elem))
                     return true;
@@ -2005,8 +2005,8 @@ private:
         size_t offset;
         size_t probe_length;
     };
-    FindInfo find_first_non_full(size_t hash) {
-        auto seq = probe(hash);
+    FindInfo find_first_non_full(size_t hashval) {
+        auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
             auto mask = g.MatchEmptyOrDeleted();
@@ -2032,11 +2032,11 @@ private:
 
 protected:
     template <class K>
-    std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hash) {
-        auto seq = probe(hash);
+    std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hashval) {
+        auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
                                           PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
@@ -2045,7 +2045,7 @@ protected:
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
             seq.next();
         }
-        return {prepare_insert(hash), true};
+        return {prepare_insert(hashval), true};
     }
 
     template <class K>
@@ -2053,17 +2053,17 @@ protected:
         return find_or_prepare_insert(key, this->hash(key));
     }
 
-    size_t prepare_insert(size_t hash) PHMAP_ATTRIBUTE_NOINLINE {
-        auto target = find_first_non_full(hash);
+    size_t prepare_insert(size_t hashval) PHMAP_ATTRIBUTE_NOINLINE {
+        auto target = find_first_non_full(hashval);
         if (PHMAP_PREDICT_FALSE(growth_left() == 0 &&
                                !IsDeleted(ctrl_[target.offset]))) {
             rehash_and_grow_if_necessary();
-            target = find_first_non_full(hash);
+            target = find_first_non_full(hashval);
         }
         ++size_;
         growth_left() -= IsEmpty(ctrl_[target.offset]);
-        set_ctrl(target.offset, H2(hash));
-        infoz_.RecordInsert(hash, target.probe_length);
+        set_ctrl(target.offset, H2(hashval));
+        infoz_.RecordInsert(hashval, target.probe_length);
         return target.offset;
     }
 
@@ -2091,8 +2091,8 @@ protected:
 private:
     friend struct RawHashSetTestOnlyAccess;
 
-    probe_seq<Group::kWidth> probe(size_t hash) const {
-        return probe_seq<Group::kWidth>(H1(hash, ctrl_), capacity_);
+    probe_seq<Group::kWidth> probe(size_t hashval) const {
+        return probe_seq<Group::kWidth>(H1(hashval, ctrl_), capacity_);
     }
 
     // Reset all ctrl bytes back to kEmpty, except the sentinel.
