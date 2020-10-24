@@ -1689,7 +1689,7 @@ public:
         // Does nothing.
     }
 
-    hasher hash_function() const { return hash_ref(); }
+    hasher hash_function() const { return hash_ref(); } // warning: doesn't match internal hash - use hash() member function
     key_equal key_eq() const { return eq_ref(); }
     allocator_type get_allocator() const { return alloc_ref(); }
 
@@ -3182,7 +3182,7 @@ public:
         // Does nothing.
     }
 
-    hasher hash_function() const { return hash_ref(); }
+    hasher hash_function() const { return hash_ref(); }  // warning: doesn't match internal hash - use hash() member function
     key_equal key_eq() const { return eq_ref(); }
     allocator_type get_allocator() const { return alloc_ref(); }
 
@@ -4116,6 +4116,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4181,6 +4182,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4240,6 +4242,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
@@ -4307,6 +4310,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
@@ -4361,6 +4365,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4416,6 +4421,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
 };
 
@@ -4467,6 +4473,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
@@ -4525,6 +4532,7 @@ public:
     using Base::max_load_factor;
     using Base::get_allocator;
     using Base::hash_function;
+    using Base::hash;
     using Base::key_eq;
     typename Base::hasher hash_funct() { return this->hash_function(); }
     void resize(typename Base::size_type hint) { this->rehash(hint); }
