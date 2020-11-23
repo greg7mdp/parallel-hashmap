@@ -29,6 +29,8 @@ This repository aims to provide a set of excellent **hash map** implementations,
 
 - **natvis** visualization support in Visual Studio _(hash map/set only)_
 
+@byronhe kindly provided this [Chinese translation](https://byronhe.com/post/2020/11/10/parallel-hashmap-btree-fast-multi-thread-intro/) of the README.md.
+
 
 ## Fast *and*  memory friendly
 
