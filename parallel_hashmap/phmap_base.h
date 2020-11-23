@@ -5156,9 +5156,9 @@ public:
         using UniqueLocks     = typename Base::WriteLocks;
         using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
     };
-#endif
+#endif // PHMAP_HAVE_SHARED_MUTEX
 
-#endif // PHMAP_HAS_BOOST_THREAD_MUTEXES
+#endif // BOOST_THREAD_SHARED_MUTEX_HPP
 
 
 }  // phmap
