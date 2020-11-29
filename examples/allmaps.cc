@@ -58,8 +58,8 @@ int main(int, char **)
 
     // example of using default parameters in order to specify the mutex type
     using Map = phmap::parallel_flat_hash_map<std::size_t, std::size_t,
-                                              phmap::priv::hash_default_hash<size_t>,
-                                              phmap::priv::hash_default_eq<size_t>, 
+                                              std::hash<size_t>,
+                                              std::equal_to<size_t>, 
                                               std::allocator<std::pair<const size_t, size_t>>, 
                                               4, 
                                               std::mutex>;
