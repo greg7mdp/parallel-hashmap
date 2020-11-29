@@ -4,7 +4,7 @@
 #include "parallel_hashmap/phmap.h"
 
 template<class Set, class F>
-void test_set(F &f)
+void test_set(const F &f)
 {
     Set s;
     typename Set::iterator it;
@@ -30,6 +30,7 @@ int main(int, char **)
 
     auto make_2int    = [](int i) { return std::make_pair(i, i); };
     auto make_2string = [](int i) { return std::make_pair(std::to_string(i), std::to_string(i)); };
+    
 
     test_set<phmap::flat_hash_set<int>>(make_int);
     test_set<phmap::flat_hash_set<string>>(make_string);
@@ -54,4 +55,14 @@ int main(int, char **)
 
     test_set<phmap::parallel_node_hash_map<int, int>>(make_2int);
     test_set<phmap::parallel_node_hash_map<string, string>>(make_2string);
+
+    // example of using default parameters in order to specify the mutex type
+    using Map = phmap::parallel_flat_hash_map<std::size_t, std::size_t,
+                                              phmap::priv::hash_default_hash<size_t>,
+                                              phmap::priv::hash_default_eq<size_t>, 
+                                              std::allocator<std::pair<const size_t, size_t>>, 
+                                              4, 
+                                              std::mutex>;
+    auto make_2size_t    = [](size_t i) { return std::make_pair(i, i); };
+    test_set<Map>(make_2size_t);
 }
