@@ -56,7 +56,14 @@ int main(int, char **)
     test_set<phmap::parallel_node_hash_map<int, int>>(make_2int);
     test_set<phmap::parallel_node_hash_map<string, string>>(make_2string);
 
-    // example of using default parameters in order to specify the mutex type
+    // example of using default parameters in order to specify the mutex type.
+    // 
+    // Please be aware that the iterators returned (by find for example) cannot 
+    // be safely read in a multithreaded environment. Instead use if_contains(), 
+    // which passes a reference value to the callback while holding the submap lock. 
+    // Similarly, write access can be done safely using modify_if, try_emplace_l 
+    // or lazy_emplace_l.
+    // ----------------------------------------------------------------------------
     using Map = phmap::parallel_flat_hash_map<std::size_t, std::size_t,
                                               std::hash<size_t>,
                                               std::equal_to<size_t>, 
