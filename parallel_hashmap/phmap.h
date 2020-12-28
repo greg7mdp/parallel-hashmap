@@ -3505,8 +3505,9 @@ public:
 
     // if map does not contains key, it is inserted and the mapped value is value-constructed 
     // with the provided arguments (if any), as with try_emplace. 
-    // Then the lambda is called with the mapped value (under write lock protection) and can 
-    // update the mapped value.
+    // if map already  contains key, then the lambda is called with the mapped value (under 
+    // write lock protection) and can update the mapped value.
+    // returns true if key was not already present, false otherwise.
     // ---------------------------------------------------------------------------------------
     template <class K = key_type, class F, class... Args>
     bool try_emplace_l(K&& k, F&& f, Args&&... args) {
