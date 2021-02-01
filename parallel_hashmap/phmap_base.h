@@ -3142,8 +3142,8 @@ public:
     static const size_type npos = ~(size_type(0));
 
     constexpr Span() noexcept : Span(nullptr, 0) {}
-    constexpr Span(pointer array, size_type length) noexcept
-        : ptr_(array), len_(length) {}
+    constexpr Span(pointer array, size_type lgth) noexcept
+        : ptr_(array), len_(lgth) {}
 
     // Implicit conversion constructors
     template <size_t N>

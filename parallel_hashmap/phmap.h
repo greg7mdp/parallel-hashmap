@@ -976,44 +976,44 @@ public:
         std::is_nothrow_default_constructible<key_equal>::value&&
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
-    explicit raw_hash_set(size_t bucket_count, const hasher& hashfn = hasher(),
+    explicit raw_hash_set(size_t bucket_cnt, const hasher& hashfn = hasher(),
                           const key_equal& eq = key_equal(),
                           const allocator_type& alloc = allocator_type())
         : ctrl_(EmptyGroup()), settings_(0, hashfn, eq, alloc) {
-        if (bucket_count) {
-            capacity_ = NormalizeCapacity(bucket_count);
+        if (bucket_cnt) {
+            capacity_ = NormalizeCapacity(bucket_cnt);
             reset_growth_left();
             initialize_slots();
         }
     }
 
-    raw_hash_set(size_t bucket_count, const hasher& hashfn,
+    raw_hash_set(size_t bucket_cnt, const hasher& hashfn,
                  const allocator_type& alloc)
-        : raw_hash_set(bucket_count, hashfn, key_equal(), alloc) {}
+        : raw_hash_set(bucket_cnt, hashfn, key_equal(), alloc) {}
 
-    raw_hash_set(size_t bucket_count, const allocator_type& alloc)
-        : raw_hash_set(bucket_count, hasher(), key_equal(), alloc) {}
+    raw_hash_set(size_t bucket_cnt, const allocator_type& alloc)
+        : raw_hash_set(bucket_cnt, hasher(), key_equal(), alloc) {}
 
     explicit raw_hash_set(const allocator_type& alloc)
         : raw_hash_set(0, hasher(), key_equal(), alloc) {}
 
     template <class InputIter>
-    raw_hash_set(InputIter first, InputIter last, size_t bucket_count = 0,
+    raw_hash_set(InputIter first, InputIter last, size_t bucket_cnt = 0,
                  const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(bucket_count, hashfn, eq, alloc) {
+        : raw_hash_set(bucket_cnt, hashfn, eq, alloc) {
         insert(first, last);
     }
 
     template <class InputIter>
-    raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
+    raw_hash_set(InputIter first, InputIter last, size_t bucket_cnt,
                  const hasher& hashfn, const allocator_type& alloc)
-        : raw_hash_set(first, last, bucket_count, hashfn, key_equal(), alloc) {}
+        : raw_hash_set(first, last, bucket_cnt, hashfn, key_equal(), alloc) {}
 
     template <class InputIter>
-    raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
+    raw_hash_set(InputIter first, InputIter last, size_t bucket_cnt,
                  const allocator_type& alloc)
-        : raw_hash_set(first, last, bucket_count, hasher(), key_equal(), alloc) {}
+        : raw_hash_set(first, last, bucket_cnt, hasher(), key_equal(), alloc) {}
 
     template <class InputIter>
     raw_hash_set(InputIter first, InputIter last, const allocator_type& alloc)
@@ -1041,33 +1041,33 @@ public:
     //
     // RequiresNotInit<T> is a workaround for gcc prior to 7.1.
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    raw_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
+    raw_hash_set(std::initializer_list<T> init, size_t bucket_cnt = 0,
                  const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(init.begin(), init.end(), bucket_count, hashfn, eq, alloc) {}
+        : raw_hash_set(init.begin(), init.end(), bucket_cnt, hashfn, eq, alloc) {}
 
-    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count = 0,
+    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt = 0,
                  const hasher& hashfn = hasher(), const key_equal& eq = key_equal(),
                  const allocator_type& alloc = allocator_type())
-        : raw_hash_set(init.begin(), init.end(), bucket_count, hashfn, eq, alloc) {}
+        : raw_hash_set(init.begin(), init.end(), bucket_cnt, hashfn, eq, alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
+    raw_hash_set(std::initializer_list<T> init, size_t bucket_cnt,
                  const hasher& hashfn, const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hashfn, key_equal(), alloc) {}
+        : raw_hash_set(init, bucket_cnt, hashfn, key_equal(), alloc) {}
 
-    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt,
                  const hasher& hashfn, const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hashfn, key_equal(), alloc) {}
+        : raw_hash_set(init, bucket_cnt, hashfn, key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
+    raw_hash_set(std::initializer_list<T> init, size_t bucket_cnt,
                  const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+        : raw_hash_set(init, bucket_cnt, hasher(), key_equal(), alloc) {}
 
-    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+    raw_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt,
                  const allocator_type& alloc)
-        : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+        : raw_hash_set(init, bucket_cnt, hasher(), key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     raw_hash_set(std::initializer_list<T> init, const allocator_type& alloc)
@@ -2575,42 +2575,42 @@ public:
         std::is_nothrow_default_constructible<key_equal>::value&&
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
-    explicit parallel_hash_set(size_t bucket_count, 
+    explicit parallel_hash_set(size_t bucket_cnt, 
                                const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
                                const allocator_type& alloc = allocator_type()) {
         for (auto& inner : sets_)
-            inner.set_ = EmbeddedSet(bucket_count / N, hash_param, eq, alloc);
+            inner.set_ = EmbeddedSet(bucket_cnt / N, hash_param, eq, alloc);
     }
 
-    parallel_hash_set(size_t bucket_count, 
+    parallel_hash_set(size_t bucket_cnt, 
                       const hasher& hash_param,
                       const allocator_type& alloc)
-        : parallel_hash_set(bucket_count, hash_param, key_equal(), alloc) {}
+        : parallel_hash_set(bucket_cnt, hash_param, key_equal(), alloc) {}
 
-    parallel_hash_set(size_t bucket_count, const allocator_type& alloc)
-        : parallel_hash_set(bucket_count, hasher(), key_equal(), alloc) {}
+    parallel_hash_set(size_t bucket_cnt, const allocator_type& alloc)
+        : parallel_hash_set(bucket_cnt, hasher(), key_equal(), alloc) {}
 
     explicit parallel_hash_set(const allocator_type& alloc)
         : parallel_hash_set(0, hasher(), key_equal(), alloc) {}
 
     template <class InputIter>
-    parallel_hash_set(InputIter first, InputIter last, size_t bucket_count = 0,
+    parallel_hash_set(InputIter first, InputIter last, size_t bucket_cnt = 0,
                       const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(bucket_count, hash_param, eq, alloc) {
+        : parallel_hash_set(bucket_cnt, hash_param, eq, alloc) {
         insert(first, last);
     }
 
     template <class InputIter>
-    parallel_hash_set(InputIter first, InputIter last, size_t bucket_count,
+    parallel_hash_set(InputIter first, InputIter last, size_t bucket_cnt,
                       const hasher& hash_param, const allocator_type& alloc)
-        : parallel_hash_set(first, last, bucket_count, hash_param, key_equal(), alloc) {}
+        : parallel_hash_set(first, last, bucket_cnt, hash_param, key_equal(), alloc) {}
 
     template <class InputIter>
-    parallel_hash_set(InputIter first, InputIter last, size_t bucket_count,
+    parallel_hash_set(InputIter first, InputIter last, size_t bucket_cnt,
                       const allocator_type& alloc)
-        : parallel_hash_set(first, last, bucket_count, hasher(), key_equal(), alloc) {}
+        : parallel_hash_set(first, last, bucket_cnt, hasher(), key_equal(), alloc) {}
 
     template <class InputIter>
     parallel_hash_set(InputIter first, InputIter last, const allocator_type& alloc)
@@ -2639,33 +2639,33 @@ public:
     // RequiresNotInit<T> is a workaround for gcc prior to 7.1.
     // --------------------------------------------------------------------
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    parallel_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
+    parallel_hash_set(std::initializer_list<T> init, size_t bucket_cnt = 0,
                       const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash_param, eq, alloc) {}
+        : parallel_hash_set(init.begin(), init.end(), bucket_cnt, hash_param, eq, alloc) {}
 
-    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_count = 0,
+    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt = 0,
                       const hasher& hash_param = hasher(), const key_equal& eq = key_equal(),
                       const allocator_type& alloc = allocator_type())
-        : parallel_hash_set(init.begin(), init.end(), bucket_count, hash_param, eq, alloc) {}
+        : parallel_hash_set(init.begin(), init.end(), bucket_cnt, hash_param, eq, alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    parallel_hash_set(std::initializer_list<T> init, size_t bucket_count,
+    parallel_hash_set(std::initializer_list<T> init, size_t bucket_cnt,
                       const hasher& hash_param, const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hash_param, key_equal(), alloc) {}
+        : parallel_hash_set(init, bucket_cnt, hash_param, key_equal(), alloc) {}
 
-    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt,
                       const hasher& hash_param, const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hash_param, key_equal(), alloc) {}
+        : parallel_hash_set(init, bucket_cnt, hash_param, key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
-    parallel_hash_set(std::initializer_list<T> init, size_t bucket_count,
+    parallel_hash_set(std::initializer_list<T> init, size_t bucket_cnt,
                       const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+        : parallel_hash_set(init, bucket_cnt, hasher(), key_equal(), alloc) {}
 
-    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+    parallel_hash_set(std::initializer_list<init_type> init, size_t bucket_cnt,
                       const allocator_type& alloc)
-        : parallel_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+        : parallel_hash_set(init, bucket_cnt, hasher(), key_equal(), alloc) {}
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
     parallel_hash_set(std::initializer_list<T> init, const allocator_type& alloc)

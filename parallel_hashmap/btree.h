@@ -1188,10 +1188,10 @@ namespace priv {
         field_type max_count() const {
             // Internal nodes have max_count==kInternalNodeMaxCount.
             // Leaf nodes have max_count in [1, kNodeValues].
-            const field_type max_count = GetField<1>()[3];
-            return max_count == field_type{kInternalNodeMaxCount}
+            const field_type max_cnt = GetField<1>()[3];
+            return max_cnt == field_type{kInternalNodeMaxCount}
             ? field_type{kNodeValues}
-            : max_count;
+            : max_cnt;
         }
 
         // Getter for the parent of this node.
@@ -1377,14 +1377,14 @@ namespace priv {
 
         // Node allocation/deletion routines.
         static btree_node *init_leaf(btree_node *n, btree_node *parent,
-                                     int max_count) {
+                                     int max_cnt) {
             n->set_parent(parent);
             n->set_position(0);
             n->set_start(0);
             n->set_count(0);
-            n->set_max_count((field_type)max_count);
+            n->set_max_count((field_type)max_cnt);
             phmap::priv::SanitizerPoisonMemoryRegion(
-                n->slot(0), max_count * sizeof(slot_type));
+                n->slot(0), max_cnt * sizeof(slot_type));
             return n;
         }
         static btree_node *init_internal(btree_node *n, btree_node *parent) {
@@ -1834,8 +1834,8 @@ namespace priv {
         // Returns a count of the number of times the key appears in the btree.
         template <typename K>
         size_type count_unique(const K &key) const {
-            const iterator begin = internal_find(key);
-            if (begin.node == nullptr) {
+            const iterator beg = internal_find(key);
+            if (beg.node == nullptr) {
                 // The key doesn't exist in the tree.
                 return 0;
             }
@@ -1967,10 +1967,10 @@ namespace priv {
 
         // Allocates a correctly aligned node of at least size bytes using the
         // allocator.
-        node_type *allocate(const size_type size) {
+        node_type *allocate(const size_type sz) {
             return reinterpret_cast<node_type *>(
                 phmap::priv::Allocate<node_type::Alignment()>(
-                    mutable_allocator(), (size_t)size));
+                    mutable_allocator(), (size_t)sz));
         }
 
         // Node creation/deletion routines.
@@ -1993,9 +1993,9 @@ namespace priv {
         iterator rebalance_after_delete(iterator iter);
 
         // Deallocates a node of a certain size in bytes using the allocator.
-        void deallocate(const size_type size, node_type *node) {
+        void deallocate(const size_type sz, node_type *node) {
             phmap::priv::Deallocate<node_type::Alignment()>(
-                mutable_allocator(), node, (size_t)size);
+                mutable_allocator(), node, (size_t)sz);
         }
 
         void delete_internal_node(node_type *node) {
@@ -2746,13 +2746,13 @@ namespace priv {
     }
 
     template <typename P>
-    auto btree<P>::erase(iterator begin, iterator end)
+    auto btree<P>::erase(iterator _begin, iterator _end)
         -> std::pair<size_type, iterator> {
-        difference_type count = std::distance(begin, end);
+        difference_type count = std::distance(_begin, _end);
         assert(count >= 0);
 
         if (count == 0) {
-            return {0, begin};
+            return {0, _begin};
         }
 
         if (count == size_) {
@@ -2760,68 +2760,68 @@ namespace priv {
             return {count, this->end()};
         }
 
-        if (begin.node == end.node) {
-            erase_same_node(begin, end);
+        if (_begin.node == _end.node) {
+            erase_same_node(_begin, _end);
             size_ -= count;
-            return {count, rebalance_after_delete(begin)};
+            return {count, rebalance_after_delete(_begin)};
         }
 
         const size_type target_size = size_ - count;
         while (size_ > target_size) {
-            if (begin.node->leaf()) {
+            if (_begin.node->leaf()) {
                 const size_type remaining_to_erase = size_ - target_size;
-                const size_type remaining_in_node = begin.node->count() - begin.position;
-                begin = erase_from_leaf_node(
-                    begin, (std::min)(remaining_to_erase, remaining_in_node));
+                const size_type remaining_in_node = _begin.node->count() - _begin.position;
+                _begin = erase_from_leaf_node(
+                    _begin, (std::min)(remaining_to_erase, remaining_in_node));
             } else {
-                begin = erase(begin);
+                _begin = erase(_begin);
             }
         }
-        return {count, begin};
+        return {count, _begin};
     }
 
     template <typename P>
-    void btree<P>::erase_same_node(iterator begin, iterator end) {
-        assert(begin.node == end.node);
-        assert(end.position > begin.position);
+    void btree<P>::erase_same_node(iterator _begin, iterator _end) {
+        assert(_begin.node == _end.node);
+        assert(_end.position > _begin.position);
 
-        node_type *node = begin.node;
-        size_type to_erase = end.position - begin.position;
+        node_type *node = _begin.node;
+        size_type to_erase = _end.position - _begin.position;
         if (!node->leaf()) {
-            // Delete all children between begin and end.
+            // Delete all children between _begin and _end.
             for (size_type i = 0; i < to_erase; ++i) {
-                internal_clear(node->child(begin.position + i + 1));
+                internal_clear(node->child(_begin.position + i + 1));
             }
-            // Rotate children after end into new positions.
-            for (size_type i = begin.position + to_erase + 1; i <= node->count(); ++i) {
+            // Rotate children after _end into new positions.
+            for (size_type i = _begin.position + to_erase + 1; i <= node->count(); ++i) {
                 node->set_child(i - to_erase, node->child(i));
                 node->clear_child(i);
             }
         }
-        node->remove_values_ignore_children(begin.position, to_erase,
+        node->remove_values_ignore_children(_begin.position, to_erase,
                                             mutable_allocator());
 
         // Do not need to update rightmost_, because
-        // * either end == this->end(), and therefore node == rightmost_, and still
+        // * either _end == this->end(), and therefore node == rightmost_, and still
         //   exists
-        // * or end != this->end(), and therefore rightmost_ hasn't been erased, since
-        //   it wasn't covered in [begin, end)
+        // * or _end != this->end(), and therefore rightmost_ hasn't been erased, since
+        //   it wasn't covered in [_begin, _end)
     }
 
     template <typename P>
-    auto btree<P>::erase_from_leaf_node(iterator begin, size_type to_erase)
+    auto btree<P>::erase_from_leaf_node(iterator _begin, size_type to_erase)
         -> iterator {
-        node_type *node = begin.node;
+        node_type *node = _begin.node;
         assert(node->leaf());
-        assert(node->count() > begin.position);
-        assert(begin.position + to_erase <= node->count());
+        assert(node->count() > _begin.position);
+        assert(_begin.position + to_erase <= node->count());
 
-        node->remove_values_ignore_children(begin.position, to_erase,
+        node->remove_values_ignore_children(_begin.position, to_erase,
                                             mutable_allocator());
 
         size_ -= to_erase;
 
-        return rebalance_after_delete(begin);
+        return rebalance_after_delete(_begin);
     }
 
     template <typename P>
@@ -2839,14 +2839,14 @@ namespace priv {
     template <typename P>
     template <typename K>
     auto btree<P>::erase_multi(const K &key) -> size_type {
-        const iterator begin = internal_lower_bound(key);
-        if (begin.node == nullptr) {
+        const iterator _begin = internal_lower_bound(key);
+        if (_begin.node == nullptr) {
             // The key doesn't exist in the tree, return nothing done.
             return 0;
         }
-        // Delete all of the keys between begin and upper_bound(key).
-        const iterator end = internal_end(internal_upper_bound(key));
-        return erase(begin, end).first;
+        // Delete all of the keys between _begin and upper_bound(key).
+        const iterator _end = internal_end(internal_upper_bound(key));
+        return erase(_begin, _end).first;
     }
 
     template <typename P>
@@ -2933,7 +2933,7 @@ namespace priv {
                 assert(right->max_count() == kNodeValues);
                 if (right->count() < kNodeValues) {
                     // We bias rebalancing based on the position being inserted. If we're
-                    // inserting at the beginning of the left node then we bias rebalancing
+                    // inserting at the _beginning of the left node then we bias rebalancing
                     // to fill up the right node.
                     int to_move =
                         (kNodeValues - right->count()) / (1 + (insert_position > 0));
