@@ -63,7 +63,7 @@ using Perturb = std::function<void (std::vector<uint64_t> &)>;
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 template<class Set, size_t N>
-void test(const char *name, Perturb perturb1, Perturb perturb2)
+void test(const char *name, Perturb perturb1, Perturb /* perturb2 */)
 {
     //phmap::btree_set<uint64_t> s;
     Set s;

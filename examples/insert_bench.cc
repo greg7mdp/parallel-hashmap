@@ -70,7 +70,7 @@ public:
     }
 
     std::array<uint64_t, 4> state() const {
-        return {m_a, m_b, m_c, m_counter};
+        return {{m_a, m_b, m_c, m_counter}};
     }
 
     void state(std::array<uint64_t, 4> const& s) {
