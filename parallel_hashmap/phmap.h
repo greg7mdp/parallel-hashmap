@@ -2747,7 +2747,18 @@ public:
 
     PHMAP_ATTRIBUTE_REINITIALIZES void clear() {
         for (auto& inner : sets_)
+        {
+            typename Lockable::UniqueLock m(inner);
             inner.set_.clear();
+        }
+    }
+
+    // extension - clears only soecified submap
+    // ----------------------------------------
+    void clearSubmap(std::size_t submap_index) {
+        Inner& inner = sets_[submap_index];
+        typename Lockable::UniqueLock m(inner);
+        inner.set_.clear();
     }
 
     // This overload kicks in when the argument is an rvalue of insertable and
@@ -3343,6 +3354,7 @@ private:
         return sets_[0].set_.alloc_ref();
     }
 
+protected:       // protected in case users want to derive fromm this
     std::array<Inner, num_tables> sets_;
 };
 
