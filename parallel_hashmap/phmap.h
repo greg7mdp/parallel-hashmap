@@ -2755,7 +2755,7 @@ public:
 
     // extension - clears only soecified submap
     // ----------------------------------------
-    void clearSubmap(std::size_t submap_index) {
+    void clear(std::size_t submap_index) {
         Inner& inner = sets_[submap_index];
         typename Lockable::UniqueLock m(inner);
         inner.set_.clear();
