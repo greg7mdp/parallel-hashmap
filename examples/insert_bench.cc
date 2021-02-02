@@ -20,11 +20,11 @@ public:
     sfc64(sfc64&&) = default;
     sfc64& operator=(sfc64&&) = default;
 
-    sfc64(std::array<uint64_t, 4> const& state)
-        : m_a(state[0])
-        , m_b(state[1])
-        , m_c(state[2])
-        , m_counter(state[3]) {}
+    sfc64(std::array<uint64_t, 4> const& _state)
+        : m_a(_state[0])
+        , m_b(_state[1])
+        , m_c(_state[2])
+        , m_counter(_state[3]) {}
 
     static constexpr uint64_t(min)() {
         return (std::numeric_limits<uint64_t>::min)();
@@ -36,10 +36,10 @@ public:
     sfc64()
         : sfc64(UINT64_C(0x853c49e6748fea9b)) {}
 
-    sfc64(uint64_t seed)
-        : m_a(seed)
-        , m_b(seed)
-        , m_c(seed)
+    sfc64(uint64_t _seed)
+        : m_a(_seed)
+        , m_b(_seed)
+        , m_c(_seed)
         , m_counter(1) {
         for (int i = 0; i < 12; ++i) {
             operator()();

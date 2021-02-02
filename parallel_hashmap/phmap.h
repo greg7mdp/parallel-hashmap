@@ -3184,8 +3184,8 @@ public:
     }
 
     float load_factor() const {
-        size_t capacity = bucket_count();
-        return capacity ? static_cast<float>(static_cast<double>(size()) / capacity) : 0;
+        size_t _capacity = bucket_count();
+        return _capacity ? static_cast<float>(static_cast<double>(size()) / _capacity) : 0;
     }
 
     float max_load_factor() const { return 1.0f; }
