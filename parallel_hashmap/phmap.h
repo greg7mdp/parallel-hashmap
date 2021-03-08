@@ -2869,6 +2869,84 @@ public:
         }
     };
 
+    // --------------------------------------------------------------------
+    // phmap expension: emplace_with_hash
+    // ----------------------------------
+    // same as emplace, but hashval is provided
+    // --------------------------------------------------------------------
+    template <class K, class... Args>
+    std::pair<iterator, bool> emplace_decomposable_with_hash(const K& key, size_t hashval, Args&&... args)
+    {
+        Inner& inner   = sets_[subidx(hashval)];
+        auto&  set     = inner.set_;
+        typename Lockable::UniqueLock m(inner);
+        return make_rv(&inner, set.emplace_decomposable(key, hashval, std::forward<Args>(args)...));
+    }
+
+    struct EmplaceDecomposableHashval 
+    {
+        template <class K, class... Args>
+        std::pair<iterator, bool> operator()(const K& key, Args&&... args) const {
+            return s.emplace_decomposable_with_hash(key, hashval, std::forward<Args>(args)...);
+        }
+        parallel_hash_set& s;
+        size_t hashval;
+    };
+
+    // This overload kicks in if we can deduce the key from args. This enables us
+    // to avoid constructing value_type if an entry with the same key already
+    // exists.
+    //
+    // For example:
+    //
+    //   flat_hash_map<std::string, std::string> m = {{"abc", "def"}};
+    //   // Creates no std::string copies and makes no heap allocations.
+    //   m.emplace("abc", "xyz");
+    // --------------------------------------------------------------------
+    template <class... Args, typename std::enable_if<
+                                 IsDecomposable<Args...>::value, int>::type = 0>
+    std::pair<iterator, bool> emplace_with_hash(size_t hashval, Args&&... args) {
+        return PolicyTraits::apply(EmplaceDecomposableHashval{*this, hashval},
+                                   std::forward<Args>(args)...);
+    }
+
+    // This overload kicks in if we cannot deduce the key from args. It constructs
+    // value_type unconditionally and then either moves it into the table or
+    // destroys.
+    // --------------------------------------------------------------------
+    template <class... Args, typename std::enable_if<
+                                 !IsDecomposable<Args...>::value, int>::type = 0>
+    std::pair<iterator, bool> emplace_with_hash(size_t hashval, Args&&... args) {
+        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
+        slot_type* slot = reinterpret_cast<slot_type*>(&raw);
+
+        PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
+        const auto& elem = PolicyTraits::element(slot);
+        Inner& inner    = sets_[subidx(hashval)];
+        auto&  set      = inner.set_;
+        typename Lockable::UniqueLock m(inner);
+        typename EmbeddedSet::template InsertSlotWithHash<true> f {
+            inner, std::move(*slot), hashval};
+        return make_rv(PolicyTraits::apply(f, elem));
+    }
+
+    template <class... Args>
+    iterator emplace_hint_with_hash(size_t hashval, const_iterator, Args&&... args) {
+        return emplace_with_hash(hashval, std::forward<Args>(args)...).first;
+    }
+
+    template <class K = key_type, class F>
+    iterator lazy_emplace_with_hash(size_t hashval, const key_arg<K>& key, F&& f) {
+        Inner& inner = sets_[subidx(hashval)];
+        auto&  set   = inner.set_;
+        typename Lockable::UniqueLock m(inner);
+        return make_iterator(&inner, set.lazy_emplace_with_hash(key, hashval, std::forward<F>(f)));
+    }
+
+    // --------------------------------------------------------------------
+    // end of phmap expension
+    // --------------------------------------------------------------------
+
     template <class K, class... Args>
     std::pair<iterator, bool> emplace_decomposable(const K& key, Args&&... args)
     {
@@ -2912,13 +2990,12 @@ public:
     template <class... Args, typename std::enable_if<
                                  !IsDecomposable<Args...>::value, int>::type = 0>
     std::pair<iterator, bool> emplace(Args&&... args) {
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
-            raw;
+        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
+        size_t hashval  = this->hash(PolicyTraits::key(slot));
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
         const auto& elem = PolicyTraits::element(slot);
-        size_t hashval  = this->hash(PolicyTraits::key(slot));
         Inner& inner    = sets_[subidx(hashval)];
         auto&  set      = inner.set_;
         typename Lockable::UniqueLock m(inner);
@@ -3309,13 +3386,18 @@ protected:
 
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
-        auto hashval = this->hash(key);
+    find_or_prepare_insert_with_hash(size_t hashval, const K& key, typename Lockable::UniqueLock &mutexlock) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         mutexlock    = std::move(typename Lockable::UniqueLock(inner));
         auto  p   = set.find_or_prepare_insert(key, hashval); // std::pair<size_t, bool>
         return std::make_tuple(&inner, p.first, p.second);
+    }
+
+    template <class K>
+    std::tuple<Inner*, size_t, bool> 
+    find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
+        return find_or_prepare_insert_with_hash<K>(this->hash(key), key, mutexlock);
     }
 
     iterator iterator_at(Inner *inner, 
@@ -3498,6 +3580,31 @@ public:
 
     // ----------- phmap extensions --------------------------
 
+    template <class K = key_type, class... Args,
+              typename std::enable_if<
+                  !std::is_convertible<K, const_iterator>::value, int>::type = 0,
+              K* = nullptr>
+    std::pair<iterator, bool> try_emplace_with_hash(size_t hashval, key_arg<K>&& k, Args&&... args) {
+        return try_emplace_impl_with_hash(hashval, std::forward<K>(k), std::forward<Args>(args)...);
+    }
+
+    template <class K = key_type, class... Args,
+              typename std::enable_if<
+                  !std::is_convertible<K, const_iterator>::value, int>::type = 0>
+    std::pair<iterator, bool> try_emplace_with_hash(size_t hashval, const key_arg<K>& k, Args&&... args) {
+        return try_emplace_impl_with_hash(hashval, k, std::forward<Args>(args)...);
+    }
+
+    template <class K = key_type, class... Args, K* = nullptr>
+    iterator try_emplace_with_hash(size_t hashval, const_iterator, key_arg<K>&& k, Args&&... args) {
+        return try_emplace_with_hash(hashval, std::forward<K>(k), std::forward<Args>(args)...).first;
+    }
+
+    template <class K = key_type, class... Args>
+    iterator try_emplace_with_hash(size_t hashval, const_iterator, const key_arg<K>& k, Args&&... args) {
+        return try_emplace_with_hash(hashval, k, std::forward<Args>(args)...).first;
+    }    
+
     // if map contains key, lambda is called with the mapped value (under read lock protection),
     // and if_contains returns true. This is a const API and lambda should not modify the value
     // -----------------------------------------------------------------------------------------
@@ -3588,6 +3695,21 @@ private:
         return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), 
                 std::get<2>(res)};
     }
+
+    template <class K = key_type, class... Args>
+    std::pair<iterator, bool> try_emplace_impl_with_hash(size_t hashval, K&& k, Args&&... args) {
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
+        typename Base::Inner *inner = std::get<0>(res);
+        if (std::get<2>(res))
+            inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
+                                   std::forward_as_tuple(std::forward<K>(k)),
+                                   std::forward_as_tuple(std::forward<Args>(args)...));
+        return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), 
+                std::get<2>(res)};
+    }
+
+    
 };
 
 
@@ -4364,6 +4486,8 @@ public:
     using Base::insert;
     using Base::emplace;
     using Base::emplace_hint;
+    using Base::emplace_with_hash;
+    using Base::emplace_hint_with_hash;
     using Base::extract;
     using Base::merge;
     using Base::swap;
@@ -4417,6 +4541,9 @@ public:
     using Base::emplace;
     using Base::emplace_hint;
     using Base::try_emplace;
+    using Base::emplace_with_hash;
+    using Base::emplace_hint_with_hash;
+    using Base::try_emplace_with_hash;
     using Base::extract;
     using Base::merge;
     using Base::swap;
@@ -4470,6 +4597,8 @@ public:
     using Base::insert;
     using Base::emplace;
     using Base::emplace_hint;
+    using Base::emplace_with_hash;
+    using Base::emplace_hint_with_hash;
     using Base::extract;
     using Base::merge;
     using Base::swap;
@@ -4526,6 +4655,9 @@ public:
     using Base::emplace;
     using Base::emplace_hint;
     using Base::try_emplace;
+    using Base::emplace_with_hash;
+    using Base::emplace_hint_with_hash;
+    using Base::try_emplace_with_hash;
     using Base::extract;
     using Base::merge;
     using Base::swap;
