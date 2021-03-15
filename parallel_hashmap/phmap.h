@@ -3622,6 +3622,17 @@ public:
         return modify_if_impl<K, F, typename Lockable::UniqueLock>(key, std::forward<F>(f));
     }
 
+
+    // if map contains key, lambda is called with the mapped value  (under write lock protection).
+    // If the lambda returns true, the key is subsequently erased from the map (the write lock
+    // is only released after erase).
+    // returns true if key was erased, false otherwise.
+    // ----------------------------------------------------------------------------------------------------
+    template <class K = key_type, class F>
+    bool erase_if(const key_arg<K>& key, F&& f) {
+        return erase_if_impl<K, F, typename Lockable::UniqueLock>(key, std::forward<F>(f));
+    }
+
     // if map does not contains key, it is inserted and the mapped value is value-constructed 
     // with the provided arguments (if any), as with try_emplace. 
     // if map already  contains key, then the lambda is called with the mapped value (under 
@@ -3669,6 +3680,24 @@ private:
         std::forward<F>(f)(Policy::value(&*it));
         return true;
     }
+
+    template <class K = key_type, class F, class L>
+    bool erase_if_impl(const key_arg<K>& key, F&& f) {
+#if __cplusplus >= 201703L
+        static_assert(std::is_invocable<F, mapped_type&>::value);
+#endif
+        L m;
+        auto it = this->template find<K, L>(key, this->hash(key), m);
+        if (it == this->end())
+            return false;
+        if (std::forward<F>(f)(Policy::value(&*it)))
+        {
+            this->erase(it);
+            return true;
+        }
+        return false;
+    }
+
 
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {

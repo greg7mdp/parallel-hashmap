@@ -59,6 +59,16 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
                      [](int& v) { v = 6; },   // called only when key was already present
                      [](const Map::constructor& ctor) { ctor(5, 13); }); // construct value_type in place when key not present
     EXPECT_EQ(m[5], 6);
+
+    // test erase_if
+    // -------------
+    EXPECT_EQ(m.erase_if(4, [](int& v) { assert(0); return v==12; }), false); // m[4] not present - lambda not called
+    EXPECT_EQ(m.erase_if(5, [](int& v) { return v==12; }), false);            // m[5] == 6, so erase not performed
+    EXPECT_EQ(m[5], 6);
+    EXPECT_EQ(m.erase_if(5, [](int& v) { return v==6; }), true);              // lambda returns true, so m[5] erased
+    EXPECT_EQ(m[5], 0);
+
+
 }
 
 }  // namespace
