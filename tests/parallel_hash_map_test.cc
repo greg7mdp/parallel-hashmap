@@ -62,7 +62,7 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
 
     // test erase_if
     // -------------
-    EXPECT_EQ(m.erase_if(4, [](int& v) { assert(0); return v==12; }), false); // m[4] not present - lambda not called
+    EXPECT_EQ(m.erase_if(9, [](int& v) { assert(0); return v==12; }), false); // m[9] not present - lambda not called
     EXPECT_EQ(m.erase_if(5, [](int& v) { return v==12; }), false);            // m[5] == 6, so erase not performed
     EXPECT_EQ(m[5], 6);
     EXPECT_EQ(m.erase_if(5, [](int& v) { return v==6; }), true);              // lambda returns true, so m[5] erased
