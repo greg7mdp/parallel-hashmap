@@ -1293,13 +1293,13 @@ public:
     void insert(InputIt first, InputIt last) {
         this->reserve(this->size() + (last - first));
         for (; first != last; ++first) 
-            insert(*first);
+            emplace(*first);
     }
 
     template <class InputIt, typename phmap::enable_if_t<!has_difference_operator<InputIt>::value, int> = 0>
     void insert(InputIt first, InputIt last) {
         for (; first != last; ++first) 
-            insert(*first);
+            emplace(*first);
     }
 
     template <class T, RequiresNotInit<T> = 0, RequiresInsertable<const T&> = 0>
@@ -3856,7 +3856,7 @@ struct FlatHashSetPolicy
     template <class Allocator, class... Args>
     static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
         phmap::allocator_traits<Allocator>::construct(*alloc, slot,
-                                                     std::forward<Args>(args)...);
+                                                      std::forward<Args>(args)...);
     }
 
     template <class Allocator>
