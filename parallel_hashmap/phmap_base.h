@@ -5137,6 +5137,8 @@ public:
     };
 #endif
 
+#endif // BOOST_THREAD_SHARED_MUTEX_HPP
+
 // --------------------------------------------------------------------------
 //         std::shared_mutex support (read and write lock support)
 // --------------------------------------------------------------------------
@@ -5157,8 +5159,6 @@ public:
         using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
     };
 #endif // PHMAP_HAVE_SHARED_MUTEX
-
-#endif // BOOST_THREAD_SHARED_MUTEX_HPP
 
 
 }  // phmap
