@@ -248,7 +248,7 @@ namespace phmap {
 
         enum class ncmp : value_type { unordered = -127 };
 
-#ifdef __cpp_inline_variables
+#if defined(__cpp_inline_variables) && !defined(_MSC_VER)
 
 #define PHMAP_COMPARE_INLINE_BASECLASS_DECL(name)
 
