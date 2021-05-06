@@ -1,7 +1,7 @@
 
 <img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/phash.png?raw=true" width="120" align="middle"> 
 
-# The Parallel Hashmap  [![Build Status](https://travis-ci.org/greg7mdp/parallel-hashmap.svg?branch=master)](https://travis-ci.org/greg7mdp/parallel-hashmap)  [![Build Status](https://ci.appveyor.com/api/projects/status/86kc657lp4cja8ju?svg=true)](https://ci.appveyor.com/project/greg7mdp/parallel-hashmap) 
+# The Parallel Hashmap  [![Build Status](https://travis-ci.com/greg7mdp/parallel-hashmap.svg?branch=master)](https://travis-ci.com/greg7mdp/parallel-hashmap)  [![Build Status](https://ci.appveyor.com/api/projects/status/86kc657lp4cja8ju?svg=true)](https://ci.appveyor.com/project/greg7mdp/parallel-hashmap) 
 
 ## Overview
 
