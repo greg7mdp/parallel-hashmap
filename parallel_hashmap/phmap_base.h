@@ -1303,7 +1303,7 @@ constexpr bool HasRebindAlloc(...) {
 }
 
 template <typename T, typename U>
-constexpr bool HasRebindAlloc(typename T::template rebind<U>::other*) {
+constexpr bool HasRebindAlloc(typename std::allocator_traits<T>::template rebind_alloc<U>*) {
   return true;
 }
 
@@ -1527,7 +1527,7 @@ private:
     template <typename A, typename... Args>
     static auto construct_impl(int, A& a,  // NOLINT(runtime/references)
                                Args&&... args)
-        -> decltype(a.construct(std::forward<Args>(args)...)) {
+        -> decltype(std::allocator_traits<A>::construct(a, std::forward<Args>(args)...)) {
         std::allocator_traits<A>::construct(a, std::forward<Args>(args)...);
     }
 
@@ -1538,7 +1538,7 @@ private:
 
     template <typename A, typename T>
     static auto destroy_impl(int, A& a,  // NOLINT(runtime/references)
-                             T* p) -> decltype(a.destroy(p)) {
+                             T* p) -> decltype(std::allocator_traits<A>::destroy(a, p)) {
         std::allocator_traits<A>::destroy(a, p);
     }
     template <typename T>
