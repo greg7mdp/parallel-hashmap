@@ -3622,6 +3622,7 @@ public:
 
     // if map contains key, lambda is called with the mapped value without read lock protection,
     // and if_contains_unsafe returns true. This is a const API and lambda should not modify the value
+    // This should be used only if we know that no other thread may be mutating the map at the time.
     // -----------------------------------------------------------------------------------------
     template <class K = key_type, class F>
     bool if_contains_unsafe(const key_arg<K>& key, F&& f) const {
@@ -3702,12 +3703,11 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto it = this->template find<K, L>(key, this->hash(key), m);
-        if (it == this->end())
-            return false;
-        if (std::forward<F>(f)(Policy::value(&*it)))
+        auto res = this->template find_as_pair<K, L>(key, this->hash(key), m);
+        if (res.second != res.first->set_.end() &&
+            std::forward<F>(f)(Policy::value(&*res.second)))
         {
-            this->erase(it);
+            res.first->set_.erase(res.second);
             return true;
         }
         return false;
