@@ -3376,12 +3376,18 @@ private:
 
 protected:
     template <class K = key_type, class L = typename Lockable::SharedLock>
-    iterator find(const key_arg<K>& key, size_t hashval, L &mutexlock) {
+    std::pair<Inner*, EmbeddedIterator> find_as_pair(const key_arg<K>& key, size_t hashval, L& mutexlock)
+    {
         Inner& inner = sets_[subidx(hashval)];
-        auto&  set = inner.set_;
+        auto& set = inner.set_;
         mutexlock = std::move(L(inner));
-        auto  it = set.find(key, hashval);
-        return make_iterator(&inner, it);
+        return std::make_pair(&inner, set.find(key, hashval));
+    }
+
+    template <class K = key_type, class L = typename Lockable::SharedLock>
+    iterator find(const key_arg<K>& key, size_t hashval, L& mutexlock) {
+        auto res = find_as_pair(key, hashval, mutexlock);
+        return make_iterator(res.first, res.second);
     }
 
     template <class K>
@@ -3603,7 +3609,7 @@ public:
     template <class K = key_type, class... Args>
     iterator try_emplace_with_hash(size_t hashval, const_iterator, const key_arg<K>& k, Args&&... args) {
         return try_emplace_with_hash(hashval, k, std::forward<Args>(args)...).first;
-    }    
+    }
 
     // if map contains key, lambda is called with the mapped value (under read lock protection),
     // and if_contains returns true. This is a const API and lambda should not modify the value
@@ -3612,6 +3618,16 @@ public:
     bool if_contains(const key_arg<K>& key, F&& f) const {
         return const_cast<parallel_hash_map*>(this)->template 
             modify_if_impl<K, F, typename Lockable::SharedLock>(key, std::forward<F>(f));
+    }
+
+    // if map contains key, lambda is called with the mapped value without read lock protection,
+    // and if_contains_unsafe returns true. This is a const API and lambda should not modify the value
+    // This should be used only if we know that no other thread may be mutating the map at the time.
+    // -----------------------------------------------------------------------------------------
+    template <class K = key_type, class F>
+    bool if_contains_unsafe(const key_arg<K>& key, F&& f) const {
+        return const_cast<parallel_hash_map*>(this)->template 
+            modify_if_impl<K, F, LockableBaseImpl<phmap::NullMutex>::DoNothing>(key, std::forward<F>(f));
     }
 
     // if map contains key, lambda is called with the mapped value  (under write lock protection),
@@ -3674,10 +3690,10 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto it = this->template find<K, L>(key, this->hash(key), m);
-        if (it == this->end())
+        auto res = this->template find_as_pair<K, L>(key, this->hash(key), m);
+        if (res.second == res.first->set_.end())
             return false;
-        std::forward<F>(f)(Policy::value(&*it));
+        std::forward<F>(f)(Policy::value(&*res.second));
         return true;
     }
 
@@ -3687,12 +3703,11 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto it = this->template find<K, L>(key, this->hash(key), m);
-        if (it == this->end())
-            return false;
-        if (std::forward<F>(f)(Policy::value(&*it)))
+        auto res = this->template find_as_pair<K, L>(key, this->hash(key), m);
+        if (res.second != res.first->set_.end() &&
+            std::forward<F>(f)(Policy::value(&*res.second)))
         {
-            this->erase(it);
+            res.first->set_.erase(res.second);
             return true;
         }
         return false;
