@@ -1628,20 +1628,22 @@ public:
     // called heterogeneous key support.
     template <class K = key_type>
     iterator find(const key_arg<K>& key, size_t hashval) {
-        auto seq = probe(hashval);
-        while (true) {
-            Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hashval))) {
-                if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
-                                          EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
-                    return iterator_at(seq.offset((size_t)i));
-            }
-            if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) 
-                return end();
-            seq.next();
-        }
+        size_t offset;
+        if (find_impl(key, hashval, offset))
+            return iterator_at(offset);
+        else
+            return end();
     }
+
+    template <class K = key_type>
+    pointer find_ptr(const key_arg<K>& key, size_t hashval) {
+        size_t offset;
+        if (find_impl(key, hashval, offset))
+            return &PolicyTraits::element(slots_ + offset);
+        else
+            return nullptr;
+    }
+
     template <class K = key_type>
     iterator find(const key_arg<K>& key) {
         return find(key, this->hash(key));
@@ -1721,6 +1723,24 @@ public:
 private:
     template <class Container, typename Enabler>
     friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
+
+    template <class K = key_type>
+    bool find_impl(const key_arg<K>& key, size_t hashval, size_t& offset) {
+        auto seq = probe(hashval);
+        while (true) {
+            Group g{ ctrl_ + seq.offset() };
+            for (int i : g.Match((h2_t)H2(hashval))) {
+                offset = seq.offset((size_t)i);
+                if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
+                    EqualElement<K>{key, eq_ref()},
+                    PolicyTraits::element(slots_ + offset))))
+                    return true;
+            }
+            if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
+                return false;
+            seq.next();
+        }
+    }
 
     struct FindElement 
     {
@@ -3376,18 +3396,20 @@ private:
 
 protected:
     template <class K = key_type, class L = typename Lockable::SharedLock>
-    std::pair<Inner*, EmbeddedIterator> find_as_pair(const key_arg<K>& key, size_t hashval, L& mutexlock)
+    pointer find_ptr(const key_arg<K>& key, size_t hashval, L& mutexlock)
     {
         Inner& inner = sets_[subidx(hashval)];
         auto& set = inner.set_;
         mutexlock = std::move(L(inner));
-        return std::make_pair(&inner, set.find(key, hashval));
+        return set.find_ptr(key, hashval);
     }
 
     template <class K = key_type, class L = typename Lockable::SharedLock>
     iterator find(const key_arg<K>& key, size_t hashval, L& mutexlock) {
-        auto res = find_as_pair(key, hashval, mutexlock);
-        return make_iterator(res.first, res.second);
+        Inner& inner = sets_[subidx(hashval)];
+        auto& set = inner.set_;
+        mutexlock = std::move(L(inner));
+        return make_iterator(&inner, set.find(key, hashval));
     }
 
     template <class K>
@@ -3690,10 +3712,10 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto res = this->template find_as_pair<K, L>(key, this->hash(key), m);
-        if (res.second == res.first->set_.end())
+        auto ptr = this->template find_ptr<K, L>(key, this->hash(key), m);
+        if (ptr == nullptr)
             return false;
-        std::forward<F>(f)(Policy::value(&*res.second));
+        std::forward<F>(f)(Policy::value(ptr));
         return true;
     }
 
@@ -3703,11 +3725,11 @@ private:
         static_assert(std::is_invocable<F, mapped_type&>::value);
 #endif
         L m;
-        auto res = this->template find_as_pair<K, L>(key, this->hash(key), m);
-        if (res.second != res.first->set_.end() &&
-            std::forward<F>(f)(Policy::value(&*res.second)))
+        auto it = this->template find<K, L>(key, this->hash(key), m);
+        if (it == this->end()) return false;
+        if (std::forward<F>(f)(Policy::value(&*it)))
         {
-            res.first->set_.erase(res.second);
+            this->erase(it);
             return true;
         }
         return false;
