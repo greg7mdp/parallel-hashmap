@@ -1609,10 +1609,10 @@ namespace priv {
 
         static node_type *EmptyNode() {
 #ifdef _MSC_VER
-            static EmptyNodeType* empty_node = new EmptyNodeType;
+            static EmptyNodeType empty_node;
             // This assert fails on some other construction methods.
-            assert(empty_node->parent == empty_node);
-            return empty_node;
+            assert(empty_node.parent == &empty_node);
+            return &empty_node;
 #else
             static constexpr EmptyNodeType empty_node(
                 const_cast<EmptyNodeType *>(&empty_node));
