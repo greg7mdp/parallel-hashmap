@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.13.0)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -10,8 +10,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
 
-set(PHMAP_HEADERS phmap.h phmap_base.h phmap_bits.h phmap_utils.h phmap_config.h)
 set(PHMAP_DIR parallel_hashmap)
+set(PHMAP_HEADERS ${PHMAP_DIR}/phmap.h 
+                  ${PHMAP_DIR}/phmap_base.h 
+                  ${PHMAP_DIR}/phmap_bits.h 
+                  ${PHMAP_DIR}/phmap_utils.h 
+                  ${PHMAP_DIR}/phmap_config.h)
 set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
 
 include(GNUInstallDirs)
