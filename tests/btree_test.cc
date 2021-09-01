@@ -40,12 +40,12 @@
 
 namespace phmap {
     namespace test_internal {
-        int BaseCountedInstance::num_instances_ = 0;
-        int BaseCountedInstance::num_live_instances_ = 0;
-        int BaseCountedInstance::num_moves_ = 0;
-        int BaseCountedInstance::num_copies_ = 0;
-        int BaseCountedInstance::num_swaps_ = 0;
-        int BaseCountedInstance::num_comparisons_ = 0;
+        size_t BaseCountedInstance::num_instances_ = 0;
+        size_t BaseCountedInstance::num_live_instances_ = 0;
+        size_t BaseCountedInstance::num_moves_ = 0;
+        size_t BaseCountedInstance::num_copies_ = 0;
+        size_t BaseCountedInstance::num_swaps_ = 0;
+        size_t BaseCountedInstance::num_comparisons_ = 0;
 
     }  // namespace test_internal
 }  // namespace phmap\
@@ -210,7 +210,7 @@ public:
     }
 
     int erase(const key_type &key) {
-        int size = tree_.size();
+        size_t size = tree_.size();
         int res = (int)checker_.erase(key);
         EXPECT_EQ(res, tree_.count(key));
         EXPECT_EQ(res, tree_.erase(key));
@@ -221,8 +221,8 @@ public:
     }
     iterator erase(iterator iter) {
         key_type key = iter.key();
-        int size = tree_.size();
-        int count = tree_.count(key);
+        size_t size = tree_.size();
+        size_t count = tree_.count(key);
         auto checker_iter = checker_.lower_bound(key);
         for (iterator tmp(tree_.lower_bound(key)); tmp != iter; ++tmp) {
             ++checker_iter;
@@ -231,7 +231,7 @@ public:
         ++checker_next;
         checker_.erase(checker_iter);
         iter = tree_.erase(iter);
-        EXPECT_EQ(tree_.size(), checker_.size());
+        EXPECT_EQ(tree_.size(), (size_t)checker_.size());
         EXPECT_EQ(tree_.size(), size - 1);
         EXPECT_EQ(tree_.count(key), count - 1);
         if (count == 1) {
@@ -241,7 +241,7 @@ public:
     }
 
     void erase(iterator begin, iterator end) {
-        int size = tree_.size();
+        size_t size = tree_.size();
         int count = std::distance(begin, end);
         auto checker_begin = checker_.lower_bound(begin.key());
         for (iterator tmp(tree_.lower_bound(begin.key())); tmp != begin; ++tmp) {
@@ -281,7 +281,7 @@ public:
         }
 
         // Move through the forward iterators using decrement.
-        for (int n = tree_.size() - 1; n >= 0; --n) {
+        for (int n = (int)tree_.size() - 1; n >= 0; --n) {
             iter_check(tree_iter, checker_iter);
             --tree_iter;
             --checker_iter;
@@ -297,7 +297,7 @@ public:
         }
 
         // Move through the reverse iterators using decrement.
-        for (int n = tree_.size() - 1; n >= 0; --n) {
+        for (int n = (int)tree_.size() - 1; n >= 0; --n) {
             riter_check(tree_riter, checker_riter);
             --tree_riter;
             --checker_riter;
@@ -344,7 +344,7 @@ namespace {
 
         // Insertion routines.
         std::pair<iterator, bool> insert(const value_type &x) {
-            int size = this->tree_.size();
+            size_t size = this->tree_.size();
             std::pair<typename CheckerType::iterator, bool> checker_res =
                 this->checker_.insert(x);
             std::pair<iterator, bool> tree_res = this->tree_.insert(x);
@@ -355,7 +355,7 @@ namespace {
             return tree_res;
         }
         iterator insert(iterator position, const value_type &x) {
-            int size = this->tree_.size();
+            size_t size = this->tree_.size();
             std::pair<typename CheckerType::iterator, bool> checker_res =
                 this->checker_.insert(x);
             iterator tree_res = this->tree_.insert(position, x);
@@ -392,7 +392,7 @@ namespace {
 
         // Insertion routines.
         iterator insert(const value_type &x) {
-            int size = this->tree_.size();
+            size_t size = this->tree_.size();
             auto checker_res = this->checker_.insert(x);
             iterator tree_res = this->tree_.insert(x);
             CheckPairEquals(*tree_res, *checker_res);
@@ -401,7 +401,7 @@ namespace {
             return tree_res;
         }
         iterator insert(iterator position, const value_type &x) {
-            int size = this->tree_.size();
+            size_t size = this->tree_.size();
             auto checker_res = this->checker_.insert(x);
             iterator tree_res = this->tree_.insert(position, x);
             CheckPairEquals(*tree_res, *checker_res);

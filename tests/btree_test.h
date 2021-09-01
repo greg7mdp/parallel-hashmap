@@ -67,7 +67,7 @@ namespace test_internal {
     // InstanceTracker in tests to track the number of instances.
     class BaseCountedInstance {
     public:
-        explicit BaseCountedInstance(int x) : value_(x) {
+        explicit BaseCountedInstance(size_t x) : value_(x) {
             ++num_instances_;
             ++num_live_instances_;
         }
@@ -143,7 +143,7 @@ namespace test_internal {
                             : phmap::weak_ordering::greater;
         }
 
-        int value() const {
+        size_t value() const {
             if (!is_live_) std::abort();
             return value_;
         }
@@ -166,28 +166,28 @@ namespace test_internal {
     private:
         friend class InstanceTracker;
 
-        int value_;
+        size_t value_;
 
         // Indicates if the value is live, ie it hasn't been moved away from.
         bool is_live_ = true;
 
         // Number of instances.
-        static int num_instances_;
+        static size_t num_instances_;
 
         // Number of live instances (those that have not been moved away from.)
-        static int num_live_instances_;
+        static size_t num_live_instances_;
 
         // Number of times that BaseCountedInstance objects were moved.
-        static int num_moves_;
+        static size_t num_moves_;
 
         // Number of times that BaseCountedInstance objects were copied.
-        static int num_copies_;
+        static size_t num_copies_;
 
         // Number of times that BaseCountedInstance objects were swapped.
-        static int num_swaps_;
+        static size_t num_swaps_;
 
         // Number of times that BaseCountedInstance objects were compared.
-        static int num_comparisons_;
+        static size_t num_comparisons_;
     };
     
     // Helper to track the BaseCountedInstance instance counters. Expects that the
@@ -208,33 +208,33 @@ namespace test_internal {
         // Returns the number of BaseCountedInstance instances both containing valid
         // values and those moved away from compared to when the InstanceTracker was
         // constructed
-        int instances() const {
+        size_t instances() const {
             return BaseCountedInstance::num_instances_ - start_instances_;
         }
 
         // Returns the number of live BaseCountedInstance instances compared to when
         // the InstanceTracker was constructed
-        int live_instances() const {
+        size_t live_instances() const {
             return BaseCountedInstance::num_live_instances_ - start_live_instances_;
         }
 
         // Returns the number of moves on BaseCountedInstance objects since
         // construction or since the last call to ResetCopiesMovesSwaps().
-        int moves() const { return BaseCountedInstance::num_moves_ - start_moves_; }
+        size_t moves() const { return BaseCountedInstance::num_moves_ - start_moves_; }
 
         // Returns the number of copies on BaseCountedInstance objects since
         // construction or the last call to ResetCopiesMovesSwaps().
-        int copies() const {
+        size_t copies() const {
             return BaseCountedInstance::num_copies_ - start_copies_;
         }
 
         // Returns the number of swaps on BaseCountedInstance objects since
         // construction or the last call to ResetCopiesMovesSwaps().
-        int swaps() const { return BaseCountedInstance::num_swaps_ - start_swaps_; }
+        size_t swaps() const { return BaseCountedInstance::num_swaps_ - start_swaps_; }
 
         // Returns the number of comparisons on BaseCountedInstance objects since
         // construction or the last call to ResetCopiesMovesSwaps().
-        int comparisons() const {
+        size_t comparisons() const {
             return BaseCountedInstance::num_comparisons_ - start_comparisons_;
         }
 
@@ -250,18 +250,18 @@ namespace test_internal {
         }
 
     private:
-        int start_instances_;
-        int start_live_instances_;
-        int start_moves_;
-        int start_copies_;
-        int start_swaps_;
-        int start_comparisons_;
+        size_t start_instances_;
+        size_t start_live_instances_;
+        size_t start_moves_;
+        size_t start_copies_;
+        size_t start_swaps_;
+        size_t start_comparisons_;
     };
 
     // Copyable, not movable.
     class CopyableOnlyInstance : public BaseCountedInstance {
     public:
-        explicit CopyableOnlyInstance(int x) : BaseCountedInstance(x) {}
+        explicit CopyableOnlyInstance(size_t x) : BaseCountedInstance(x) {}
         CopyableOnlyInstance(const CopyableOnlyInstance& rhs) = default;
         CopyableOnlyInstance& operator=(const CopyableOnlyInstance& rhs) = default;
 
@@ -275,7 +275,7 @@ namespace test_internal {
     // Copyable and movable.
     class CopyableMovableInstance : public BaseCountedInstance {
     public:
-        explicit CopyableMovableInstance(int x) : BaseCountedInstance(x) {}
+        explicit CopyableMovableInstance(size_t x) : BaseCountedInstance(x) {}
         CopyableMovableInstance(const CopyableMovableInstance& rhs) = default;
         CopyableMovableInstance(CopyableMovableInstance&& rhs) = default;
         CopyableMovableInstance& operator=(const CopyableMovableInstance& rhs) =
@@ -292,7 +292,7 @@ namespace test_internal {
     // Only movable, not default-constructible.
     class MovableOnlyInstance : public BaseCountedInstance {
     public:
-        explicit MovableOnlyInstance(int x) : BaseCountedInstance(x) {}
+        explicit MovableOnlyInstance(size_t x) : BaseCountedInstance(x) {}
         MovableOnlyInstance(MovableOnlyInstance&& other) = default;
         MovableOnlyInstance& operator=(MovableOnlyInstance&& other) = default;
 
