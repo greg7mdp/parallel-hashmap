@@ -338,6 +338,13 @@
     #define PHMAP_INTERNAL_MSVC_2017_DBG_MODE
 #endif
 
+// ---------------------------------------------------------------------------
+// Checks whether wchar_t is treated as a native type
+// (MSVC: /Zc:wchar_t- treats wchar_t as unsigned short)
+// ---------------------------------------------------------------------------
+#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
+#define PHMAP_HAS_NATIVE_WCHAR_T
+#endif
 
 // -----------------------------------------------------------------------------
 // Sanitizer Attributes
