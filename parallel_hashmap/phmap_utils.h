@@ -209,12 +209,14 @@ struct Hash<unsigned char> : public phmap_unary_function<unsigned char, size_t>
     { return static_cast<size_t>(val); }
 };
 
+#ifdef PHMAP_HAS_NATIVE_WCHAR_T
 template <>
 struct Hash<wchar_t> : public phmap_unary_function<wchar_t, size_t>
 {
     inline size_t operator()(wchar_t val) const noexcept
     { return static_cast<size_t>(val); }
 };
+#endif
 
 template <>
 struct Hash<int16_t> : public phmap_unary_function<int16_t, size_t>
