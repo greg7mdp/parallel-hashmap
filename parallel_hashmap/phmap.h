@@ -3206,14 +3206,16 @@ public:
     // NOTE: This is a very low level operation and should not be used without
     // specific benchmarks indicating its importance.
     // --------------------------------------------------------------------
-    template <class K = key_type>
-    void prefetch(const key_arg<K>& key) const {
-        (void)key;
-        size_t hashval     = this->hash(key);
+    void prefetch_hash(size_t hashval) const {
         const Inner& inner = sets_[subidx(hashval)];
         const auto&  set   = inner.set_;
         typename Lockable::SharedLock m(const_cast<Inner&>(inner));
         set.prefetch_hash(hashval);
+    }
+
+    template <class K = key_type>
+    void prefetch(const key_arg<K>& key) const {
+        prefetch_hash(this->hash(key));
     }
 
     // The API of find() has two extensions.
