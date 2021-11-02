@@ -100,6 +100,22 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
         EXPECT_EQ(m[5], 0);
     }
 
+    {
+        // -------------
+        // test for_each
+        // -------------
+        Map m = { {1, 7}, {2, 8}, {5, 11} };
+
+        // increment all values by 1
+        m.for_each_m([](auto &pair) {  ++pair.second; });
+
+        int counter = 0;
+        m.for_each([&counter](auto const &pair) {
+            ++counter;
+            EXPECT_EQ(pair.first + 7, pair.second);
+        });
+        EXPECT_EQ(counter, 3);
+    }
 }
 
 }  // namespace

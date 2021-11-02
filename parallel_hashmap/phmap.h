@@ -3094,6 +3094,29 @@ public:
         return std::get<2>(res);
     }
 
+    // Extension API: support iterating over all values
+    //
+    // flat_hash_set<std::string> s;
+    // s.insert(...);
+    // s.for_each([](auto const & key) {
+    //    // Safely iterates over all the keys
+    // });
+    template <class F>
+    void for_each(F&& fCallback) const {
+        for (auto const& inner : sets_) {
+            typename Lockable::SharedLock m(const_cast<Inner&>(inner));
+            std::for_each(inner.set_.begin(), inner.set_.end(), fCallback);
+        }
+    }
+
+    // this version allows to modify the values
+    void for_each_m(std::function<void (value_type&)> && fCallback) {
+        for (auto& inner : sets_) {
+            typename Lockable::UniqueLock m(const_cast<Inner&>(inner));
+            std::for_each(inner.set_.begin(), inner.set_.end(), fCallback);
+        }
+    }
+
     // Extension API: support for heterogeneous keys.
     //
     //   std::unordered_set<std::string> s;
