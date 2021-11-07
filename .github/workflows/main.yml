@@ -17,6 +17,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2.0.0
     - name: Build and test
-      CC: ${{ matrix.compiler }}
+      env:
+        CC: ${{ matrix.compiler }}
       run: |
         mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER=${COMPILER} -DCXXFLAGS="${CXX_FLAGS}" .. && cmake --build . && make test
