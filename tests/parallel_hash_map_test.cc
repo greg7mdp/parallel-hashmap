@@ -107,10 +107,10 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
         Map m = { {1, 7}, {2, 8}, {5, 11} };
 
         // increment all values by 1
-        m.for_each_m([](auto &pair) {  ++pair.second; });
+        m.for_each_m([](Map::value_type &pair) {  ++pair.second; });
 
         int counter = 0;
-        m.for_each([&counter](auto const &pair) {
+        m.for_each([&counter](const Map::value_type &pair) {
             ++counter;
             EXPECT_EQ(pair.first + 7, pair.second);
         });
