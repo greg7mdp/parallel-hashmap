@@ -1435,7 +1435,7 @@ namespace priv {
         // Destroys a range of n values, starting at index i.
         void value_destroy_n(const size_type i, const size_type n,
                              allocator_type *alloc) {
-            for (int j = 0; j < n; ++j) {
+            for (size_type j = 0; j < n; ++j) {
                 value_destroy(i + j, alloc);
             }
         }
@@ -2138,7 +2138,7 @@ namespace priv {
         set_count((field_type)(count() + 1));
 
         if (!leaf() && count() > i + 1) {
-            for (int j = count(); j > i + 1; --j) {
+            for (int j = count(); j > (int)(i + 1); --j) {
                 set_child(j, child(j - 1));
             }
             clear_child(i + 1);
