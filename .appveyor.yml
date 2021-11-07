@@ -1,6 +1,6 @@
 # Use the Appveyor build number for naming the build.
 # src: https://www.appveyor.com/docs/build-configuration/#build-versioning
-version: '{build}'
+version: '{Windows}'
 # see https://www.appveyor.com/docs/how-to/repository-shallow-clone/
 shallow_clone: true
 
