@@ -5,7 +5,7 @@
 
 ## Overview
 
-This repository aims to provide a set of excellent **hash map** implementations, as well as a **btree** alternative to std::map and std::set, with the following characteristics:
+This repository aims to provide a set of excellent **hash map** implementations, as well as a **btree** alternative to std::map and std::set, with the following characteristics: 
 
 - **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
