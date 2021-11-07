@@ -1,4 +1,4 @@
-name: phmap CI
+name: Linux, MacOS
 
 on:
   push:
