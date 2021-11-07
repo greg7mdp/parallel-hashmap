@@ -11,15 +11,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        configs: [Release]
-        compiler: [gcc, clang]
+        compiler: [gcc]
         flags: [-std=c++11, -std=c++17]
+        optimize: [-O2]
     steps:
     - name: Checkout
       uses: actions/checkout@v2.0.0
     - name: Build and test
       env:
         CXX: ${{ matrix.compiler }}
-        CXXFLAGS: ${{ matrix.flags }}
+        CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
       run: |
         mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER=${CXX} -DCXXFLAGS="${CXXFLAGS}" .. && cmake --build . && make test
