@@ -1,4 +1,4 @@
-name: Linux, MacOS
+name: MacOS
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
         compiler: [g++, clang++]
         flags: [-std=c++11, -std=c++17]
         optimize: [-O2]
