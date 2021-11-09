@@ -21,4 +21,4 @@ jobs:
         CXX: ${{ matrix.compiler }}
         CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
       run: |
-        mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .. && cmake --build . && cmake --build build --target RUN_TESTS
+        mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .. && cmake --build . && cmake --target RUN_TESTS
