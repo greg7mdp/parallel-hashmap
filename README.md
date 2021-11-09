@@ -1,7 +1,7 @@
 
 <img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/phash.png?raw=true" width="120" align="middle"> 
 
-# The Parallel Hashmap  ![Linux](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml/badge.svg)  ![MacOS](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml/badge.svg) ![Windows](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml/badge.svg) 
+# The Parallel Hashmap  [![Linux](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions)  [![MacOS](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions) [![Windows](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions) 
 
 ## Overview
 

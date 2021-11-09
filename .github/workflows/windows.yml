@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
+        flags: ["/std:c++11", "/std:c++latest"]
         optimize: [/O2]
     steps:
     - name: Checkout
@@ -20,4 +21,4 @@ jobs:
         CXX: ${{ matrix.compiler }}
         CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
       run: |
-        mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .. && cmake --build . && make test
+        mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .. && cmake --build . && cmake --build build --target RUN_TESTS
