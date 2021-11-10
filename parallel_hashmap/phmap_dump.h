@@ -42,6 +42,8 @@ struct IsTriviallyCopyable<std::pair<T1, T2>> {
 
 namespace priv {
 
+#if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
+
 // ------------------------------------------------------------------------
 // dump/load for raw_hash_set
 // ------------------------------------------------------------------------
@@ -166,6 +168,9 @@ bool parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc>::load(InputArch
     }
     return true;
 }
+
+#endif // !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
+
 } // namespace priv
 
 

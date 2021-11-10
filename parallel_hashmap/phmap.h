@@ -1576,7 +1576,7 @@ public:
         }
     }
 
-#ifndef PHMAP_NON_DETERMINISTIC
+#if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
     template<typename OutputArchive>
     bool dump(OutputArchive&) const;
 
@@ -3366,7 +3366,7 @@ public:
         return HashElement{hash_ref()}(key);
     }
 
-#ifndef PHMAP_NON_DETERMINISTIC
+#if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
     template<typename OutputArchive>
     bool dump(OutputArchive& ar) const;
 

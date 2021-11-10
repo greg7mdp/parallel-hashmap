@@ -1,17 +1,21 @@
 #include <iostream>
 #include <bitset>
 #include <cinttypes>
-#include "parallel_hashmap/phmap_dump.h"
 
 #define USE_CEREAL 0
 
 #if USE_CEREAL
+    #define PHMAP_DISABLE_DUMP // this is needed because the cereal doesn't like our hash map to have a dump() function
+
     #include "cereal/types/unordered_map.hpp"
     #include "cereal/types/memory.hpp"
     #include "cereal/types/bitset.hpp"
     #include "cereal/archives/binary.hpp"
     #include <fstream>
 #endif
+
+#include "parallel_hashmap/phmap_dump.h"
+
 #include <chrono>
 #include <functional>
 #include <cstdio>
