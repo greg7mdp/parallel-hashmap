@@ -1441,6 +1441,17 @@ public:
         slot_type** slot_;
     };
 
+    struct fpi_result 
+    {
+        ~fpi_result() { if (second) set->set_ctrl(first, H2(hashval)); }
+
+        raw_hash_set *set;
+        size_t hashval;
+        size_t first;
+        bool second;
+    };
+        
+
     template <class K = key_type, class F>
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
         auto res = find_or_prepare_insert(key);
@@ -2082,7 +2093,7 @@ private:
 
 protected:
     template <class K>
-    std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hashval) {
+    fpi_result find_or_prepare_insert(const K& key, size_t hashval) {
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
@@ -2090,16 +2101,16 @@ protected:
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
                                           PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
-                    return {seq.offset((size_t)i), false};
+                    return {this, hashval, seq.offset((size_t)i), false};
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
             seq.next();
         }
-        return {prepare_insert(hashval), true};
+        return {this, hashval, prepare_insert(hashval), true};
     }
 
     template <class K>
-    std::pair<size_t, bool> find_or_prepare_insert(const K& key) {
+    fpi_result find_or_prepare_insert(const K& key) {
         return find_or_prepare_insert(key, this->hash(key));
     }
 
@@ -2112,7 +2123,6 @@ protected:
         }
         ++size_;
         growth_left() -= IsEmpty(ctrl_[target.offset]);
-        set_ctrl(target.offset, H2(hashval));
         infoz_.RecordInsert(hashval, target.probe_length);
         return target.offset;
     }
