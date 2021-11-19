@@ -97,7 +97,7 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::load(InputArchive& ar) {
     }
 
     // allocate memory for ctrl_ and slots_
-    initialize_slots();
+    initialize_slots(capacity_);
     if (!ar.load(reinterpret_cast<char*>(ctrl_),
         sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1))) {
         std::cerr << "Failed to load ctrl" << std::endl;
