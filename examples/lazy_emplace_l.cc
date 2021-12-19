@@ -1,5 +1,6 @@
 // ------------------------
 // Windows specific example 
+// curtesy of @kanonka
 // ------------------------
 #include <windows.h>
 #include "parallel_hashmap/phmap.h"
