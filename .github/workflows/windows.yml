@@ -22,4 +22,4 @@ jobs:
         CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        cmake -Bbuild -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON && cmake --build build --target ALL_BUILD && cmake --build build --target RUN_TESTS
+        cmake -Bbuild -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Release && cmake --build build --target ALL_BUILD && cmake --build build --target RUN_TESTS
