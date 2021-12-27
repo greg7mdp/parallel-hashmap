@@ -13,13 +13,13 @@ TEST(DumpLoad, FlatHashSet_uin32) {
 
     {
         phmap::BinaryOutputArchive ar_out("./dump.data");
-        EXPECT_TRUE(st1.dump(ar_out));
+        EXPECT_TRUE(st1.phmap_dump(ar_out));
     }
 
     phmap::flat_hash_set<uint32_t> st2;
     {
         phmap::BinaryInputArchive ar_in("./dump.data");
-        EXPECT_TRUE(st2.load(ar_in));
+        EXPECT_TRUE(st2.phmap_load(ar_in));
     }
     EXPECT_TRUE(st1 == st2);
 }
@@ -30,13 +30,13 @@ TEST(DumpLoad, FlatHashMap_uint64_uint32) {
 
     {
         phmap::BinaryOutputArchive ar_out("./dump.data");
-        EXPECT_TRUE(mp1.dump(ar_out));
+        EXPECT_TRUE(mp1.phmap_dump(ar_out));
     }
 
     phmap::flat_hash_map<uint64_t, uint32_t> mp2;
     {
         phmap::BinaryInputArchive ar_in("./dump.data");
-        EXPECT_TRUE(mp2.load(ar_in));
+        EXPECT_TRUE(mp2.phmap_load(ar_in));
     }
 
     EXPECT_TRUE(mp1 == mp2);
@@ -48,13 +48,13 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
 
     {
         phmap::BinaryOutputArchive ar_out("./dump.data");
-        EXPECT_TRUE(mp1.dump(ar_out));
+        EXPECT_TRUE(mp1.phmap_dump(ar_out));
     }
 
     phmap::parallel_flat_hash_map<uint64_t, uint32_t> mp2;
     {
         phmap::BinaryInputArchive ar_in("./dump.data");
-        EXPECT_TRUE(mp2.load(ar_in));
+        EXPECT_TRUE(mp2.phmap_load(ar_in));
     }
     EXPECT_TRUE(mp1 == mp2);
 }
