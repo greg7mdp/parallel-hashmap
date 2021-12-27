@@ -1577,12 +1577,12 @@ public:
         }
     }
 
-#if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
+#if !defined(PHMAP_NON_DETERMINISTIC)
     template<typename OutputArchive>
-    bool dump(OutputArchive&) const;
+    bool phmap_dump(OutputArchive&) const;
 
     template<typename InputArchive>
-    bool load(InputArchive&);
+    bool  phmap_load(InputArchive&);
 #endif
 
     void rehash(size_t n) {
@@ -3367,12 +3367,12 @@ public:
         return HashElement{hash_ref()}(key);
     }
 
-#if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
+#if !defined(PHMAP_NON_DETERMINISTIC)
     template<typename OutputArchive>
-    bool dump(OutputArchive& ar) const;
+    bool phmap_dump(OutputArchive& ar) const;
 
     template<typename InputArchive>
-    bool load(InputArchive& ar);
+    bool phmap_load(InputArchive& ar);
 #endif
 
 private:
