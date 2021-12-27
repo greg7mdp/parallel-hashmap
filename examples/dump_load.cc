@@ -9,13 +9,13 @@ void dump_load_uint64_uint32() {
  
     {
         phmap::BinaryOutputArchive ar_out("./dump.data");
-        mp1.dump(ar_out);
+        mp1.phmap_dump(ar_out);
     }
 
     phmap::flat_hash_map<uint64_t, uint32_t> mp2;
     {
         phmap::BinaryInputArchive ar_in("./dump.data");
-        mp2.load(ar_in);
+        mp2.phmap_load(ar_in);
     }
 
     for (const auto& n : mp2)
@@ -31,13 +31,13 @@ void dump_load_parallel_flat_hash_map() {
  
     {
         phmap::BinaryOutputArchive ar_out("./dump.data");
-        mp1.dump(ar_out);
+        mp1.phmap_dump(ar_out);
     }
 
     phmap::parallel_flat_hash_map<uint64_t, uint32_t> mp2;
     {
         phmap::BinaryInputArchive ar_in("./dump.data");
-        mp2.load(ar_in);
+        mp2.phmap_load(ar_in);
     }
 
      for (const auto& n : mp2)
