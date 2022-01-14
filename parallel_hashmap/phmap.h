@@ -1466,6 +1466,15 @@ public:
         assert(!slot);
     }
 
+    template <class K = key_type, class F>
+    void emplace_single_with_hash(const key_arg<K>& key, size_t &hashval, F&& f) {
+        auto res = find_or_prepare_insert(key, hashval);
+        if (res.second)
+            lazy_emplace_at(res.first, std::forward<F>(f));
+        else
+            _erase(iterator_at(res.first));
+    }
+
 
     // Extension API: support for heterogeneous keys.
     //
@@ -3080,19 +3089,14 @@ public:
         typename Lockable::UniqueLock m(inner);
         return make_iterator(&inner, set.lazy_emplace_with_hash(key, hashval, std::forward<F>(f)));
     }
-
-    template <class K = key_type, class FExists, class FEmplace>
-    bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
-        typename Lockable::UniqueLock m;
-        auto res = this->find_or_prepare_insert(key, m);
-        Inner* inner = std::get<0>(res);
-        if (std::get<2>(res))
-            inner->set_.lazy_emplace_at(std::get<1>(res), std::forward<FEmplace>(fEmplace));
-        else {
-            auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
-            std::forward<FExists>(fExists)(Policy::value(&*it));
-        }
-        return std::get<2>(res);
+    
+    template <class K = key_type, class F>
+    void emplace_single(const key_arg<K>& key, F&& f) {
+        auto hashval = this->hash(key);
+        Inner& inner = sets_[subidx(hashval)];
+        auto&  set   = inner.set_;
+        typename Lockable::UniqueLock m(inner);
+        set.emplace_single_with_hash(key, hashval, std::forward<F>(f));
     }
 
     // Extension API: support iterating over all values
@@ -3715,7 +3719,6 @@ public:
         return modify_if_impl<K, F, typename Lockable::UniqueLock>(key, std::forward<F>(f));
     }
 
-
     // if map contains key, lambda is called with the mapped value  (under write lock protection).
     // If the lambda returns true, the key is subsequently erased from the map (the write lock
     // is only released after erase).
@@ -3744,6 +3747,20 @@ public:
         else {
             auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
             std::forward<F>(f)(Policy::value(&*it));
+        }
+        return std::get<2>(res);
+    }
+
+    template <class K = key_type, class FExists, class FEmplace>
+    bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert(key, m);
+        typename Base::Inner* inner = std::get<0>(res);
+        if (std::get<2>(res))
+            inner->set_.lazy_emplace_at(std::get<1>(res), std::forward<FEmplace>(fEmplace));
+        else {
+            auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
+            std::forward<FExists>(fExists)(Policy::value(&*it));
         }
         return std::get<2>(res);
     }

@@ -68,7 +68,7 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
 
     {
         // --------------------
-        // test lazy__emplace_l
+        // test lazy_emplace_l
         // --------------------
         Map m = { {1, 7}, {2, 9} };
  
