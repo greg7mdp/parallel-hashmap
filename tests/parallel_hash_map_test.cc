@@ -116,6 +116,22 @@ TEST(THIS_TEST_NAME, ThreadSafeContains) {
         });
         EXPECT_EQ(counter, 3);
     }
+
+    {
+        // --------------------
+        // test emplace_single
+        // --------------------
+        Map m = { {1, 4}, {11, 4} };
+ 
+        // emplace_single insert a value if not already present, else removes it
+        for (int i=0; i<12; ++i)
+            m.emplace_single(i, [i](const Map::constructor& ctor) { ctor(i, 4); });
+        EXPECT_EQ(m.count(0), 1);
+        EXPECT_EQ(m.count(1), 0);
+        EXPECT_EQ(m.count(2), 1);
+        EXPECT_EQ(m.count(11), 0);
+    }
+
 }
 
 }  // namespace
