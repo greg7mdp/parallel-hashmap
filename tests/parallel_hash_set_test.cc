@@ -11,6 +11,8 @@ namespace {
 
 struct Entry
 {
+    Entry(int k, int v=0) : key(k), value(v) {}
+
     bool operator==(const Entry &o) const
     { 
         return key == o.key; // not checking value
