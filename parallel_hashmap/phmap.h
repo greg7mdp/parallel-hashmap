@@ -1451,7 +1451,7 @@ public:
     }
 
     template <class K = key_type, class F>
-    iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t &hashval, F&& f) {
+    iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
         auto res = find_or_prepare_insert(key, hashval);
         if (res.second) {
             lazy_emplace_at(res.first, std::forward<F>(f));
@@ -1467,7 +1467,7 @@ public:
     }
 
     template <class K = key_type, class F>
-    void emplace_single_with_hash(const key_arg<K>& key, size_t &hashval, F&& f) {
+    void emplace_single_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
         auto res = find_or_prepare_insert(key, hashval);
         if (res.second)
             lazy_emplace_at(res.first, std::forward<F>(f));
@@ -3095,7 +3095,7 @@ public:
     // emplace_single
     // --------------
     template <class K = key_type, class F>
-    void emplace_single_with_hash(const key_arg<K>& key, size_t &hashval, F&& f) {
+    void emplace_single_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
         typename Lockable::UniqueLock m(inner);
