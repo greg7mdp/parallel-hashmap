@@ -2470,7 +2470,7 @@ protected:
 
         Inner() {}
 
-        Inner(Params p) :
+        Inner(Params const &p) :
             set_(p.bucket_cnt, p.hashfn, p.eq, p.alloc)
         {}
 
@@ -2657,7 +2657,7 @@ public:
     {}
 
     template <std::size_t... i>
-    parallel_hash_set(typename Inner::Params p,
+    parallel_hash_set(typename Inner::Params const &p,
                       phmap::index_sequence<i...>) : sets_{((void)i, p)...}
     {}
 
