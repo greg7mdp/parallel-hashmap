@@ -2652,7 +2652,7 @@ public:
                                const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
                                const allocator_type& alloc = allocator_type()) :
-        parallel_hash_set(typename Inner::Params(bucket_cnt, hash_param, eq, alloc), 
+        parallel_hash_set(typename Inner::Params{bucket_cnt, hash_param, eq, alloc}, 
                           phmap::make_index_sequence<num_tables>{})
     {}
 
