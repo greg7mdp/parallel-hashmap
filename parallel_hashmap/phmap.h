@@ -2460,6 +2460,20 @@ protected:
     // --------------------------------------------------------------------
     struct Inner : public Lockable
     {
+        struct Params
+        {
+            size_t bucket_cnt;
+            const hasher& hashfn;
+            const key_equal& eq;
+            const allocator_type& alloc;
+        };
+
+        Inner() {}
+
+        Inner(Params p) :
+            set_(p.bucket_cnt, p.hashfn, p.eq, p.alloc)
+        {}
+
         bool operator==(const Inner& o) const
         {
             typename Lockable::SharedLocks l(const_cast<Inner &>(*this), const_cast<Inner &>(o));
@@ -2637,10 +2651,15 @@ public:
     explicit parallel_hash_set(size_t bucket_cnt, 
                                const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
-                               const allocator_type& alloc = allocator_type()) {
-        for (auto& inner : sets_)
-            inner.set_ = EmbeddedSet(bucket_cnt / N, hash_param, eq, alloc);
-    }
+                               const allocator_type& alloc = allocator_type()) :
+        parallel_hash_set(Inner::Params(bucket_cnt, hash_param, eq, alloc), 
+                          phmap::make_index_sequence<num_tables>{})
+    {}
+
+    template <std::size_t... i>
+    parallel_hash_set(Inner::Params p,
+                      phmap::index_sequence<i...>) : sets_{((void)i, p)...}
+    {}
 
     parallel_hash_set(size_t bucket_cnt, 
                       const hasher& hash_param,
