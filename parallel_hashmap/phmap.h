@@ -2657,7 +2657,7 @@ public:
     {}
 
     template <std::size_t... i>
-    parallel_hash_set(Inner::Params p,
+    parallel_hash_set(typename Inner::Params p,
                       phmap::index_sequence<i...>) : sets_{((void)i, p)...}
     {}
 
