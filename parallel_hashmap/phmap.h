@@ -2470,8 +2470,7 @@ protected:
 
         Inner() {}
 
-        Inner(Params const &p) :
-            set_(p.bucket_cnt, p.hashfn, p.eq, p.alloc)
+        Inner(Params const &p) : set_(p.bucket_cnt, p.hashfn, p.eq, p.alloc)
         {}
 
         bool operator==(const Inner& o) const
@@ -2648,6 +2647,15 @@ public:
         std::is_nothrow_default_constructible<key_equal>::value&&
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
+#if 1
+    explicit parallel_hash_set(size_t bucket_cnt, 
+                               const hasher& hash_param    = hasher(),
+                               const key_equal& eq         = key_equal(),
+                               const allocator_type& alloc = allocator_type()) {
+        for (auto& inner : sets_)
+            inner.set_ = EmbeddedSet(bucket_cnt / N, hash_param, eq, alloc);
+    }
+#else
     explicit parallel_hash_set(size_t bucket_cnt, 
                                const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
@@ -2660,6 +2668,7 @@ public:
     parallel_hash_set(typename Inner::Params const &p,
                       phmap::index_sequence<i...>) : sets_{((void)i, p)...}
     {}
+#endif
 
     parallel_hash_set(size_t bucket_cnt, 
                       const hasher& hash_param,
