@@ -2647,7 +2647,7 @@ public:
         std::is_nothrow_default_constructible<key_equal>::value&&
         std::is_nothrow_default_constructible<allocator_type>::value) {}
 
-#if __cplusplus >= 201703L && (defined(_MSC_VER) || defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 6))
+#if  (__cplusplus >= 201703L || _MSVC_LANG >= 201402) && (defined(_MSC_VER) || defined(__clang__) || (defined(__GNUC__) && __GNUC__ > 6))
     explicit parallel_hash_set(size_t bucket_cnt, 
                                const hasher& hash_param    = hasher(),
                                const key_equal& eq         = key_equal(),
