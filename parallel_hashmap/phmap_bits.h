@@ -315,19 +315,19 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros64(uint64_t n) {
 #endif
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros32Slow(uint64_t n) {
-    int zeroes = 28;
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32Slow(uint64_t n) {
+    uint32_t zeroes = 28;
     if (n >> 16) zeroes -= 16, n >>= 16;
     if (n >> 8) zeroes -= 8, n >>= 8;
     if (n >> 4) zeroes -= 4, n >>= 4;
     return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros32(uint32_t n) {
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32(uint32_t n) {
 #if defined(_MSC_VER) && !defined(__clang__)
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (_BitScanReverse(&result, n)) {
-        return (int)(31 - result);
+        return (uint32_t)(31 - result);
     }
     return 32;
 #elif defined(__GNUC__) || defined(__clang__)
@@ -348,8 +348,8 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros32(uint32_t n) {
 #endif
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64Slow(uint64_t n) {
-    int c = 63;
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero64Slow(uint64_t n) {
+    uint32_t c = 63;
     n &= ~n + 1;
     if (n & 0x00000000FFFFFFFF) c -= 32;
     if (n & 0x0000FFFF0000FFFF) c -= 16;
@@ -360,11 +360,11 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64Slow(uint64_t n) 
     return c;
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64(uint64_t n) {
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero64(uint64_t n) {
 #if defined(_MSC_VER) && !defined(__clang__) && defined(_M_X64)
     unsigned long result = 0;  // NOLINT(runtime/int)
     _BitScanForward64(&result, n);
-    return (int)result;
+    return (uint32_t)result;
 #elif defined(_MSC_VER) && !defined(__clang__)
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (static_cast<uint32_t>(n) == 0) {
@@ -382,8 +382,8 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64(uint64_t n) {
 #endif
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32Slow(uint32_t n) {
-    int c = 31;
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero32Slow(uint32_t n) {
+    uint32_t c = 31;
     n &= ~n + 1;
     if (n & 0x0000FFFF) c -= 16;
     if (n & 0x00FF00FF) c -= 8;
@@ -393,11 +393,11 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32Slow(uint32_t n) 
     return c;
 }
 
-PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
+PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero32(uint32_t n) {
 #if defined(_MSC_VER) && !defined(__clang__)
     unsigned long result = 0;  // NOLINT(runtime/int)
     _BitScanForward(&result, n);
-    return (int)result;
+    return (uint32_t)result;
 #elif defined(__GNUC__) || defined(__clang__)
     static_assert(sizeof(int) == sizeof(n),
                   "__builtin_ctz does not take 32-bit arg");
@@ -568,6 +568,7 @@ namespace little_endian {
 #endif /* ENDIAN */
 
 // Functions to do unaligned loads and stores in little-endian order.
+// ------------------------------------------------------------------
 inline uint16_t Load16(const void *p) {
   return ToHost16(PHMAP_INTERNAL_UNALIGNED_LOAD16(p));
 }

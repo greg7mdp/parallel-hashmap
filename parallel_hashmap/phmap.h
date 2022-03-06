@@ -34,6 +34,58 @@
 // limitations under the License.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// IMPLEMENTATION DETAILS
+//
+// The table stores elements inline in a slot array. In addition to the slot
+// array the table maintains some control state per slot. The extra state is one
+// byte per slot and stores empty or deleted marks, or alternatively 7 bits from
+// the hash of an occupied slot. The table is split into logical groups of
+// slots, like so:
+//
+//      Group 1         Group 2        Group 3
+// +---------------+---------------+---------------+
+// | | | | | | | | | | | | | | | | | | | | | | | | |
+// +---------------+---------------+---------------+
+//
+// On lookup the hash is split into two parts:
+// - H2: 7 bits (those stored in the control bytes)
+// - H1: the rest of the bits
+// The groups are probed using H1. For each group the slots are matched to H2 in
+// parallel. Because H2 is 7 bits (128 states) and the number of slots per group
+// is low (8 or 16) in almost all cases a match in H2 is also a lookup hit.
+//
+// On insert, once the right group is found (as in lookup), its slots are
+// filled in order.
+//
+// On erase a slot is cleared. In case the group did not have any empty slots
+// before the erase, the erased slot is marked as deleted.
+//
+// Groups without empty slots (but maybe with deleted slots) extend the probe
+// sequence. The probing algorithm is quadratic. Given N the number of groups,
+// the probing function for the i'th probe is:
+//
+//   P(0) = H1 % N
+//
+//   P(i) = (P(i - 1) + i) % N
+//
+// This probing function guarantees that after N probes, all the groups of the
+// table will be probed exactly once.
+//
+// The control state and slot array are stored contiguously in a shared heap
+// allocation. The layout of this allocation is: `capacity()` control bytes,
+// one sentinel control byte, `Group::kWidth - 1` cloned control bytes,
+// <possible padding>, `capacity()` slots. The sentinel control byte is used in
+// iteration so we know when we reach the end of the table. The cloned control
+// bytes at the end of the table are cloned from the beginning of the table so
+// groups that begin near the end of the table can see a full group. In cases in
+// which there are more than `capacity()` cloned control bytes, the extra bytes
+// are `kEmpty`, and these ensure that we always see at least one empty slot and
+// can stop an unsuccessful search.
+// ---------------------------------------------------------------------------
+
+
+
 #ifdef _MSC_VER
     #pragma warning(push)  
 
@@ -75,6 +127,17 @@
 namespace phmap {
 
 namespace priv {
+
+// --------------------------------------------------------------------------
+template <typename AllocType>
+void SwapAlloc(AllocType& lhs, AllocType& rhs,
+               std::true_type /* propagate_on_container_swap */) {
+  using std::swap;
+  swap(lhs, rhs);
+}
+template <typename AllocType>
+void SwapAlloc(AllocType& /*lhs*/, AllocType& /*rhs*/,
+               std::false_type /* propagate_on_container_swap */) {}
 
 // --------------------------------------------------------------------------
 template <size_t Width>
@@ -181,26 +244,24 @@ public:
         return *this;
     }
     explicit operator bool() const { return mask_ != 0; }
-    int operator*() const { return LowestBitSet(); }
-    int LowestBitSet() const {
+    uint32_t operator*() const { return LowestBitSet(); }
+    uint32_t LowestBitSet() const {
         return priv::TrailingZeros(mask_) >> Shift;
     }
-    int HighestBitSet() const {
-        return (sizeof(T) * CHAR_BIT - priv::LeadingZeros(mask_) -
-                1) >>
-            Shift;
+    uint32_t HighestBitSet() const {
+        return (sizeof(T) * CHAR_BIT - priv::LeadingZeros(mask_) - 1) >> Shift;
     }
 
     BitMask begin() const { return *this; }
     BitMask end() const { return BitMask(0); }
 
-    int TrailingZeros() const {
+    uint32_t TrailingZeros() const {
         return priv::TrailingZeros(mask_) >> Shift;
     }
 
-    int LeadingZeros() const {
-        constexpr int total_significant_bits = SignificantBits << Shift;
-        constexpr int extra_bits = sizeof(T) * 8 - total_significant_bits;
+    uint32_t LeadingZeros() const {
+        constexpr uint32_t total_significant_bits = SignificantBits << Shift;
+        constexpr uint32_t extra_bits = sizeof(T) * 8 - total_significant_bits;
         return priv::LeadingZeros(mask_ << extra_bits) >> Shift;
     }
 
@@ -286,10 +347,10 @@ inline size_t H1(size_t hashval, const ctrl_t* ) {
 #endif
 
 
-inline ctrl_t H2(size_t hashval)       { return (ctrl_t)(hashval & 0x7F); }
+inline h2_t H2(size_t hashval)       { return (ctrl_t)(hashval & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
-inline bool IsFull(ctrl_t c)           { return c >= 0; }
+inline bool IsFull(ctrl_t c)           { return c >= static_cast<ctrl_t>(0); }
 inline bool IsDeleted(ctrl_t c)        { return c == kDeleted; }
 inline bool IsEmptyOrDeleted(ctrl_t c) { return c < kSentinel; }
 
@@ -338,7 +399,7 @@ struct GroupSse2Impl
     BitMask<uint32_t, kWidth> Match(h2_t hash) const {
         auto match = _mm_set1_epi8((char)hash);
         return BitMask<uint32_t, kWidth>(
-            _mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl)));
+            static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl))));
     }
 
     // Returns a bitmask representing the positions of empty slots.
@@ -347,7 +408,7 @@ struct GroupSse2Impl
 #if PHMAP_HAVE_SSSE3
         // This only works because kEmpty is -128.
         return BitMask<uint32_t, kWidth>(
-            _mm_movemask_epi8(_mm_sign_epi8(ctrl, ctrl)));
+            static_cast<uint32_t>(_mm_movemask_epi8(_mm_sign_epi8(ctrl, ctrl))));
 #else
         return Match(static_cast<h2_t>(kEmpty));
 #endif
@@ -356,17 +417,17 @@ struct GroupSse2Impl
     // Returns a bitmask representing the positions of empty or deleted slots.
     // -----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> MatchEmptyOrDeleted() const {
-        auto special = _mm_set1_epi8(kSentinel);
+        auto special = _mm_set1_epi8(static_cast<uint8_t>(kSentinel));
         return BitMask<uint32_t, kWidth>(
-            _mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)));
+            static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl))));
     }
 
     // Returns the number of trailing empty or deleted elements in the group.
     // ----------------------------------------------------------------------
     uint32_t CountLeadingEmptyOrDeleted() const {
-        auto special = _mm_set1_epi8(kSentinel);
+        auto special = _mm_set1_epi8(static_cast<uint8_t>(kSentinel));
         return TrailingZeros(
-            _mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1);
+            static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1));
     }
 
     // ----------------------------------------------------------------------
@@ -452,6 +513,11 @@ struct GroupPortableImpl
 #else
     using Group = GroupPortableImpl;
 #endif
+
+// The number of cloned control bytes that we copy from the beginning to the
+// end of the control bytes array.
+// -------------------------------------------------------------------------
+constexpr size_t NumClonedBytes() { return Group::kWidth - 1; }
 
 template <class Policy, class Hash, class Eq, class Alloc>
 class raw_hash_set;
@@ -1341,7 +1407,9 @@ public:
     }
 
     iterator insert(const_iterator, node_type&& node) {
-        return insert(std::move(node)).first;
+        auto res = insert(std::move(node));
+        node = std::move(res.node);
+        return res.position;
     }
 
     // This overload kicks in if we can deduce the key from args. This enables us
@@ -1759,7 +1827,7 @@ private:
         auto seq = probe(hashval);
         while (true) {
             Group g{ ctrl_ + seq.offset() };
-            for (int i : g.Match((h2_t)H2(hashval))) {
+            for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 offset = seq.offset((size_t)i);
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                     EqualElement<K>{key, eq_ref()},
@@ -2033,7 +2101,7 @@ private:
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hashval))) {
+            for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) ==
                                       elem))
                     return true;
@@ -2095,7 +2163,7 @@ protected:
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match((h2_t)H2(hashval))) {
+            for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
                                           PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
@@ -2261,9 +2329,10 @@ public:
     using key_arg = typename KeyArgImpl::template type<K, key_type>;
 
     static_assert(!std::is_reference<key_type>::value, "");
-    // TODO(alkis): remove this assertion and verify that reference mapped_type is
-    // supported.
-    static_assert(!std::is_reference<mapped_type>::value, "");
+
+    // TODO(b/187807849): Evaluate whether to support reference mapped_type and
+    // remove this assertion if/when it is supported.
+     static_assert(!std::is_reference<mapped_type>::value, "");
 
     using iterator = typename raw_hash_map::raw_hash_set::iterator;
     using const_iterator = typename raw_hash_map::raw_hash_set::const_iterator;
@@ -4327,7 +4396,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
         auto seq = set.probe(hashval);
         while (true) {
             priv::Group g{set.ctrl_ + seq.offset()};
-            for (int i : g.Match(priv::H2(hashval))) {
+            for (uint32_t i : g.Match(priv::H2(hashval))) {
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
