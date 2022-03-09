@@ -1528,6 +1528,12 @@ namespace priv {
         bool operator!=(const const_iterator &x) const {
             return node != x.node || position != x.position;
         }
+        bool operator==(const iterator &x) const {
+            return node == x.node && position == x.position;
+        }
+        bool operator!=(const iterator &x) const {
+            return node != x.node || position != x.position;
+        }
 
         // Accessors for the key/value the iterator is pointing at.
         reference operator*() const {
@@ -3784,7 +3790,7 @@ namespace priv {
                     std::is_same<typename params_type::is_map_container,
                                  typename T::params_type::is_map_container>>::value,
                 int> = 0>
-            void merge(btree_container<T> &src) {  // NOLINT
+        void merge(btree_container<T> &src) {  // NOLINT
             insert(std::make_move_iterator(src.begin()),
                    std::make_move_iterator(src.end()));
             src.clear();
@@ -3799,7 +3805,7 @@ namespace priv {
                     std::is_same<typename params_type::is_map_container,
                                  typename T::params_type::is_map_container>>::value,
                 int> = 0>
-            void merge(btree_container<T> &&src) {
+        void merge(btree_container<T> &&src) {
             merge(src);
         }
     };

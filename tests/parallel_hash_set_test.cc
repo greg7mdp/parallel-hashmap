@@ -120,7 +120,7 @@ TEST(THIS_TEST_NAME, EmplaceSingle) {
     // --------------------
     // test emplace_single
     // --------------------
-    Set m = { {1}, {11} };
+    Set m = { 1, 11 };
  
     // emplace_single insert a value if not already present, else removes it
     for (int i=0; i<12; ++i)
