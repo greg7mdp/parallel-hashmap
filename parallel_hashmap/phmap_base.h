@@ -3682,14 +3682,6 @@ constexpr Span<const T> MakeConstSpan(const T (&array)[N]) noexcept {
 // ---------------------------------------------------------------------------
 //  layout.h
 // ---------------------------------------------------------------------------
-#if defined(__GXX_RTTI)
-    #define PHMAP_INTERNAL_HAS_CXA_DEMANGLE
-#endif
-
-#ifdef PHMAP_INTERNAL_HAS_CXA_DEMANGLE
-    #include <cxxabi.h>
-#endif
-
 namespace phmap {
 namespace priv {
 
