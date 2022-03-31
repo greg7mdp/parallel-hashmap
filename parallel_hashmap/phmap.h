@@ -239,15 +239,19 @@ public:
     using const_iterator = BitMask;
 
     explicit BitMask(T mask) : mask_(mask) {}
-    BitMask& operator++() {
-        mask_ &= (mask_ - 1);
+
+    BitMask& operator++() {    // ++iterator
+        mask_ &= (mask_ - 1);  // clear the least significant bit set
         return *this;
     }
+
     explicit operator bool() const { return mask_ != 0; }
     uint32_t operator*() const { return LowestBitSet(); }
+
     uint32_t LowestBitSet() const {
         return priv::TrailingZeros(mask_) >> Shift;
     }
+
     uint32_t HighestBitSet() const {
         return (sizeof(T) * CHAR_BIT - priv::LeadingZeros(mask_) - 1) >> Shift;
     }
@@ -286,9 +290,9 @@ using h2_t = uint8_t;
 // --------------------------------------------------------------------------
 enum Ctrl : ctrl_t 
 {
-    kEmpty = -128,   // 0b10000000
-    kDeleted = -2,   // 0b11111110
-    kSentinel = -1,  // 0b11111111
+    kEmpty = -128,   // 0b10000000 or 0x80
+    kDeleted = -2,   // 0b11111110 or 0xfe
+    kSentinel = -1,  // 0b11111111 or 0xff
 };
 
 static_assert(
@@ -482,12 +486,12 @@ struct GroupPortableImpl
         return BitMask<uint64_t, kWidth, 3>((x - lsbs) & ~x & msbs);
     }
 
-    BitMask<uint64_t, kWidth, 3> MatchEmpty() const {
+    BitMask<uint64_t, kWidth, 3> MatchEmpty() const {          // bit 1 of each byte is 0 for empty (but not for deleted)
         constexpr uint64_t msbs = 0x8080808080808080ULL;
         return BitMask<uint64_t, kWidth, 3>((ctrl & (~ctrl << 6)) & msbs);
     }
 
-    BitMask<uint64_t, kWidth, 3> MatchEmptyOrDeleted() const {
+    BitMask<uint64_t, kWidth, 3> MatchEmptyOrDeleted() const { // lsb of each byte is 0 for empty or deleted
         constexpr uint64_t msbs = 0x8080808080808080ULL;
         return BitMask<uint64_t, kWidth, 3>((ctrl & (~ctrl << 7)) & msbs);
     }
