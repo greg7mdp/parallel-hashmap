@@ -54,9 +54,9 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_dump(OutputArchive& ar) const 
                     "value_type should be trivially copyable");
 
     ar.saveBinary(&size_, sizeof(size_t));
+    ar.saveBinary(&capacity_, sizeof(size_t));
     if (size_ == 0)
         return true;
-    ar.saveBinary(&capacity_, sizeof(size_t));
     ar.saveBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.saveBinary(slots_, sizeof(slot_type) * capacity_);
     return true;
@@ -69,12 +69,12 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
                     "value_type should be trivially copyable");
     raw_hash_set<Policy, Hash, Eq, Alloc>().swap(*this); // clear any existing content
     ar.loadBinary(&size_, sizeof(size_t));
-    if (size_ == 0)
-        return true;
     ar.loadBinary(&capacity_, sizeof(size_t));
 
     // allocate memory for ctrl_ and slots_
     initialize_slots(capacity_);
+    if (size_ == 0)
+        return true;
     ar.loadBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.loadBinary(slots_, sizeof(slot_type) * capacity_);
     return true;
