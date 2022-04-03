@@ -71,8 +71,10 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
     ar.loadBinary(&size_, sizeof(size_t));
     ar.loadBinary(&capacity_, sizeof(size_t));
 
-    // allocate memory for ctrl_ and slots_
-    initialize_slots(capacity_);
+    if (capacity_) {
+        // allocate memory for ctrl_ and slots_
+        initialize_slots(capacity_);
+    }
     if (size_ == 0)
         return true;
     ar.loadBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
