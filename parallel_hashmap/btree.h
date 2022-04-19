@@ -2239,11 +2239,13 @@ namespace priv {
             // 1) Shift existing values in the right node to their correct positions.
             right->uninitialized_move_n(to_move, right->count() - to_move,
                                         right->count(), right, alloc);
-            for (slot_type *src = right->slot(right->count() - to_move - 1),
-                     *dest = right->slot(right->count() - 1),
-                     *end = right->slot(0);
-                 src >= end; --src, --dest) {
-                params_type::move(alloc, src, dest);
+            if (right->count() > to_move) {
+                for (slot_type *src = right->slot(right->count() - to_move - 1),
+                         *dest = right->slot(right->count() - 1),
+                         *end = right->slot(0);
+                     src >= end; --src, --dest) {
+                    params_type::move(alloc, src, dest);
+                }
             }
 
             // 2) Move the delimiting value in the parent to the right node.
