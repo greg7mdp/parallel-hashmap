@@ -11,11 +11,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
 
 set(PHMAP_DIR parallel_hashmap)
-set(PHMAP_HEADERS ${PHMAP_DIR}/phmap.h 
-                  ${PHMAP_DIR}/phmap_base.h 
-                  ${PHMAP_DIR}/phmap_bits.h 
-                  ${PHMAP_DIR}/phmap_utils.h 
-                  ${PHMAP_DIR}/phmap_config.h)
+set(PHMAP_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_base.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_bits.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_utils.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_config.h)
+
 set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
 
 include(GNUInstallDirs)
