@@ -112,6 +112,9 @@ if (PHMAP_BUILD_TESTS)
     phmap_cc_test(NAME dump_load SRCS "tests/dump_load_test.cc"
                   COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
 
+    phmap_cc_test(NAME erase_if SRCS "tests/erase_if_test.cc"
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+
     ## --------------- btree -----------------------------------------------
     phmap_cc_test(NAME btree SRCS "tests/btree_test.cc"
                   CLOPTS "-w" DEPS gmock_main)

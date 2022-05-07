@@ -4939,6 +4939,70 @@ public:
 
 }  // namespace phmap
 
+
+namespace phmap {
+    namespace priv {
+        template <class C, class Pred> 
+        std::size_t erase_if(C &c, Pred pred) {
+            auto old_size = c.size();
+            for (auto i = c.begin(), last = c.end(); i != last; ) {
+                if (pred(*i)) {
+                    i = c.erase(i);
+                } else {
+                    ++i;
+                }
+            }
+            return old_size - c.size();
+        }
+    } // priv
+} // phmap
+
+namespace std {
+
+    // ======== erase_if for phmap set containers ==================================
+    template <class T, class Hash, class Eq, class Alloc, class Pred> 
+    std::size_t erase_if(phmap::flat_hash_set<T, Hash, Eq, Alloc>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class T, class Hash, class Eq, class Alloc, class Pred> 
+    std::size_t erase_if(phmap::node_hash_set<T, Hash, Eq, Alloc>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_, class Pred> 
+    std::size_t erase_if(phmap::parallel_flat_hash_set<T, Hash, Eq, Alloc, N, Mtx_>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class T, class Hash, class Eq, class Alloc, size_t N, class Mtx_, class Pred> 
+    std::size_t erase_if(phmap::parallel_node_hash_set<T, Hash, Eq, Alloc, N, Mtx_>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    // ======== erase_if for phmap map containers ==================================
+    template <class K, class V, class Hash, class Eq, class Alloc, class Pred> 
+    std::size_t erase_if(phmap::flat_hash_map<K, V, Hash, Eq, Alloc>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class K, class V, class Hash, class Eq, class Alloc, class Pred> 
+    std::size_t erase_if(phmap::node_hash_map<K, V, Hash, Eq, Alloc>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mtx_, class Pred> 
+    std::size_t erase_if(phmap::parallel_flat_hash_map<K, V, Hash, Eq, Alloc, N, Mtx_>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+    template <class K, class V, class Hash, class Eq, class Alloc, size_t N, class Mtx_, class Pred> 
+    std::size_t erase_if(phmap::parallel_node_hash_map<K, V, Hash, Eq, Alloc, N, Mtx_>& c, Pred pred) {
+        return phmap::priv::erase_if(c, std::move(pred));
+    }
+
+} // std
+
 #ifdef _MSC_VER
      #pragma warning(pop)  
 #endif

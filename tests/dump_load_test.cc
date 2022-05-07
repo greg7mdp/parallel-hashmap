@@ -8,7 +8,7 @@ namespace phmap {
 namespace priv {
 namespace {
 
-TEST(DumpLoad, FlatHashSet_uin32) {
+TEST(DumpLoad, FlatHashSet_uint32) {
     phmap::flat_hash_set<uint32_t> st1 = { 1991, 1202 };
 
     {
