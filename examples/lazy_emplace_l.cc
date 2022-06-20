@@ -30,7 +30,7 @@ public:
     {
         int newIndex = -1;
         m_stringsMap.lazy_emplace_l(std::move(str),
-                                    [&](int& v) { newIndex = v; },    // called only when key was already present
+                                    [&](Map::value_type& p) { newIndex = p.second; },  // called only when key was already present
                                     [&](const Map::constructor& ctor) // construct value_type in place when key not present
                                         { newIndex = InterlockedIncrement(curIdx); ctor(std::move(str), newIndex); }); 
 

@@ -3276,10 +3276,10 @@ public:
         return false;
     }
 
-    // if map does not contains key, it is inserted and the mapped value is value-constructed 
-    // with the provided arguments (if any), as with try_emplace. 
-    // if map already  contains key, then the lambda is called with the mapped value (under 
+    // if map already  contains key, the first lambda is called with the mapped value (under 
     // write lock protection) and can update the mapped value.
+    // if map does not contains key, the second lambda is called and it should invoke the 
+    // passed constructor to construct the value
     // returns true if key was not already present, false otherwise.
     // ---------------------------------------------------------------------------------------
     template <class K = key_type, class FExists, class FEmplace>
