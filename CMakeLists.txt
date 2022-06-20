@@ -5,6 +5,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(DetectVersion)
 
 cmake_policy(SET CMP0048 NEW)                    ## set VERSION as documented by the project() command.
+cmake_policy(SET CMP0076 NEW)                    ## accept new policy
 set(CMAKE_CXX_STANDARD 11)                       ## compile with C++11 support
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -44,8 +45,8 @@ export(EXPORT ${PROJECT_NAME}-targets
        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
 
 ## ------------------------- building tests and examples -------------
-option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    OFF)
-option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" OFF)
+option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    ON)
+option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" ON)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")

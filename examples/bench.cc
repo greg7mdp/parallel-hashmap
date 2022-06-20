@@ -16,7 +16,7 @@
     #elif 0
         // Abseil's mutexes are very efficient (at least on windows)
         #include "absl/synchronization/mutex.h"
-        #define MTX absl::Mutex
+        #define MTX phmap::AbslMutex
     #elif 1
         #include <boost/thread/locks.hpp>
         #if 1

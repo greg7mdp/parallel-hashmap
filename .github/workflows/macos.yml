@@ -22,4 +22,4 @@ jobs:
         CXX: ${{ matrix.compiler }}
         CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
       run: |
-        mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && cmake --build . && make test
+        mkdir build && cd build && cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && cmake --build . && make test
