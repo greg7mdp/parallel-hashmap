@@ -10,6 +10,8 @@
     #define NMSP phmap
     #define EXTRAARGS
 #else
+    #include "parallel_hashmap/phmap.h"
+
     #if 1
         #include <mutex>
         #define MTX std::mutex
@@ -48,7 +50,6 @@
         #define MTX spinlock
     #endif
 
-    #include "parallel_hashmap/phmap.h"
     #define MAPNAME phmap::parallel_flat_hash_map
     #define NMSP phmap
 
