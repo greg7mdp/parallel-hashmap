@@ -74,8 +74,8 @@
     #endif
 #endif
 
-#define xstr(s) str(s)
-#define str(s) #s
+#define phmap_xstr(s) phmap_str(s)
+#define phmap_str(s) #s
 
 template <class K, class V>
 using HashT      = MAPNAME<K, V EXTRAARGS>;
@@ -83,7 +83,7 @@ using HashT      = MAPNAME<K, V EXTRAARGS>;
 using hash_t     = HashT<int64_t, int64_t>;
 using str_hash_t = HashT<const char *, int64_t>;
 
-const char *program_slug = xstr(MAPNAME); // "_4";
+const char *program_slug = phmap_xstr(MAPNAME); // "_4";
 
 #include <cassert>
 #include <ctime>
@@ -408,7 +408,7 @@ int main(int argc, char ** argv)
 #if MT_SUPPORT
     if (!strcmp(program_slug,"absl::parallel_flat_hash_map") || 
         !strcmp(program_slug,"phmap::parallel_flat_hash_map"))
-        program_slug = xstr(MAPNAME) "_mt";
+        program_slug = phmap_xstr(MAPNAME) "_mt";
 #endif
 
     std::thread t1(memlog);
