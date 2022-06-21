@@ -418,6 +418,10 @@ struct GroupSse2Impl
 #endif
     }
 
+#ifdef __INTEL_COMPILER
+#pragma warning push
+#pragma warning disable 68
+#endif
     // Returns a bitmask representing the positions of empty or deleted slots.
     // -----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> MatchEmptyOrDeleted() const {
@@ -433,6 +437,9 @@ struct GroupSse2Impl
         return TrailingZeros(
             static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1));
     }
+#ifdef __INTEL_COMPILER
+#pragma warning pop
+#endif
 
     // ----------------------------------------------------------------------
     void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
@@ -4387,21 +4394,6 @@ namespace hashtable_debug_internal {
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
-
-template <typename Set>
-struct HashtableDebugAccess<Set, phmap::void_t<typename Set::parallel_hash_set>> {
-    using Traits = typename Set::PolicyTraits;
-    using Slot = typename Traits::slot_type;
-    using EmbeddedSet = typename Set::EmbeddedSet;
-
-    static size_t GetNumProbes(const Set& set, const typename Set::key_type& key) {
-        size_t hashval = set.hash(key);
-        auto& inner = set.sets_[set.subidx(hashval)];
-        auto& inner_set = inner.set_;
-        return HashtableDebugAccess<EmbeddedSet>::GetNumProbes(inner_set, key);
-    }
-};
-
 template <typename Set>
 struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>> 
 {
@@ -4460,6 +4452,23 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
         return m;
     }
 };
+
+
+#if !defined(__clang__) // compilation error with clang++-12 -stdc++=20 (should fix )
+template <typename Set>
+struct HashtableDebugAccess<Set, phmap::void_t<typename Set::EmbeddedSet>> {
+    using Traits = typename Set::PolicyTraits;
+    using Slot = typename Traits::slot_type;
+    using EmbeddedSet = typename Set::EmbeddedSet;
+
+    static size_t GetNumProbes(const Set& set, const typename Set::key_type& key) {
+        size_t hashval = set.hash(key);
+        auto& inner = set.sets_[set.subidx(hashval)];
+        auto& inner_set = inner.set_;
+        return HashtableDebugAccess<EmbeddedSet>::GetNumProbes(inner_set, key);
+    }
+};
+#endif
 
 }  // namespace hashtable_debug_internal
 }  // namespace priv
