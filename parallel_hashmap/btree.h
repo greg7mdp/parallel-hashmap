@@ -1210,6 +1210,10 @@ namespace priv {
         reference value(size_type i) { return params_type::element(slot(i)); }
         const_reference value(size_type i) const { return params_type::element(slot(i)); }
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
         // Getters/setter for the child at position i in the node.
         btree_node *child(size_type i) const { return GetField<3>()[i]; }
         btree_node *&mutable_child(size_type i) { return GetField<3>()[i]; }
@@ -1221,6 +1225,9 @@ namespace priv {
             mutable_child(i) = c;
             c->set_position((field_type)i);
         }
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
         void init_child(int i, btree_node *c) {
             set_child(i, c);
             c->set_parent(this);
@@ -2085,8 +2092,8 @@ namespace priv {
         void internal_clear(node_type *node);
 
         // Verifies the tree structure of node.
-        int internal_verify(const node_type *node,
-                            const key_type *lo, const key_type *hi) const;
+        size_type internal_verify(const node_type *node,
+                                  const key_type *lo, const key_type *hi) const;
 
         node_stats internal_stats(const node_type *node) const {
             // The root can be a static empty node.
@@ -3234,7 +3241,7 @@ namespace priv {
     }
 
     template <typename P>
-    int btree<P>::internal_verify(
+    typename btree<P>::size_type btree<P>::internal_verify(
         const node_type *node, const key_type *lo, const key_type *hi) const {
         assert(node->count() > 0);
         assert(node->count() <= node->max_count());
@@ -3247,7 +3254,7 @@ namespace priv {
         for (int i = 1; i < node->count(); ++i) {
             assert(!compare_keys(node->key(i), node->key(i - 1)));
         }
-        int count = node->count();
+        size_type count = node->count();
         if (!node->leaf()) {
             for (int i = 0; i <= node->count(); ++i) {
                 assert(node->child(i) != nullptr);

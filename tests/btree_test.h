@@ -391,7 +391,7 @@ namespace priv {
     };
 
     // Generate n values for our tests and benchmarks. Value range is [0, maxval].
-    inline std::vector<int> GenerateNumbersWithSeed(int n, int maxval, int seed) {
+    inline std::vector<int> GenerateNumbersWithSeed(size_t n, int maxval, int seed) {
         // NOTE: Some tests rely on generated numbers not changing between test runs.
         // We use std::minstd_rand0 because it is well-defined, but don't use
         // std::uniform_int_distribution because platforms use different algorithms.
@@ -400,7 +400,7 @@ namespace priv {
         std::vector<int> values;
         phmap::flat_hash_set<int> unique_values;
         if (values.size() < n) {
-            for (size_t i = values.size(); i < (size_t)n; i++) {
+            for (size_t i = values.size(); i < n; i++) {
                 int value;
                 do {
                     value = static_cast<int>(rng()) % (maxval + 1);
@@ -414,13 +414,13 @@ namespace priv {
 
     // Generates n values in the range [0, maxval].
     template <typename V>
-    std::vector<V> GenerateValuesWithSeed(int n, int maxval, int seed) {
+    std::vector<V> GenerateValuesWithSeed(size_t n, int maxval, int seed) {
         const std::vector<int> nums = GenerateNumbersWithSeed(n, maxval, seed);
         Generator<V> gen(maxval);
         std::vector<V> vec;
 
         vec.reserve(n);
-        for (int i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
             vec.push_back(gen(nums[i]));
         }
 

@@ -3397,7 +3397,7 @@ public:
     //
     // Do not use erase APIs taking iterators when accessing the map concurrently
     // --------------------------------------------------------------------
-    void _erase(iterator it, bool do_lock = true) {
+    void _erase(iterator it) {
         Inner* inner = it.inner_;
         assert(inner != nullptr);
         auto&  set   = inner->set_;

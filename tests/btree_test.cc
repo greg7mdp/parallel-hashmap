@@ -48,7 +48,7 @@ namespace phmap {
         size_t BaseCountedInstance::num_comparisons_ = 0;
 
     }  // namespace test_internal
-}  // namespace phmap\
+}  // namespace phmap
 
 
 static const size_t test_values = 10000;
@@ -425,7 +425,7 @@ namespace {
         const T &const_b = *b;
 
         // Test insert.
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             mutable_b.insert(values[i]);
             mutable_b.value_check(values[i]);
         }
@@ -436,14 +436,14 @@ namespace {
         // Test copy constructor.
         T b_copy(const_b);
         EXPECT_EQ(b_copy.size(), const_b.size());
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             CheckPairEquals(*b_copy.find(key_of_value(values[i])), values[i]);
         }
 
         // Test range constructor.
         T b_range(const_b.begin(), const_b.end());
         EXPECT_EQ(b_range.size(), const_b.size());
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             CheckPairEquals(*b_range.find(key_of_value(values[i])), values[i]);
         }
 
@@ -455,7 +455,7 @@ namespace {
         b_range.clear();
         b_range.insert(b_copy.begin(), b_copy.end());
         EXPECT_EQ(b_range.size(), b_copy.size());
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             CheckPairEquals(*b_range.find(key_of_value(values[i])), values[i]);
         }
 
@@ -473,7 +473,7 @@ namespace {
         b_range.swap(b_copy);
         EXPECT_EQ(b_copy.size(), 0);
         EXPECT_EQ(b_range.size(), const_b.size());
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             CheckPairEquals(*b_range.find(key_of_value(values[i])), values[i]);
         }
         b_range.swap(b_copy);
@@ -482,13 +482,13 @@ namespace {
         swap(b_range, b_copy);
         EXPECT_EQ(b_copy.size(), 0);
         EXPECT_EQ(b_range.size(), const_b.size());
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             CheckPairEquals(*b_range.find(key_of_value(values[i])), values[i]);
         }
         swap(b_range, b_copy);
 
         // Test erase via values.
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             mutable_b.erase(key_of_value(values[i]));
             // Erasing a non-existent key should have no effect.
             ASSERT_EQ(mutable_b.erase(key_of_value(values[i])), 0);
@@ -499,7 +499,7 @@ namespace {
 
         // Test erase via iterators.
         mutable_b = b_copy;
-        for (int i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i) {
             mutable_b.erase(mutable_b.find(key_of_value(values[i])));
         }
 
@@ -507,7 +507,7 @@ namespace {
         EXPECT_EQ(const_b.size(), 0);
 
         // Test insert with hint.
-        for (int i = 0; i < values.size(); i++) {
+        for (size_t i = 0; i < values.size(); i++) {
             mutable_b.insert(mutable_b.upper_bound(key_of_value(values[i])), values[i]);
         }
 
@@ -521,7 +521,7 @@ namespace {
         // First half.
         mutable_b = b_copy;
         typename T::iterator mutable_iter_end = mutable_b.begin();
-        for (int i = 0; i < values.size() / 2; ++i) ++mutable_iter_end;
+        for (size_t i = 0; i < values.size() / 2; ++i) ++mutable_iter_end;
         mutable_b.erase(mutable_b.begin(), mutable_iter_end);
         EXPECT_EQ(mutable_b.size(), values.size() - values.size() / 2);
         const_b.verify();
@@ -529,7 +529,7 @@ namespace {
         // Second half.
         mutable_b = b_copy;
         typename T::iterator mutable_iter_begin = mutable_b.begin();
-        for (int i = 0; i < values.size() / 2; ++i) ++mutable_iter_begin;
+        for (size_t i = 0; i < values.size() / 2; ++i) ++mutable_iter_begin;
         mutable_b.erase(mutable_iter_begin, mutable_b.end());
         EXPECT_EQ(mutable_b.size(), values.size() / 2);
         const_b.verify();
@@ -537,9 +537,9 @@ namespace {
         // Second quarter.
         mutable_b = b_copy;
         mutable_iter_begin = mutable_b.begin();
-        for (int i = 0; i < values.size() / 4; ++i) ++mutable_iter_begin;
+        for (size_t i = 0; i < values.size() / 4; ++i) ++mutable_iter_begin;
         mutable_iter_end = mutable_iter_begin;
-        for (int i = 0; i < values.size() / 4; ++i) ++mutable_iter_end;
+        for (size_t i = 0; i < values.size() / 4; ++i) ++mutable_iter_end;
         mutable_b.erase(mutable_iter_begin, mutable_iter_end);
         EXPECT_EQ(mutable_b.size(), values.size() - values.size() / 4);
         const_b.verify();
@@ -1862,7 +1862,7 @@ namespace {
             while (s.size() < kSize) {
                 s.insert(MovableOnlyInstance(s.size()));
             }
-            for (int i = 0; i < kSize; ++i) {
+            for (size_t i = 0; i < kSize; ++i) {
                 // Extract with key
                 auto nh = s.extract(MovableOnlyInstance(i));
                 EXPECT_EQ(s.size(), kSize - 1);
@@ -1895,7 +1895,7 @@ namespace {
                 m.insert(
                     {CopyableMovableInstance(m.size()), MovableOnlyInstance(m.size())});
             }
-            for (int i = 0; i < kSize; ++i) {
+            for (size_t i = 0; i < kSize; ++i) {
                 // Extract with key
                 auto nh = m.extract(CopyableMovableInstance(i));
                 EXPECT_EQ(m.size(), kSize - 1);
