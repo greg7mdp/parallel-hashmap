@@ -4336,28 +4336,26 @@ public:
 
 #if PHMAP_HAVE_STD_STRING_VIEW
 
-// support char16_t wchar_t ....
-template<class CharT> 
-struct StringHashT 
-{
-    using is_transparent = void;
-
-    size_t operator()(std::basic_string_view<CharT> v) const {
-        std::string_view bv{reinterpret_cast<const char*>(v.data()), v.size() * sizeof(CharT)};
-        return std::hash<std::string_view>()(bv);
-    }
-};
-
 // Supports heterogeneous lookup for basic_string<T>-like elements.
 template<class CharT> 
 struct StringHashEqT
 {
-    using Hash = StringHashT<CharT>;
+    struct Hash 
+    {
+        using is_transparent = void;
+        
+        size_t operator()(std::basic_string_view<CharT> v) const {
+            std::string_view bv{
+                reinterpret_cast<const char*>(v.data()), v.size() * sizeof(CharT)};
+            return std::hash<std::string_view>()(bv);
+        }
+    };
 
     struct Eq {
         using is_transparent = void;
 
-        bool operator()(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) const {
+        bool operator()(std::basic_string_view<CharT> lhs,
+                        std::basic_string_view<CharT> rhs) const {
             return lhs == rhs;
         }
     };
