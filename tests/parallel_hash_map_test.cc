@@ -116,6 +116,17 @@ TEST(THIS_TEST_NAME, ForEach) {
             EXPECT_EQ(pair.first + 7, pair.second);
         });
     EXPECT_EQ(counter, 3);
+    
+    counter = 0;
+    for (size_t i=0; i<m.subcnt(); ++i) {
+        m.with_submap(i, [&](const Map::EmbeddedSet& set) {
+            for (auto& p : set) {
+                ++counter;
+                EXPECT_EQ(p.first + 7, p.second);
+            }
+        });
+    }
+    EXPECT_EQ(counter, 3);
 }
 
 TEST(THIS_TEST_NAME, EmplaceSingle) {

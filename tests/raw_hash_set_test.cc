@@ -138,27 +138,27 @@ TEST(BitMask, WithShift) {
   EXPECT_EQ(0x0000000080800000, mask);
 
   BitMask<uint64_t, 8, 3> b(mask);
-  EXPECT_EQ(*b, 2);
+  EXPECT_EQ(*b, 2u);
 }
 
 TEST(BitMask, LeadingTrailing) {
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00001a40).LeadingZeros()), 3);
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00001a40).TrailingZeros()), 6);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00001a40).LeadingZeros()), 3u);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00001a40).TrailingZeros()), 6u);
 
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00000001).LeadingZeros()), 15);
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00000001).TrailingZeros()), 0);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00000001).LeadingZeros()), 15u);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00000001).TrailingZeros()), 0u);
 
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00008000).LeadingZeros()), 0);
-  EXPECT_EQ((BitMask<uint32_t, 16>(0x00008000).TrailingZeros()), 15);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00008000).LeadingZeros()), 0u);
+  EXPECT_EQ((BitMask<uint32_t, 16>(0x00008000).TrailingZeros()), 15u);
 
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000008080808000).LeadingZeros()), 3);
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000008080808000).TrailingZeros()), 1);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000008080808000).LeadingZeros()), 3u);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000008080808000).TrailingZeros()), 1u);
 
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000000000000080).LeadingZeros()), 7);
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000000000000080).TrailingZeros()), 0);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000000000000080).LeadingZeros()), 7u);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x0000000000000080).TrailingZeros()), 0u);
 
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x8000000000000000).LeadingZeros()), 0);
-  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x8000000000000000).TrailingZeros()), 7);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x8000000000000000).LeadingZeros()), 0u);
+  EXPECT_EQ((BitMask<uint64_t, 8, 3>(0x8000000000000000).TrailingZeros()), 7u);
 }
 
 TEST(Group, EmptyGroup) {
