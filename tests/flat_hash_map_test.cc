@@ -22,6 +22,10 @@
     #define THIS_EXTRA_TPL_PARAMS 
 #endif
 
+#ifndef THIS_EXTRA_TPL_PARAMS_NULLMUTEX
+    #define THIS_EXTRA_TPL_PARAMS_NULLMUTEX 
+#endif
+
 #include "parallel_hashmap/phmap.h"
 
 #if defined(PHMAP_HAVE_STD_ANY)
@@ -62,6 +66,12 @@ template <class K, class V, class H = phmap::priv::hash_default_hash<K>,
           class Alloc =  phmap::priv::Allocator<
               phmap::priv::Pair<const K, V>>>
 using ThisMap = THIS_HASH_MAP<K, V, H, Eq, Alloc THIS_EXTRA_TPL_PARAMS>;
+    
+template <class K, class V, class H = phmap::priv::hash_default_hash<K>,
+          class Eq = phmap::priv::hash_default_eq<K>,
+          class Alloc =  phmap::priv::Allocator<
+              phmap::priv::Pair<const K, V>>>
+using ThisMap_NullMutex = THIS_HASH_MAP<K, V, H, Eq, Alloc THIS_EXTRA_TPL_PARAMS_NULLMUTEX>;
 
 static_assert(!std::is_standard_layout<NonStandardLayout>(), "");
 

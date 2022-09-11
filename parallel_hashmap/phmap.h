@@ -3372,6 +3372,11 @@ public:
         fCallback(set);
     }
 
+    // unsafe, for internal use only
+    Inner& get_inner(size_t idx) {
+        return  sets_[idx];
+    }
+
     // Extension API: support for heterogeneous keys.
     //
     //   std::unordered_set<std::string> s;
@@ -3485,8 +3490,8 @@ public:
         for (size_t i=0; i<num_tables; ++i)
         {
             typename Lockable::UniqueLock l(sets_[i]);
-            typename Lockable2::UniqueLock l2(that.sets_[i]);
-            swap(sets_[i].set_, that.sets_[i].set_);
+            typename Lockable2::UniqueLock l2(that.get_inner(i));
+            swap(sets_[i].set_, that.get_inner(i).set_);
         }
     }
 
