@@ -3372,6 +3372,11 @@ public:
         fCallback(set);
     }
 
+    // unsafe, for internal use only
+    Inner& get_inner(size_t idx) {
+        return  sets_[idx];
+    }
+
     // Extension API: support for heterogeneous keys.
     //
     //   std::unordered_set<std::string> s;
@@ -3473,15 +3478,20 @@ public:
         return it == end() ? node_type() : extract(const_iterator{it});
     }
 
-    void swap(parallel_hash_set& that) noexcept(
-        IsNoThrowSwappable<EmbeddedSet>() &&
-        (!AllocTraits::propagate_on_container_swap::value ||
-         IsNoThrowSwappable<allocator_type>())) {
+    template<class Mtx2_>
+    void swap(parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc>& that)
+        noexcept(IsNoThrowSwappable<EmbeddedSet>() &&
+                 (!AllocTraits::propagate_on_container_swap::value ||
+                  IsNoThrowSwappable<allocator_type>()))
+    {
         using std::swap;
+        using Lockable2 = phmap::LockableImpl<Mtx2_>;
+         
         for (size_t i=0; i<num_tables; ++i)
         {
-            typename Lockable::UniqueLocks l(sets_[i], that.sets_[i]);
-            swap(sets_[i].set_, that.sets_[i].set_);
+            typename Lockable::UniqueLock l(sets_[i]);
+            typename Lockable2::UniqueLock l2(that.get_inner(i));
+            swap(sets_[i].set_, that.get_inner(i).set_);
         }
     }
 
@@ -3620,8 +3630,11 @@ public:
         return !(a == b);
     }
 
+    template<class Mtx2_>
     friend void swap(parallel_hash_set& a,
-                     parallel_hash_set& b) noexcept(noexcept(a.swap(b))) {
+                     parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc>& b)
+        noexcept(noexcept(a.swap(b)))
+    {
         a.swap(b);
     }
 
@@ -3700,14 +3713,16 @@ private:
 
     // TODO(alkis): Optimize this assuming *this and that don't overlap.
     // --------------------------------------------------------------------
-    parallel_hash_set& move_assign(parallel_hash_set&& that, std::true_type) {
-        parallel_hash_set tmp(std::move(that));
+    template<class Mtx2_>
+    parallel_hash_set& move_assign(parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc>&& that, std::true_type) {
+        parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc> tmp(std::move(that));
         swap(tmp);
         return *this;
     }
 
-    parallel_hash_set& move_assign(parallel_hash_set&& that, std::false_type) {
-        parallel_hash_set tmp(std::move(that), alloc_ref());
+    template<class Mtx2_>
+    parallel_hash_set& move_assign(parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc>&& that, std::false_type) {
+        parallel_hash_set<N, RefSet, Mtx2_, Policy, Hash, Eq, Alloc> tmp(std::move(that), alloc_ref());
         swap(tmp);
         return *this;
     }

@@ -9,6 +9,24 @@ namespace phmap {
 namespace priv {
 namespace {
 
+TEST(THIS_TEST_NAME, Swap) {
+    using Map = ThisMap<int, int>;
+    using MapB = ThisMap_NullMutex<int, int>;
+    
+    Map t;
+    EXPECT_TRUE(t.find(0) == t.end());
+    auto res = t.emplace(0, 1);
+    EXPECT_TRUE(res.second);
+    EXPECT_EQ(1, t.size());
+    MapB u;
+    t.swap(u);
+    EXPECT_EQ(0, t.size());
+    EXPECT_EQ(1, u.size());
+    EXPECT_TRUE(t.find(0) == t.end());
+    EXPECT_TRUE(u[0] == 1);
+}
+
+
 TEST(THIS_TEST_NAME, IfContains) {
     // ----------------
     // test if_contains
