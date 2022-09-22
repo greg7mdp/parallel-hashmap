@@ -606,7 +606,7 @@ namespace {
         using V = typename remove_pair_const<typename T::value_type>::type;
         const std::vector<V> random_values = GenerateValuesWithSeed<V>(
             test_values, 4 * test_values,
-            testing::GTEST_FLAG(random_seed));
+            GTEST_FLAG_GET(random_seed));
 
         unique_checker<T, C> container;
 
@@ -630,7 +630,7 @@ namespace {
         using V = typename remove_pair_const<typename T::value_type>::type;
         const std::vector<V> random_values = GenerateValuesWithSeed<V>(
             test_values, 4 * test_values,
-            testing::GTEST_FLAG(random_seed));
+            GTEST_FLAG_GET(random_seed));
 
         multi_checker<T, C> container;
 
