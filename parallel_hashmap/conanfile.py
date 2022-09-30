@@ -6,7 +6,7 @@ import os
 
 class SparseppConan(ConanFile):
     name = "parallel_hashmap"
-    version = "1.34"
+    version = "1.36"
     description = "A header-only, very fast and memory-friendly hash map"
     url = "https://github.com/greg7mdp/parallel-hashmap/blob/master/parallel_hashmap/conanfile.py"
     

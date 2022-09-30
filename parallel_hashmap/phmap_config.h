@@ -35,8 +35,8 @@
 // ---------------------------------------------------------------------------
 
 #define PHMAP_VERSION_MAJOR 1
-#define PHMAP_VERSION_MINOR 0
-#define PHMAP_VERSION_PATCH 0
+#define PHMAP_VERSION_MINOR 3
+#define PHMAP_VERSION_PATCH 6
 
 // Included for the __GLIBC__ macro (or similar macros on other systems).
 #include <limits.h>
