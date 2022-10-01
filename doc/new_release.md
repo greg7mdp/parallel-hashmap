@@ -16,7 +16,7 @@
 - cd recipes/parallel-hashmap/all
 - conan create conanfile.py parallel-hashmap/1.3.8@ -pr:b=default -pr:h=default 
 - git diff
-- git commit -am "[parallel-hashmap] Bump version to 1.1.5"
+- git commit -am "[parallel-hashmap] Bump version to 1.3.8"
 - git push origin phmap_1.3.8 
 - create PR like [this](https://github.com/conan-io/conan-center-index/pull/13161)
 
