@@ -7,6 +7,9 @@ configure_file(
                ${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt
 )
 
+set(PHMAP_SAVE_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(PHMAP_SAVE_CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 # Configure and build the downloaded googletest source
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
                 RESULT_VARIABLE result
@@ -23,6 +26,9 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build .
 if(result)
          message(FATAL_ERROR "Build step for googletest failed: ${result}")
 endif()
+
+set(CMAKE_CXX_FLAGS ${PHMAP_SAVE_CMAKE_CXX_FLAGS})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PHMAP_SAVE_CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 # Prevent overriding the parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

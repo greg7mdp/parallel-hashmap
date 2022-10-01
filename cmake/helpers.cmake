@@ -15,8 +15,7 @@ function(phmap_cc_test)
   )
 
   set(_NAME "test_${PHMAP_CC_TEST_NAME}")
-  add_executable(${_NAME} "")
-  target_sources(${_NAME} PRIVATE ${PHMAP_CC_TEST_SRCS})
+  add_executable(${_NAME}  ${PHMAP_CC_TEST_SRCS})
   target_include_directories(${_NAME}
     PUBLIC ${PHMAP_COMMON_INCLUDE_DIRS}
     PRIVATE ${GMOCK_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS}

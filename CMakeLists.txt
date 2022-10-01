@@ -1,29 +1,64 @@
+#[===================================================================[
+    parallel-hashmap library by Gregory Popovitch
+
+    CMake projects that wish to use this library may do
+    something like :
+
+    include(FetchContent)
+    FetchContent_Declare(
+        parallel-hashmap
+        GIT_REPOSITORY https://github.com/greg7mdp/parallel-hashmap.git
+        GIT_TAG        v1.3.7 # adjust tag/branch/commit as needed
+    )
+    FetchContent_MakeAvailable(parallel-hashmap)
+
+    ...
+    target_link_libraries (my_target PRIVATE parallel-hashmap)
+
+#]===================================================================]
+
 cmake_minimum_required(VERSION 3.8)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(DetectVersion)
 
-cmake_policy(SET CMP0048 NEW)                    ## set VERSION as documented by the project() command.
-cmake_policy(SET CMP0076 NEW)                    ## accept new policy
-set(CMAKE_CXX_STANDARD 11)                       ## compile with C++11 support
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_policy(SET CMP0048 NEW)             ## set VERSION as documented by the project() command.
+cmake_policy(SET CMP0076 NEW)             ## accept new policy
+
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)            ## compile with C++11 support
+endif()
+
+if(NOT CMAKE_CXX_STANDARD_REQUIRED)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
+if(NOT DEFINED PHMAP_MASTER_PROJECT)
+    set(PHMAP_MASTER_PROJECT OFF)
+    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+        set(PHMAP_MASTER_PROJECT ON)
+    endif()
+endif()
 
 project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
+
+## ----------------------------- options -----------------------------
+option(PHMAP_INSTALL "Enable installation" ${PHMAP_MASTER_PROJECT})
+
 
 set(PHMAP_DIR parallel_hashmap)
 set(PHMAP_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap.h 
                   ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_base.h 
                   ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_bits.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_config.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_dump.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_fwd_decl.h 
                   ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_utils.h 
-                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/phmap_config.h)
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/meminfo.h 
+                  ${CMAKE_CURRENT_SOURCE_DIR}/${PHMAP_DIR}/btree.h)
 
-set(CMAKE_SUPPRESS_REGENERATION true)            ## suppress ZERO_CHECK project
-
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
 include(helpers)
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -34,19 +69,24 @@ target_include_directories(
      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
      $<INSTALL_INTERFACE:include>)
 
-install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}/${PHMAP_DIR}/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PHMAP_DIR})
-
-install(TARGETS ${PROJECT_NAME}
-        EXPORT ${PROJECT_NAME}-targets)
-
-export(EXPORT ${PROJECT_NAME}-targets
-       FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+if(PHMAP_INSTALL)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+    
+    install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/${PHMAP_DIR}/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PHMAP_DIR})
+    
+    install(TARGETS ${PROJECT_NAME}
+            EXPORT ${PROJECT_NAME}-targets)
+    
+    export(EXPORT ${PROJECT_NAME}-targets
+           FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+endif()
 
 ## ------------------------- building tests and examples -------------
-option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    ON)
-option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" ON)
+option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    ${PHMAP_MASTER_PROJECT})
+option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" ${PHMAP_MASTER_PROJECT})
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
@@ -54,72 +94,75 @@ endif()
 
 if (PHMAP_BUILD_TESTS)
 
-    include(cmake/DownloadGTest.cmake)
-    include_directories(${PROJECT_SOURCE_DIR})
-
-    check_target(gtest)
-    check_target(gtest_main)
-    check_target(gmock)
+    if (NOT PHMAP_GTEST_LIBS)
+        include(cmake/DownloadGTest.cmake)
+        include_directories(${PROJECT_SOURCE_DIR})
+    
+        check_target(gtest)
+        check_target(gtest_main)
+        check_target(gmock)
+        set(PHMAP_GTEST_LIBS gmock_main)
+    endif()
 
     enable_testing()
 
     ## ---------------- regular hash maps ----------------------------
     phmap_cc_test(NAME compressed_tuple SRCS "tests/compressed_tuple_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME container_memory SRCS "tests/container_memory_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME hash_policy_testing SRCS "tests/hash_policy_testing_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME node_hash_policy SRCS "tests/node_hash_policy_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME raw_hash_set SRCS "tests/raw_hash_set_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME raw_hash_set_allocator SRCS "tests/raw_hash_set_allocator_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     ## ---------------- regular hash maps ----------------------------
     phmap_cc_test(NAME flat_hash_set SRCS "tests/flat_hash_set_test.cc"
-                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME flat_hash_map SRCS "tests/flat_hash_map_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME node_hash_map SRCS "tests/node_hash_map_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME node_hash_set SRCS "tests/node_hash_set_test.cc"
-                  COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS  ${PHMAP_GTEST_LIBS})
 
     ## --------------- parallel hash maps -----------------------------------------------
     phmap_cc_test(NAME parallel_flat_hash_map SRCS "tests/parallel_flat_hash_map_test.cc"
-                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME parallel_flat_hash_set SRCS "tests/parallel_flat_hash_set_test.cc"
-                  COPTS "-DUNORDERED_SET_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME parallel_node_hash_map SRCS "tests/parallel_node_hash_map_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME parallel_node_hash_set SRCS "tests/parallel_node_hash_set_test.cc"
-                  COPTS "-DUNORDERED_SET_CXX17" DEPS  gmock_main)
+                  COPTS "-DUNORDERED_SET_CXX17" DEPS  ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME parallel_flat_hash_map_mutex SRCS "tests/parallel_flat_hash_map_mutex_test.cc"
-                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME dump_load SRCS "tests/dump_load_test.cc"
-                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     phmap_cc_test(NAME erase_if SRCS "tests/erase_if_test.cc"
-                  COPTS "-DUNORDERED_MAP_CXX17" DEPS gmock_main)
+                  COPTS "-DUNORDERED_MAP_CXX17" DEPS ${PHMAP_GTEST_LIBS})
 
     ## --------------- btree -----------------------------------------------
     phmap_cc_test(NAME btree SRCS "tests/btree_test.cc"
-                  DEPS gmock_main)
+                  DEPS ${PHMAP_GTEST_LIBS})
 
 
 endif()
