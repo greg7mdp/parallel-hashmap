@@ -1,7 +1,7 @@
 - update version in phmap_config.h
 - update version in comment on top of CMakeLists.txt
-- create the new release on github (tag `1.3.8` - use semantic versioning)
-- download the tar.gz from github, and use `sha256sum parallel-hashmap-1.3.8.tar.gz` on linux to get the sha256
+- create the new release on github (tag `v1.3.8` - use semantic versioning)
+- download the tar.gz from github, and use `sha256sum parallel-hashmap-v1.3.8.tar.gz` on linux to get the sha256
 
 ## conan
 
