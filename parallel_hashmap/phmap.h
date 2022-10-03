@@ -2217,10 +2217,13 @@ protected:
     void emplace_at(size_t i, Args&&... args) {
         PolicyTraits::construct(&alloc_ref(), slots_ + i,
                                 std::forward<Args>(args)...);
-
+        
+#ifdef PHMAP_CHECK_CONSTRUCTED_VALUE
+        // this check can be costly, so do it only when requested
         assert(PolicyTraits::apply(FindElement{*this}, *iterator_at(i)) ==
                iterator_at(i) &&
                "constructed value does not match the lookup key");
+#endif
     }
 
     iterator iterator_at(size_t i) { return {ctrl_ + i, slots_ + i}; }
