@@ -1450,7 +1450,7 @@ public:
     template <class... Args, typename std::enable_if<
                                  !IsDecomposable<Args...>::value, int>::type = 0>
     std::pair<iterator, bool> emplace(Args&&... args) {
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
+        typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
             raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
 
@@ -1461,7 +1461,7 @@ public:
 
     template <class... Args, typename std::enable_if<!IsDecomposable<Args...>::value, int>::type = 0>
     std::pair<iterator, bool> emplace_with_hash(size_t hashval, Args&&... args) {
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
+        typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
@@ -2053,7 +2053,7 @@ private:
         //       mark target as FULL
         //       repeat procedure for current slot with moved from element (target)
         ConvertDeletedToEmptyAndFullToDeleted(ctrl_, capacity_);
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
+        typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type
             raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
         for (size_t i = 0; i != capacity_; ++i) {
@@ -3087,7 +3087,7 @@ public:
     template <class... Args, typename std::enable_if<
                                  !IsDecomposable<Args...>::value, int>::type = 0>
     std::pair<iterator, bool> emplace_with_hash(size_t hashval, Args&&... args) {
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
+        typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
 
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
@@ -3160,7 +3160,7 @@ public:
     template <class... Args, typename std::enable_if<
                                  !IsDecomposable<Args...>::value, int>::type = 0>
     std::pair<iterator, bool> emplace(Args&&... args) {
-        typename std::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
+        typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
         size_t hashval  = this->hash(PolicyTraits::key(slot));
 

@@ -96,19 +96,6 @@ struct VoidTImpl {
   using type = void;
 };
 
-// This trick to retrieve a default alignment is necessary for our
-// implementation of aligned_storage_t to be consistent with any implementation
-// of std::aligned_storage.
-// ---------------------------------------------------------------------------
-template <size_t Len, typename T = std::aligned_storage<Len>>
-struct default_alignment_of_aligned_storage;
-
-template <size_t Len, size_t Align>
-struct default_alignment_of_aligned_storage<Len,
-                                            std::aligned_storage<Len, Align>> {
-  static constexpr size_t value = Align;
-};
-
 // NOTE: The `is_detected` family of templates here differ from the library
 // fundamentals specification in that for library fundamentals, `Op<Args...>` is
 // evaluated as soon as the type `is_detected<Op, Args...>` undergoes
@@ -308,9 +295,15 @@ using remove_extent_t = typename std::remove_extent<T>::type;
 template <typename T>
 using remove_all_extents_t = typename std::remove_all_extents<T>::type;
 
-template <size_t Len, size_t Align = type_traits_internal::
-                          default_alignment_of_aligned_storage<Len>::value>
-using aligned_storage_t = typename std::aligned_storage<Len, Align>::type;
+template<std::size_t Len, std::size_t Align>
+struct aligned_storage {
+    struct type {
+        alignas(Align) unsigned char data[Len];
+    };
+};
+
+template< std::size_t Len, std::size_t Align>
+using aligned_storage_t = typename aligned_storage<Len, Align>::type;
 
 template <typename T>
 using decay_t = typename std::decay<T>::type;
