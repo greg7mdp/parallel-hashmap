@@ -148,33 +148,6 @@
     #define PHMAP_INTERNAL_HAVE_MIN_CLANG_VERSION(x, y) 0
 #endif
 
-// ----------------------------------------------------------------
-// Checks whether `std::is_trivially_destructible<T>` is supported.
-// ----------------------------------------------------------------
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE cannot be directly set
-#elif defined(_LIBCPP_VERSION) || defined(_MSC_VER) ||                     \
-    (!defined(__clang__) && defined(__GNUC__) && defined(__GLIBCXX__) &&  PHMAP_INTERNAL_HAVE_MIN_GNUC_VERSION(4, 8))
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE 1
-#endif
-
-// --------------------------------------------------------------
-// Checks whether `std::is_trivially_default_constructible<T>` is 
-// supported.
-// --------------------------------------------------------------
-#if defined(PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE)
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE cannot be directly set
-#elif defined(PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE)
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot directly set
-#elif (defined(__clang__) && defined(_LIBCPP_VERSION)) ||        \
-    (!defined(__clang__) && defined(__GNUC__) &&                 \
-     PHMAP_INTERNAL_HAVE_MIN_GNUC_VERSION(5, 1) && \
-     (defined(_LIBCPP_VERSION) || defined(__GLIBCXX__))) ||      \
-    (defined(_MSC_VER) && !defined(__NVCC__))
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
-#endif
-
 // -------------------------------------------------------------------
 // Checks whether C++11's `thread_local` storage duration specifier is
 // supported.

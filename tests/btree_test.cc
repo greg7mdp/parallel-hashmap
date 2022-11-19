@@ -418,7 +418,7 @@ namespace {
     };
 
     template <typename T, typename V>
-    void DoTest(const char *name, T *b, const std::vector<V> &values) {
+    void DoTest(const char *, T *b, const std::vector<V> &values) {
         typename KeyOfValue<typename T::key_type, V>::type key_of_value;
 
         T &mutable_b = *b;
