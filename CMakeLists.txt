@@ -13,7 +13,7 @@
     FetchContent_MakeAvailable(parallel-hashmap)
 
     ...
-    target_link_libraries (my_target PRIVATE parallel-hashmap)
+    include_directories(${parallel-hashmap_SOURCE_DIR})
 
 #]===================================================================]
 
