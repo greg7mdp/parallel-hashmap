@@ -313,7 +313,7 @@
     #endif
 #endif
 
-#if PHMAP_HAVE_CC17
+#if PHMAP_HAVE_CC17 && (!defined(__has_include) || __has_include(<shared_mutex>))
     #define PHMAP_HAVE_SHARED_MUTEX 1
 #endif
 
