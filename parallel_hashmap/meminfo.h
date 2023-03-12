@@ -121,12 +121,12 @@ namespace spp
         GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PPROCESS_MEMORY_COUNTERS>(&pmc), sizeof(pmc));
         return static_cast<uint64_t>(pmc.PrivateUsage);
 #elif defined(__linux__)
-        auto parseLine = 
+        auto parseLine =
             [](char* line)->int
             {
                 auto i = strlen(line);
-				
-                while(*line < '0' || *line > '9') 
+
+                while(*line < '0' || *line > '9')
                 {
                     line++;
                 }

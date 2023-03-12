@@ -18,7 +18,7 @@
 //
 // Includes work from abseil-cpp (https://github.com/abseil/abseil-cpp)
 // with modifications.
-// 
+//
 // Copyright 2018 The Abseil Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +51,7 @@
 #include "phmap_config.h"
 
 #ifdef _MSC_VER
-    #pragma warning(push)  
+    #pragma warning(push)
     #pragma warning(disable : 4514) // unreferenced inline function has been removed
 #endif
 
@@ -183,7 +183,7 @@ inline void UnalignedStore64(void *p, uint64_t v) { memcpy(p, &v, sizeof v); }
 
 #ifdef PHMAP_HAVE_INTRINSIC_INT128
     __extension__ typedef unsigned __int128 phmap_uint128;
-    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
+    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
     {
         auto result = static_cast<phmap_uint128>(a) * static_cast<phmap_uint128>(b);
         *high = static_cast<uint64_t>(result >> 64);
@@ -193,7 +193,7 @@ inline void UnalignedStore64(void *p, uint64_t v) { memcpy(p, &v, sizeof v); }
 #elif (defined(_MSC_VER))
     #if defined(_M_X64)
         #pragma intrinsic(_umul128)
-        inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
+        inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
         {
             return _umul128(a, b, high);
         }
@@ -658,7 +658,7 @@ inline void Store64(void *p, uint64_t v) {
 }  // namespace phmap
 
 #ifdef _MSC_VER
-     #pragma warning(pop)  
+     #pragma warning(pop)
 #endif
 
 #endif // phmap_bits_h_guard_

@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-    #pragma warning(push)  
+    #pragma warning(push)
     #pragma warning(disable : 4514) // unreferenced inline function has been removed
     #pragma warning(disable : 4710) // function not inlined
     #pragma warning(disable : 4711) // selected for automatic inline expansion
@@ -44,7 +44,7 @@ namespace phmap {
 
         // The hash of an object of type T is computed by using phmap::Hash.
         template <class T, class E = void>
-        struct HashEq 
+        struct HashEq
         {
             using Hash = phmap::Hash<T>;
             using Eq   = phmap::EqualTo<T>;
@@ -57,17 +57,17 @@ namespace phmap {
         using hash_default_eq = typename priv::HashEq<T>::Eq;
 
         // type alias for std::allocator so we can forward declare without including other headers
-        template <class T>  
+        template <class T>
         using Allocator = typename phmap::Allocator<T>;
 
         // type alias for std::pair so we can forward declare without including other headers
-        template<class T1, class T2> 
+        template<class T1, class T2>
         using Pair = typename phmap::Pair<T1, T2>;
 
     }  // namespace priv
 
     // ------------- forward declarations for hash containers ----------------------------------
-    template <class T, 
+    template <class T,
               class Hash  = phmap::priv::hash_default_hash<T>,
               class Eq    = phmap::priv::hash_default_eq<T>,
               class Alloc = phmap::priv::Allocator<T>>  // alias for std::allocator
@@ -79,8 +79,8 @@ namespace phmap {
               class Alloc = phmap::priv::Allocator<
                             phmap::priv::Pair<const K, V>>> // alias for std::allocator
         class flat_hash_map;
-    
-    template <class T, 
+
+    template <class T,
               class Hash  = phmap::priv::hash_default_hash<T>,
               class Eq    = phmap::priv::hash_default_eq<T>,
               class Alloc = phmap::priv::Allocator<T>> // alias for std::allocator
@@ -110,7 +110,7 @@ namespace phmap {
               class Mutex = phmap::NullMutex>   // use std::mutex to enable internal locks
         class parallel_flat_hash_map;
 
-    template <class T, 
+    template <class T,
               class Hash  = phmap::priv::hash_default_hash<T>,
               class Eq    = phmap::priv::hash_default_eq<T>,
               class Alloc = phmap::priv::Allocator<T>, // alias for std::allocator
@@ -139,7 +139,7 @@ namespace phmap {
     template <typename Key, typename Value, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<phmap::priv::Pair<const Key, Value>>>
         class btree_map;
-    
+
     template <typename Key, typename Value, typename Compare = phmap::Less<Key>,
               typename Alloc = phmap::Allocator<phmap::priv::Pair<const Key, Value>>>
         class btree_multimap;
@@ -148,7 +148,7 @@ namespace phmap {
 
 
 #ifdef _MSC_VER
-     #pragma warning(pop)  
+     #pragma warning(pop)
 #endif
 
 #endif // phmap_fwd_decl_h_guard_

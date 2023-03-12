@@ -18,7 +18,7 @@
 //
 // Includes work from abseil-cpp (https://github.com/abseil/abseil-cpp)
 // with modifications.
-// 
+//
 // Copyright 2018 The Abseil Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,14 +81,14 @@
     #error "phmap requires __apple_build_version__ of 4211165 or higher."
 #endif
 
-// Enforce C++11 as the minimum. 
+// Enforce C++11 as the minimum.
 #if defined(__cplusplus) && !defined(_MSC_VER)
     #if __cplusplus < 201103L
         #error "C++ versions less than C++11 are not supported."
     #endif
 #endif
 
-// We have chosen glibc 2.12 as the minimum 
+// We have chosen glibc 2.12 as the minimum
 #if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
     #if !__GLIBC_PREREQ(2, 12)
         #error "Minimum required version of glibc is 2.12."
@@ -103,7 +103,7 @@
     #error "phmap assumes CHAR_BIT == 8."
 #endif
 
-// phmap currently assumes that an int is 4 bytes. 
+// phmap currently assumes that an int is 4 bytes.
 #if INT_MAX < 2147483647
     #error "phmap assumes that int is at least 4 bytes. "
 #endif
@@ -175,10 +175,10 @@
         #undef PHMAP_HAVE_TLS
         #undef PHMAP_HAVE_THREAD_LOCAL
     #endif
-#endif 
+#endif
 
 // ------------------------------------------------------------
-// Checks whether the __int128 compiler extension for a 128-bit 
+// Checks whether the __int128 compiler extension for a 128-bit
 // integral type is supported.
 // ------------------------------------------------------------
 #ifdef PHMAP_HAVE_INTRINSIC_INT128
@@ -196,7 +196,7 @@
 #endif
 
 // ------------------------------------------------------------------
-// Checks whether the compiler both supports and enables exceptions. 
+// Checks whether the compiler both supports and enables exceptions.
 // ------------------------------------------------------------------
 #ifdef PHMAP_HAVE_EXCEPTIONS
     #error PHMAP_HAVE_EXCEPTIONS cannot be directly set.
@@ -313,7 +313,7 @@
     #endif
 #endif
 
-#if PHMAP_HAVE_CC17
+#if PHMAP_HAVE_CC17 && __has_include(<shared_mutex>)
     #define PHMAP_HAVE_SHARED_MUTEX 1
 #endif
 
@@ -641,7 +641,7 @@
 // ----------------------------------------------------------------------
 #if PHMAP_HAVE_CC17
     #define PHMAP_IF_CONSTEXPR(expr) if constexpr ((expr))
-#else 
+#else
     #define PHMAP_IF_CONSTEXPR(expr) if ((expr))
 #endif
 
