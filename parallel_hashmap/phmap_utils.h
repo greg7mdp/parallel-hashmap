@@ -293,7 +293,6 @@ template <class H> struct Combiner<H, 4>
 {
     H operator()(H h1, size_t k1)
     {
-#if 1
         // Copyright 2005-2014 Daniel James.
         // Distributed under the Boost Software License, Version 1.0. (See accompanying
         // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -310,9 +309,6 @@ template <class H> struct Combiner<H, 4>
         h1 = h1*5+0xe6546b64;
 
         return h1;
-#else
-        return h1 ^ (k1 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
-#endif
     }
 };
 
@@ -320,7 +316,6 @@ template <class H> struct Combiner<H, 8>
 {
     H operator()(H h, size_t k)
     {
-#if 1
         // Copyright 2005-2014 Daniel James.
         // Distributed under the Boost Software License, Version 1.0. (See accompanying
         // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -339,9 +334,6 @@ template <class H> struct Combiner<H, 8>
         h += 0xe6546b64;
 
         return h;
-#else
-        return h ^ (k + size_t(0xc6a4a7935bd1e995) + (h << 6) + (h >> 2));
-#endif
     }
 };
 
