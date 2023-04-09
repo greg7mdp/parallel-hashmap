@@ -195,6 +195,7 @@ if (PHMAP_BUILD_EXAMPLES)
     add_executable(ex_dump_load examples/dump_load.cc phmap.natvis)
     add_executable(ex_btree examples/btree.cc phmap.natvis)
     add_executable(ex_matt examples/matt.cc phmap.natvis)
+    add_executable(ex_mt_word_counter examples/mt_word_counter.cc phmap.natvis)
 
     target_link_libraries(ex_knucleotide Threads::Threads)
     target_link_libraries(ex_bench Threads::Threads)
