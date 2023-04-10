@@ -17,7 +17,7 @@
 int main() {
     // download Jane Austin "Pride and Prejudice"
     // ------------------------------------------
-    if (system("wget https://www.gutenberg.org/files/1342/1342-0.txt") != 0) {
+    if (system("curl https://www.gutenberg.org/files/1342/1342-0.txt -o 1342-0.txt") != 0) {
         std::cout << "Error: could not retrieve test file https://www.gutenberg.org/files/1342/1342-0.txt\n";
         return 1;
     }
