@@ -205,7 +205,7 @@ constexpr bool IsNoThrowSwappable(std::false_type /* is_swappable */) {
 
 // --------------------------------------------------------------------------
 template <typename T>
-int TrailingZeros(T x) {
+uint32_t TrailingZeros(T x) {
     PHMAP_IF_CONSTEXPR(sizeof(T) == 8)
         return base_internal::CountTrailingZerosNonZero64(static_cast<uint64_t>(x));
     else
@@ -214,7 +214,7 @@ int TrailingZeros(T x) {
 
 // --------------------------------------------------------------------------
 template <typename T>
-int LeadingZeros(T x) {
+uint32_t LeadingZeros(T x) {
     PHMAP_IF_CONSTEXPR(sizeof(T) == 8)
         return base_internal::CountLeadingZeros64(static_cast<uint64_t>(x));
     else
@@ -357,7 +357,7 @@ inline size_t H1(size_t hashval, const ctrl_t* ) {
 #endif
 
 
-inline h2_t H2(size_t hashval)       { return (ctrl_t)(hashval & 0x7F); }
+inline h2_t H2(size_t hashval)       { return (h2_t)(ctrl_t)(hashval & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
 inline bool IsFull(ctrl_t c)           { return c >= static_cast<ctrl_t>(0); }
@@ -963,7 +963,7 @@ public:
             return tmp;
         }
 
-#if PHMAP_BIDIRECTIONAL
+#if 0 // PHMAP_BIDIRECTIONAL
         // PRECONDITION: not a begin() iterator.
         iterator& operator--() {
             assert(ctrl_);
@@ -1248,7 +1248,7 @@ public:
     }
     iterator end() 
     {
-#if PHMAP_BIDIRECTIONAL
+#if 0 // PHMAP_BIDIRECTIONAL
         return iterator_at(capacity_); 
 #else
         return {ctrl_ + capacity_};
