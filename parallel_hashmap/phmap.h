@@ -1526,13 +1526,28 @@ public:
         slot_type** slot_;
     };
 
+    // Extension API: support for lazy emplace.
+    // Looks up key in the table. If found, returns the iterator to the element.
+    // Otherwise calls f with one argument of type raw_hash_set::constructor. f
+    // MUST call raw_hash_set::constructor with arguments as if a
+    // raw_hash_set::value_type is constructed, otherwise the behavior is
+    // undefined.
+    //
+    // For example:
+    //
+    //   std::unordered_set<ArenaString> s;
+    //   // Makes ArenaStr even if "abc" is in the map.
+    //   s.insert(ArenaString(&arena, "abc"));
+    //
+    //   flat_hash_set<ArenaStr> s;
+    //   // Makes ArenaStr only if "abc" is not in the map.
+    //   s.lazy_emplace("abc", [&](const constructor& ctor) {
+    //                         ctor(&arena, "abc");
+    //   });
+    // -----------------------------------------------------
     template <class K = key_type, class F>
     iterator lazy_emplace(const key_arg<K>& key, F&& f) {
-        auto res = find_or_prepare_insert(key);
-        if (res.second) {
-            lazy_emplace_at(res.first, std::forward<F>(f));
-        }
-        return iterator_at(res.first);
+        return lazy_emplace_with_hash(key, this->hash(key), std::forward<F>(f));
     }
 
     template <class K = key_type, class F>
@@ -1540,6 +1555,7 @@ public:
         auto res = find_or_prepare_insert(key, hashval);
         if (res.second) {
             lazy_emplace_at(res.first, std::forward<F>(f));
+            this->set_ctrl(res.first, H2(hashval));
         }
         return iterator_at(res.first);
     }
@@ -1554,9 +1570,10 @@ public:
     template <class K = key_type, class F>
     void emplace_single_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
         auto res = find_or_prepare_insert(key, hashval);
-        if (res.second)
+        if (res.second) {
             lazy_emplace_at(res.first, std::forward<F>(f));
-        else
+            this->set_ctrl(res.first, H2(hashval));
+        } else
             _erase(iterator_at(res.first));
     }
 
@@ -1888,6 +1905,7 @@ private:
         auto res = find_or_prepare_insert(key, hashval);
         if (res.second) {
             emplace_at(res.first, std::forward<Args>(args)...);
+            this->set_ctrl(res.first, H2(hashval));
         }
         return {iterator_at(res.first), res.second};
     }
@@ -1915,9 +1933,11 @@ private:
     {
         template <class K, class... Args>
         std::pair<iterator, bool> operator()(const K& key, Args&&...) && {
-            auto res = s.find_or_prepare_insert(key);
+            size_t hashval = s.hash(key);
+            auto res = s.find_or_prepare_insert(key, hashval);
             if (res.second) {
                 PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot);
+                s.set_ctrl(res.first, H2(hashval));
             } else if (do_destroy) {
                 PolicyTraits::destroy(&s.alloc_ref(), &slot);
             }
@@ -1936,6 +1956,7 @@ private:
             auto res = s.find_or_prepare_insert(key, hashval);
             if (res.second) {
                 PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot);
+                s.set_ctrl(res.first, H2(hashval));
             } else if (do_destroy) {
                 PolicyTraits::destroy(&s.alloc_ref(), &slot);
             }
@@ -2187,11 +2208,6 @@ protected:
         return {prepare_insert(hashval), true};
     }
 
-    template <class K>
-    std::pair<size_t, bool> find_or_prepare_insert(const K& key) {
-        return find_or_prepare_insert(key, this->hash(key));
-    }
-
     size_t prepare_insert(size_t hashval) PHMAP_ATTRIBUTE_NOINLINE {
         auto target = find_first_non_full(hashval);
         if (PHMAP_PREDICT_FALSE(growth_left() == 0 &&
@@ -2201,7 +2217,7 @@ protected:
         }
         ++size_;
         growth_left() -= IsEmpty(ctrl_[target.offset]);
-        set_ctrl(target.offset, H2(hashval));
+        // set_ctrl(target.offset, H2(hashval));
         infoz_.RecordInsert(hashval, target.probe_length);
         return target.offset;
     }
@@ -2230,6 +2246,23 @@ protected:
     iterator iterator_at(size_t i) { return {ctrl_ + i, slots_ + i}; }
     const_iterator iterator_at(size_t i) const { return {ctrl_ + i, slots_ + i}; }
 
+protected:
+    // Sets the control byte, and if `i < Group::kWidth`, set the cloned byte at
+    // the end too.
+    void set_ctrl(size_t i, ctrl_t h) {
+        assert(i < capacity_);
+
+        if (IsFull(h)) {
+            SanitizerUnpoisonObject(slots_ + i);
+        } else {
+            SanitizerPoisonObject(slots_ + i);
+        }
+
+        ctrl_[i] = h;
+        ctrl_[((i - Group::kWidth) & capacity_) + 1 +
+              ((Group::kWidth - 1) & capacity_)] = h;
+    }
+
 private:
     friend struct RawHashSetTestOnlyAccess;
 
@@ -2246,22 +2279,6 @@ private:
 
     void reset_growth_left(size_t capacity) {
         growth_left() = CapacityToGrowth(capacity) - size_;
-    }
-
-    // Sets the control byte, and if `i < Group::kWidth`, set the cloned byte at
-    // the end too.
-    void set_ctrl(size_t i, ctrl_t h) {
-        assert(i < capacity_);
-
-        if (IsFull(h)) {
-            SanitizerUnpoisonObject(slots_ + i);
-        } else {
-            SanitizerPoisonObject(slots_ + i);
-        }
-
-        ctrl_[i] = h;
-        ctrl_[((i - Group::kWidth) & capacity_) + 1 +
-              ((Group::kWidth - 1) & capacity_)] = h;
     }
 
     size_t& growth_left() { return settings_.template get<0>(); }
@@ -2458,21 +2475,26 @@ public:
 private:
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
-        auto res = this->find_or_prepare_insert(k);
-        if (res.second)
+        size_t hashval = this->hash(k);
+        auto res = this->find_or_prepare_insert(k, hashval);
+        if (res.second) {
             this->emplace_at(res.first, std::forward<K>(k), std::forward<V>(v));
-        else
+            this->set_ctrl(res.first, H2(hashval));
+        } else
             Policy::value(&*this->iterator_at(res.first)) = std::forward<V>(v);
         return {this->iterator_at(res.first), res.second};
     }
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl(K&& k, Args&&... args) {
-        auto res = this->find_or_prepare_insert(k);
-        if (res.second)
+        size_t hashval = this->hash(k);
+        auto res = this->find_or_prepare_insert(k, hashval);
+        if (res.second) {
             this->emplace_at(res.first, std::piecewise_construct,
                              std::forward_as_tuple(std::forward<K>(k)),
                              std::forward_as_tuple(std::forward<Args>(args)...));
+            this->set_ctrl(res.first, H2(hashval));
+        }
         return {this->iterator_at(res.first), res.second};
     }
 };
@@ -3295,12 +3317,14 @@ public:
     // ---------------------------------------------------------------------------------------
     template <class K = key_type, class FExists, class FEmplace>
     bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
+        size_t hashval = this->hash(key);
         typename Lockable::UniqueLock m;
-        auto res = this->find_or_prepare_insert(key, m);
+        auto res = this->find_or_prepare_insert_with_hash(hashval, key, m);
         Inner* inner = std::get<0>(res);
-        if (std::get<2>(res))
+        if (std::get<2>(res)) {
             inner->set_.lazy_emplace_at(std::get<1>(res), std::forward<FEmplace>(fEmplace));
-        else {
+            inner->set_.set_ctrl(std::get<1>(res), H2(hashval));
+        } else {
             auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
             std::forward<FExists>(fExists)(const_cast<value_type &>(*it)); // in case of the set, non "key" part of value_type can be changed
         }
@@ -3979,14 +4003,16 @@ public:
     // ---------------------------------------------------------------------------------------
     template <class K = key_type, class F, class... Args>
     bool try_emplace_l(K&& k, F&& f, Args&&... args) {
+        size_t hashval = this->hash(k);
         typename Lockable::UniqueLock m;
-        auto res = this->find_or_prepare_insert(k, m);
+        auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
-        if (std::get<2>(res))
+        if (std::get<2>(res)) {
             inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
                                    std::forward_as_tuple(std::forward<K>(k)),
                                    std::forward_as_tuple(std::forward<Args>(args)...));
-        else {
+            inner->set_.set_ctrl(std::get<1>(res), H2(hashval));
+        } else {
             auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
             std::forward<F>(f)(const_cast<value_type &>(*it)); // in case of the set, non "key" part of value_type can be changed
         }
@@ -4009,12 +4035,14 @@ private:
 
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
+        size_t hashval = this->hash(k);
         typename Lockable::UniqueLock m;
-        auto res = this->find_or_prepare_insert(k, m);
+        auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
-        if (std::get<2>(res))
+        if (std::get<2>(res)) {
             inner->set_.emplace_at(std::get<1>(res), std::forward<K>(k), std::forward<V>(v));
-        else
+            inner->set_.set_ctrl(std::get<1>(res), H2(hashval));
+        } else
             Policy::value(&*inner->set_.iterator_at(std::get<1>(res))) = std::forward<V>(v);
         return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), 
                 std::get<2>(res)};
@@ -4022,15 +4050,8 @@ private:
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl(K&& k, Args&&... args) {
-        typename Lockable::UniqueLock m;
-        auto res = this->find_or_prepare_insert(k, m);
-        typename Base::Inner *inner = std::get<0>(res);
-        if (std::get<2>(res))
-            inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
-                                   std::forward_as_tuple(std::forward<K>(k)),
-                                   std::forward_as_tuple(std::forward<Args>(args)...));
-        return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), 
-                std::get<2>(res)};
+        return try_emplace_impl_with_hash(this->hash(k), std::forward<K>(k),
+                                          std::forward<Args>(args)...);
     }
 
     template <class K = key_type, class... Args>
@@ -4038,10 +4059,12 @@ private:
         typename Lockable::UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
-        if (std::get<2>(res))
+        if (std::get<2>(res)) {
             inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
                                    std::forward_as_tuple(std::forward<K>(k)),
                                    std::forward_as_tuple(std::forward<Args>(args)...));
+            inner->set_.set_ctrl(std::get<1>(res), H2(hashval));
+        }
         return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), 
                 std::get<2>(res)};
     }
