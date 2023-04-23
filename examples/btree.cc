@@ -4,11 +4,7 @@
 
 int main()
 { 
-   phmap::btree_multimap<int, int> foo;
-   for (auto it = foo.begin(); it != foo.end(); it++) {
-   }
-
-   // initialise map with some values using an initializer_list
+    // initialise map with some values using an initializer_list
     phmap::btree_map<std::string, int> map = 
         { { "John", 35 },
           { "Jane", 32 },
