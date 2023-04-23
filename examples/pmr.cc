@@ -16,7 +16,7 @@ struct MyStruct
 {
     template<typename Key, typename Value>
     using ParallelFlatHashMap = phmap::parallel_flat_hash_map<Key, Value, std::hash<Key>, std::equal_to<Key>, 
-                            std::pmr::polymorphic_allocator<std::pair<const Key, Value>>>;
+                                                              std::pmr::polymorphic_allocator<std::pair<const Key, Value>>>;
 
     ParallelFlatHashMap<uint32_t, uint32_t> hashMap;
 

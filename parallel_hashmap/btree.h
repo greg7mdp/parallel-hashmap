@@ -737,13 +737,13 @@ namespace priv {
         StringBtreeDefaultLess(std::less<std::string_view>) {}  // NOLINT
         StringBtreeDefaultLess(phmap::Less<std::string_view>) {}  // NOLINT
 
-        phmap::weak_ordering operator()(std::string_view lhs,
-                                        std::string_view rhs) const {
+        phmap::weak_ordering operator()(const std::string_view &lhs,
+                                        const std::string_view &rhs) const {
             return compare_internal::compare_result_as_ordering(lhs.compare(rhs));
         }
 #else
-        phmap::weak_ordering operator()(std::string lhs,
-                                        std::string rhs) const {
+        phmap::weak_ordering operator()(const std::string &lhs,
+                                        const std::string &rhs) const {
             return compare_internal::compare_result_as_ordering(lhs.compare(rhs));
         }
 #endif
@@ -763,8 +763,8 @@ namespace priv {
             return compare_internal::compare_result_as_ordering(rhs.compare(lhs));
         }
 #else
-        phmap::weak_ordering operator()(std::string lhs,
-                                        std::string rhs) const {
+        phmap::weak_ordering operator()(const std::string &lhs,
+                                        const std::string &rhs) const {
             return compare_internal::compare_result_as_ordering(rhs.compare(lhs));
         }
 #endif

@@ -55,7 +55,7 @@ public:
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
-void showtime(const char *name, std::function<void ()> doit)
+void showtime(const char *name, const std::function<void ()>& doit)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
     doit();

@@ -48,6 +48,7 @@ int main() {
 
     // run 4 threads, each thread processing lines from one of the vectors
     // -------------------------------------------------------------------
+    threads.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
         threads.emplace_back(
             [&word_counts](std::vector<std::string>&& lines) {

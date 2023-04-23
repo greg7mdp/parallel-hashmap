@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
+#include <utility>
 #include <vector>
 #include <random>
 #include <parallel_hashmap/phmap.h>
@@ -14,7 +15,7 @@
 class Timer
 {
 public:
-    Timer(std::string name) : _name(name), _start(std::chrono::high_resolution_clock::now()) {}
+    Timer(std::string name) : _name(std::move(name)), _start(std::chrono::high_resolution_clock::now()) {}
 
     ~Timer() 
     {
@@ -63,7 +64,7 @@ using Perturb = std::function<void (std::vector<uint64_t> &)>;
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 template<class Set, size_t N>
-void test(const char *name, Perturb perturb1, Perturb /* perturb2 */)
+void test(const char *name, const Perturb &perturb1, const Perturb& /* perturb2 */)
 {
     //phmap::btree_set<uint64_t> s;
     Set s;
