@@ -25,7 +25,7 @@ This repository aims to provide a set of excellent **hash map** implementations,
 
 - **Dump/load** feature: when a `flat` hash map stores data that is `std::trivially_copyable`, the table can be dumped to disk and restored as a single array, very efficiently, and without requiring any hash computation. This is typically about 10 times faster than doing element-wise serialization to disk, but it will use 10% to 60% extra disk space. See `examples/serialize.cc`. _(flat hash map/set only)_
 
-- **Tested** on Windows (vs2015 & vs2017, vs2019, Intel compiler 18 and 19), linux (g++ 4.8.4, 5, 6, 7, 8, clang++ 3.9, 4.0, 5.0) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
+- **Tested** on Windows (vs2015 & vs2017, vs2019, vs2022, Intel compiler 18 and 19), linux (g++ 4.8, 5, 6, 7, 8, 9, 10, 11, 12, clang++ 3.9 to 16) and MacOS (g++ and clang++) - click on travis and appveyor icons above for detailed test status.
 
 - Automatic support for **boost's hash_value()** method for providing the hash function (see `examples/hash_value.h`). Also default hash support for `std::pair` and `std::tuple`.
 
