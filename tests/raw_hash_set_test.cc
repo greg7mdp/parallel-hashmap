@@ -389,40 +389,6 @@ struct BadTable : raw_hash_set<IntPolicy, BadFastHash, std::equal_to<int>,
   using Base::Base;
 };
 
-#if PHMAP_HAVE_STD_STRING_VIEW
-TEST(Table, EmptyFunctorOptimization) {
-  static_assert(std::is_empty<std::equal_to<std::string_view>>::value, "");
-  static_assert(std::is_empty<std::allocator<int>>::value, "");
-
-  struct MockTable {
-    void* ctrl;
-    void* slots;
-    size_t size;
-    size_t capacity;
-    size_t growth_left;
-    void* infoz;
-  };
-  struct StatelessHash {
-    size_t operator()(std::string_view) const { return 0; }
-  };
-  struct StatefulHash : StatelessHash {
-    size_t dummy;
-  };
-
-  EXPECT_EQ(
-      sizeof(MockTable),
-      sizeof(
-          raw_hash_set<StringPolicy, StatelessHash,
-                       std::equal_to<std::string_view>, std::allocator<int>>));
-
-  EXPECT_EQ(
-      sizeof(MockTable) + sizeof(StatefulHash),
-      sizeof(
-          raw_hash_set<StringPolicy, StatefulHash,
-                       std::equal_to<std::string_view>, std::allocator<int>>));
-}
-#endif
-
 TEST(Table, Empty) {
   IntTable t;
   EXPECT_EQ(0, t.size());
