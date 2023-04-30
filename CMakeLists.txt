@@ -107,9 +107,6 @@ if (PHMAP_BUILD_TESTS)
     enable_testing()
 
     ## ---------------- regular hash maps ----------------------------
-    phmap_cc_test(NAME compressed_tuple SRCS "tests/compressed_tuple_test.cc"
-                  DEPS ${PHMAP_GTEST_LIBS})
-
     phmap_cc_test(NAME container_memory SRCS "tests/container_memory_test.cc"
                   DEPS ${PHMAP_GTEST_LIBS})
 
