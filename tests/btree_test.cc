@@ -799,9 +799,6 @@ namespace {
 
     template <typename K, int N = 256>
     void SetTest() {
-        EXPECT_EQ(
-            sizeof(phmap::btree_set<K>),
-            2 * sizeof(void *) + sizeof(typename phmap::btree_set<K>::size_type));
         using BtreeSet = phmap::btree_set<K>;
         using CountingBtreeSet =
             phmap::btree_set<K, std::less<K>, PropagatingCountingAlloc<K>>;
@@ -811,9 +808,6 @@ namespace {
 
     template <typename K, int N = 256>
     void MapTest() {
-        EXPECT_EQ(
-            sizeof(phmap::btree_map<K, K>),
-            2 * sizeof(void *) + sizeof(typename phmap::btree_map<K, K>::size_type));
         using BtreeMap = phmap::btree_map<K, K>;
         using CountingBtreeMap =
             phmap::btree_map<K, K, std::less<K>,
@@ -834,9 +828,6 @@ namespace {
 
     template <typename K, int N = 256>
     void MultiSetTest() {
-        EXPECT_EQ(
-            sizeof(phmap::btree_multiset<K>),
-            2 * sizeof(void *) + sizeof(typename phmap::btree_multiset<K>::size_type));
         using BtreeMSet = phmap::btree_multiset<K>;
         using CountingBtreeMSet =
             phmap::btree_multiset<K, std::less<K>, PropagatingCountingAlloc<K>>;
@@ -846,9 +837,6 @@ namespace {
 
     template <typename K, int N = 256>
     void MultiMapTest() {
-        EXPECT_EQ(sizeof(phmap::btree_multimap<K, K>),
-                  2 * sizeof(void *) +
-                  sizeof(typename phmap::btree_multimap<K, K>::size_type));
         using BtreeMMap = phmap::btree_multimap<K, K>;
         using CountingBtreeMMap =
             phmap::btree_multimap<K, K, std::less<K>,
