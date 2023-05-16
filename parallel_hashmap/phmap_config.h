@@ -154,7 +154,7 @@
 // -------------------------------------------------------------------
 #ifdef PHMAP_HAVE_THREAD_LOCAL
     #error PHMAP_HAVE_THREAD_LOCAL cannot be directly set
-#elif defined(__APPLE__) && !defined(__GNUC__)
+#elif defined(__APPLE__) && defined(__clang__)
     #if __has_feature(cxx_thread_local) && \
         !(TARGET_OS_IPHONE && __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_9_0)
         #define PHMAP_HAVE_THREAD_LOCAL 1
