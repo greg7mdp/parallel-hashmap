@@ -100,7 +100,7 @@
 #endif
 
 #if CHAR_BIT != 8
-    #error "phmap assumes CHAR_BIT == 8."
+    #warning "phmap assumes CHAR_BIT == 8."
 #endif
 
 // phmap currently assumes that an int is 4 bytes. 
