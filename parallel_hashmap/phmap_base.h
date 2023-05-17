@@ -626,7 +626,7 @@ namespace {
 #ifdef PHMAP_HAVE_EXCEPTIONS
   #define PHMAP_THROW_IMPL(e) throw e
 #else
-  #define PHMAP_THROW_IMPL(e) std::abort()
+  #define PHMAP_THROW_IMPL(e) do { (void)(e); std::abort(); } while(0)
 #endif
 }  // namespace
 
