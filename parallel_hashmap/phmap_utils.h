@@ -57,7 +57,6 @@ struct phmap_mix<4>
     inline size_t operator()(size_t a) const
     {
         static constexpr uint64_t kmul = 0xcc9e2d51UL;
-        // static constexpr uint64_t kmul = 0x3B9ACB93UL; // [greg] my own random prime
         uint64_t l = a * kmul;
         return static_cast<size_t>(l ^ (l >> 32));
     }
@@ -71,7 +70,6 @@ struct phmap_mix<4>
         inline size_t operator()(size_t a) const
         {
             static constexpr uint64_t k = 0xde5fb9d2630458e9ULL;
-            // static constexpr uint64_t k = 0x7C9D0BF0567102A5ULL; // [greg] my own random prime
             uint64_t h;
             uint64_t l = umul128(a, k, &h);
             return static_cast<size_t>(h + l);
