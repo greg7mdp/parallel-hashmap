@@ -59,6 +59,7 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_dump(OutputArchive& ar) const 
         return true;
     ar.saveBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.saveBinary(slots_, sizeof(slot_type) * capacity_);
+    ar.saveBinary(&growth_left(), sizeof(size_t));
     return true;
 }
 
@@ -79,6 +80,7 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
         return true;
     ar.loadBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.loadBinary(slots_, sizeof(slot_type) * capacity_);
+    ar.loadBinary(&growth_left(), sizeof(size_t));
     return true;
 }
 
