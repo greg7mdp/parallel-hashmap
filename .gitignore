@@ -4,5 +4,8 @@ benchmark/output
 benchmark/charts.html
 build*
 .vagrant
+.cache
+.gdb_history
+compile_commands.json
 **/.vscode
 TAGS
