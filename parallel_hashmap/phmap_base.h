@@ -223,6 +223,17 @@ struct disjunction<> : std::false_type {};
 template <typename T>
 struct negation : std::integral_constant<bool, !T::value> {};
 
+#if __GNUC__ < 5
+template <typename T>
+struct is_trivially_copy_constructible
+    : std::integral_constant<bool, __has_trivial_copy(T) &&
+    std::is_copy_constructible<T>::value && std::is_trivially_destructible<T>::value> {};
+
+template <typename T>
+struct is_trivially_copy_assignable : std::integral_constant<
+    bool, __has_trivial_assign(typename std::remove_reference<T>::type) && phmap::is_copy_assignable<T>::value> {};
+#endif
+
 // -----------------------------------------------------------------------------
 // C++14 "_t" trait aliases
 // -----------------------------------------------------------------------------
@@ -1786,11 +1797,17 @@ protected:
 // have trivial move but nontrivial copy.
 // Also, we should be checking is_trivially_copyable here, which is not
 // supported now, so we use is_trivially_* traits instead.
+#if __GNUC__ < 5
 template <typename T,
-          bool unused =
-          std::is_trivially_copy_constructible<T>::value &&
-          std::is_trivially_copy_assignable<typename std::remove_cv<T>::type>::value &&
-          std::is_trivially_destructible<T>::value>
+          bool unused = phmap::is_trivially_copy_constructible<T>::value &&
+              phmap::is_trivially_copy_assignable<typename std::remove_cv<T>::type>::value &&
+                  std::is_trivially_destructible<T>::value>
+#else
+template <typename T,
+          bool unused = std::is_trivially_copy_constructible<T>::value &&
+              std::is_trivially_copy_assignable<typename std::remove_cv<T>::type>::value &&
+                  std::is_trivially_destructible<T>::value>
+#endif
 class optional_data;
 
 // Trivially copyable types
