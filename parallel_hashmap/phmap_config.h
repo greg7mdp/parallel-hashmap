@@ -120,7 +120,7 @@
     #define PHMAP_HAVE_BUILTIN(x) 0
 #endif
 
-#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201703) || __cplusplus >= 201703
+#if (!defined(__GNUC__) || __GNUC__ >= 5) && ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
     #define PHMAP_HAVE_CC17 1
 #else
     #define PHMAP_HAVE_CC17 0
@@ -313,8 +313,12 @@
     #endif
 #endif
 
-#if PHMAP_HAVE_CC17 && (!defined(__has_include) || __has_include(<shared_mutex>))
-    #define PHMAP_HAVE_SHARED_MUTEX 1
+#if PHMAP_HAVE_CC17
+    #ifdef __has_include
+       #if __has_include(<shared_mutex>)
+           #define PHMAP_HAVE_SHARED_MUTEX 1
+       #endif
+    #endif
 #endif
 
 #ifndef PHMAP_HAVE_STD_STRING_VIEW

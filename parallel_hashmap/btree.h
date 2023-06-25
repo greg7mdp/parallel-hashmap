@@ -108,7 +108,7 @@ namespace phmap {
             bool, std::is_copy_constructible<
                       type_traits_internal::SingleMemberUnion<T>>::value &&
             std::is_trivially_destructible<T>::value> {};
-
+#if 0
         template <class T>
         struct IsTriviallyMoveAssignableReference : std::false_type {};
 
@@ -119,7 +119,7 @@ namespace phmap {
         template <class T>
         struct IsTriviallyMoveAssignableReference<T&&>
             : std::is_trivially_move_assignable<T>::type {};
-
+#endif
     }  // namespace type_traits_internal
 
 
@@ -148,8 +148,8 @@ namespace phmap {
 
         public:
             static constexpr bool kValue =
-                (std::is_trivially_copyable<ExtentsRemoved>::value || !kIsCopyOrMoveConstructible) &&
-                (std::is_trivially_copy_assignable<ExtentsRemoved>::value || !kIsCopyOrMoveAssignable) &&
+                (phmap::is_trivially_copyable<ExtentsRemoved>::value || !kIsCopyOrMoveConstructible) &&
+                (phmap::is_trivially_copy_assignable<ExtentsRemoved>::value || !kIsCopyOrMoveAssignable) &&
                 (kIsCopyOrMoveConstructible || kIsCopyOrMoveAssignable) &&
                 std::is_trivially_destructible<ExtentsRemoved>::value &&
                 // We need to check for this explicitly because otherwise we'll say
@@ -3321,8 +3321,8 @@ namespace priv {
         // ----------------
         template <typename K = key_type>
         size_type count(const key_arg<K> &key) const {
-            auto equal_range = this->equal_range(key);
-            return std::distance(equal_range.first, equal_range.second);
+            auto er = this->equal_range(key);
+            return std::distance(er.first, er.second);
         }
         template <typename K = key_type>
         iterator find(const key_arg<K> &key) {
@@ -3362,8 +3362,8 @@ namespace priv {
         }
         template <typename K = key_type>
         size_type erase(const key_arg<K> &key) {
-            auto equal_range = this->equal_range(key);
-            return tree_.erase_range(equal_range.first, equal_range.second).first;
+            auto er = this->equal_range(key);
+            return tree_.erase_range(er.first, er.second).first;
         }
         node_type extract(iterator position) {
             // Use Move instead of Transfer, because the rebalancing code expects to
