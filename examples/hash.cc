@@ -4,7 +4,9 @@
 #include <tuple>
 #include <vector>
 #include <array>
-#include <string_view>
+#if PHMAP_HAVE_STD_STRING_VIEW
+    #include <string_view>
+#endif
 #include <iostream>
 
 using std::string;
@@ -17,7 +19,7 @@ namespace std
 {
     template<> struct hash<groupid_t>
     {
-#if 0
+#if PHMAP_HAVE_STD_STRING_VIEW
         std::size_t operator()(groupid_t const &g) const
         {
             const std::string_view bv{reinterpret_cast<const char*>(g.data()), sizeof(g)};
