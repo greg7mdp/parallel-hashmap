@@ -120,7 +120,8 @@
     #define PHMAP_HAVE_BUILTIN(x) 0
 #endif
 
-#if (!defined(__GNUC__) || __GNUC__ >= 5) && ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+#if (!defined(__GNUC__) || defined(__clang__) || __GNUC__ >= 5) && \
+    ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
     #define PHMAP_HAVE_CC17 1
 #else
     #define PHMAP_HAVE_CC17 0
