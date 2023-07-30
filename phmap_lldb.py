@@ -129,11 +129,17 @@ class flat_hash_map_or_set:
                 return None
             real_idx = -1
             for idx in range(min(self.capacity_ + 3, _MAX_CTRL_INDEX)):
-                ctrl = self.ctrl_.GetChildAtIndex(idx).GetValueAsSigned()
+                ctrl = self.ctrl_.GetChildAtIndex(idx, True, True).GetValueAsSigned()
                 if ctrl >= -1:
                     real_idx += 1
                     if real_idx == index:
-                        return self.slots_.CreateChildAtOffset(f'[{index}]', idx * self.slot_size, self.slot_type)
+                        slot = self.slots_.CreateChildAtOffset(f'', idx * self.slot_size, self.slot_type)
+                        print(slot.type.name)
+                        if "MapPolicy" in slot.type.name:
+                            val = slot.GetChildAtIndex(0, True, True)
+                        else:
+                            val = slot
+                        return val.CreateChildAtOffset(f'[{index}]', 0, val.type)
         except BaseException as ex:
             print(f"{_get_function_name(self)} -> {ex}")
         return None
@@ -160,7 +166,7 @@ class parallel_flat_or_node_map_or_set:
             buckets = sets.GetChildMemberWithName('_M_elems')
             size = capacity = 0
             for idx in range(n_buckets):
-                bucket = buckets.GetChildAtIndex(idx).GetChildMemberWithName('set_')
+                bucket = buckets.GetChildAtIndex(idx, True, True).GetChildMemberWithName('set_')
                 size += bucket.GetChildMemberWithName('size_').GetValueAsUnsigned()
                 capacity += bucket.GetChildMemberWithName('capacity_').GetValueAsUnsigned()
             return size, capacity, n_buckets
@@ -210,17 +216,22 @@ class parallel_flat_or_node_map_or_set:
             real_idx = -1
             total_idx = 0
             for idx in range(self.n_buckets_):
-                bucket = self.buckets.GetChildAtIndex(idx).GetChildMemberWithName('set_')
+                bucket = self.buckets.GetChildAtIndex(idx, True, True).GetChildMemberWithName('set_')
                 size = bucket.GetChildMemberWithName("size_").GetValueAsUnsigned()
                 if size:
                     slots_ = bucket.GetChildMemberWithName("slots_")
                     ctrl_ = bucket.GetChildMemberWithName("ctrl_")
                     for jdx in range(size):
-                        ctrl = ctrl_.GetChildAtIndex(jdx).GetValueAsSigned()
+                        ctrl = ctrl_.GetChildAtIndex(jdx, True, True).GetValueAsSigned()
                         if ctrl >= -1:
                             real_idx += 1
                             if real_idx == index:
-                                return slots_.CreateChildAtOffset(f'[{index}]', jdx * self.slot_size, self.slot_type)
+                                slot = slots_.CreateChildAtOffset(f'[{index}]', jdx * self.slot_size, self.slot_type)
+                                if "MapPolicy" in slot.type.name:
+                                    val = slot.GetChildAtIndex(0, True, True)
+                                else:
+                                    val = slot
+                                return val.CreateChildAtOffset(f'[{index}]', 0, val.type)
                     total_idx += size
                     if total_idx > _MAX_CHILDREN:
                         return None
