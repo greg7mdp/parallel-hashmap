@@ -1268,21 +1268,15 @@ public:
     size_t max_size() const { return (std::numeric_limits<size_t>::max)(); }
 
     PHMAP_ATTRIBUTE_REINITIALIZES void clear() {
-        // Iterating over this container is O(bucket_count()). When bucket_count()
-        // is much greater than size(), iteration becomes prohibitively expensive.
-        // For clear() it is more important to reuse the allocated array when the
-        // container is small because allocation takes comparatively long time
-        // compared to destruction of the elements of the container. So we pick the
-        // largest bucket_count() threshold for which iteration is still fast and
-        // past that we simply deallocate the array.
         if (empty())
             return;
-        if (capacity_ > 127) {
-            destroy_slots();
-        } else if (capacity_) {
-            for (size_t i = 0; i != capacity_; ++i) {
-                if (IsFull(ctrl_[i])) {
-                    PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+        if (capacity_) {
+            if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value) {
+                // not trivially destructible... we  need to iterate and destroy values one by one
+                for (size_t i = 0; i != capacity_; ++i) {
+                    if (IsFull(ctrl_[i])) {
+                        PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+                    }
                 }
             }
             size_ = 0;
@@ -2011,10 +2005,15 @@ private:
     }
 
     void destroy_slots() {
-        if (!capacity_) return;
-        for (size_t i = 0; i != capacity_; ++i) {
-            if (IsFull(ctrl_[i])) {
-                PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+        if (!capacity_)
+            return;
+        
+        if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value) {
+            // not trivially destructible... we  need to iterate and destroy values one by one
+            for (size_t i = 0; i != capacity_; ++i) {
+                if (IsFull(ctrl_[i])) {
+                    PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+                }
             }
         }
         auto layout = MakeLayout(capacity_);
