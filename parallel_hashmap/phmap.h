@@ -1271,8 +1271,9 @@ public:
         if (empty())
             return;
         if (capacity_) {
-            if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value) {
-                // not trivially destructible... we  need to iterate and destroy values one by one
+            if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
+                          std::is_same<typename Policy::is_flat, std::false_type>::value) {
+                // node map or not trivially destructible... we  need to iterate and destroy values one by one
                 for (size_t i = 0; i != capacity_; ++i) {
                     if (IsFull(ctrl_[i])) {
                         PolicyTraits::destroy(&alloc_ref(), slots_ + i);
@@ -2008,14 +2009,16 @@ private:
         if (!capacity_)
             return;
         
-        if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value) {
-            // not trivially destructible... we  need to iterate and destroy values one by one
+        if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
+                      std::is_same<typename Policy::is_flat, std::false_type>::value) {
+            // node map, or not trivially destructible... we  need to iterate and destroy values one by one
+            // std::cout << "either this is a node map or " << type_name<typename PolicyTraits::value_type>()  << " is not trivially_destructible\n";
             for (size_t i = 0; i != capacity_; ++i) {
                 if (IsFull(ctrl_[i])) {
                     PolicyTraits::destroy(&alloc_ref(), slots_ + i);
                 }
             }
-        }
+        } 
         auto layout = MakeLayout(capacity_);
         // Unpoison before returning the memory to the allocator.
         SanitizerUnpoisonMemoryRegion(slots_, sizeof(slot_type) * capacity_);
@@ -4183,6 +4186,7 @@ struct FlatHashSetPolicy
     using key_type = T;
     using init_type = T;
     using constant_iterators = std::true_type;
+    using is_flat = std::true_type;
 
     template <class Allocator, class... Args>
     static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
@@ -4225,6 +4229,7 @@ struct FlatHashMapPolicy
     using key_type = K;
     using mapped_type = V;
     using init_type = std::pair</*non const*/ key_type, mapped_type>;
+    using is_flat = std::true_type;
 
     template <class Allocator, class... Args>
     static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
@@ -4307,6 +4312,7 @@ struct NodeHashSetPolicy
     using key_type = T;
     using init_type = T;
     using constant_iterators = std::true_type;
+    using is_flat = std::false_type;
 
     template <class Allocator, class... Args>
         static T* new_element(Allocator* alloc, Args&&... args) {
@@ -4352,6 +4358,7 @@ public:
     using key_type = Key;
     using mapped_type = Value;
     using init_type = std::pair</*non const*/ key_type, mapped_type>;
+    using is_flat = std::false_type;
 
     template <class Allocator, class... Args>
         static value_type* new_element(Allocator* alloc, Args&&... args) {

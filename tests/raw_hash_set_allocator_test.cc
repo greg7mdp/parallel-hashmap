@@ -129,6 +129,7 @@ struct Policy {
   using slot_type = Tracked<int32_t>;
   using init_type = Tracked<int32_t>;
   using key_type = int32_t;
+  using is_flat = std::false_type;
 
   template <class allocator_type, class... Args>
   static void construct(allocator_type* alloc, slot_type* slot,
