@@ -4022,6 +4022,24 @@ public:
         return std::get<2>(res);
     }
 
+    // returns {pointer, bool} instead of {iterator, bool} per try_emplace.
+    // useful for node-based containers, since the pointer is not invalidated by concurrent insert etc.
+    template <class K = key_type, class... Args>
+    std::pair<typename parallel_hash_map::parallel_hash_set::pointer, bool> try_emplace_p(K&& k, Args&&... args) {
+        size_t hashval = this->hash(k);
+        typename Lockable::UniqueLock m;
+        auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
+        typename Base::Inner *inner = std::get<0>(res);
+        if (std::get<2>(res)) {
+            inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct,
+                                   std::forward_as_tuple(std::forward<K>(k)),
+                                   std::forward_as_tuple(std::forward<Args>(args)...));
+            inner->set_.set_ctrl(std::get<1>(res), H2(hashval));
+        }
+        auto it = this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res)));
+        return {&*it, std::get<2>(res)};
+    }
+
     // ----------- end of phmap extensions --------------------------
 
     template <class K = key_type, class P = Policy, K* = nullptr>
