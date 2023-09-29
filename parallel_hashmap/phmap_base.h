@@ -654,82 +654,84 @@ namespace base_internal {
 namespace {
 
 #ifdef PHMAP_HAVE_EXCEPTIONS
-  #define PHMAP_THROW_IMPL(e) throw e
+  #define PHMAP_THROW_IMPL_MSG(e, message) throw e(message)
+  #define PHMAP_THROW_IMPL(e) throw e()
 #else
-  #define PHMAP_THROW_IMPL(...) std::abort()
+  #define PHMAP_THROW_IMPL_MSG(e, message) do { (void)(message); std::abort(); } while(0)
+  #define PHMAP_THROW_IMPL(e) std::abort()
 #endif
 }  // namespace
 
 static inline void ThrowStdLogicError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::logic_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::logic_error, what_arg);
 }
 static inline void ThrowStdLogicError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::logic_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::logic_error, what_arg);
 }
 static inline void ThrowStdInvalidArgument(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::invalid_argument(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::invalid_argument, what_arg);
 }
 static inline void ThrowStdInvalidArgument(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::invalid_argument(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::invalid_argument, what_arg);
 }
 
 static inline void ThrowStdDomainError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::domain_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::domain_error, what_arg);
 }
 static inline void ThrowStdDomainError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::domain_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::domain_error, what_arg);
 }
 
 static inline void ThrowStdLengthError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::length_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::length_error, what_arg);
 }
 static inline void ThrowStdLengthError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::length_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::length_error, what_arg);
 }
 
 static inline void ThrowStdOutOfRange(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::out_of_range(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::out_of_range, what_arg);
 }
 static inline void ThrowStdOutOfRange(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::out_of_range(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::out_of_range, what_arg);
 }
 
 static inline void ThrowStdRuntimeError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::runtime_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::runtime_error, what_arg);
 }
 static inline void ThrowStdRuntimeError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::runtime_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::runtime_error, what_arg);
 }
 
 static inline void ThrowStdRangeError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::range_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::range_error, what_arg);
 }
 static inline void ThrowStdRangeError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::range_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::range_error, what_arg);
 }
 
 static inline void ThrowStdOverflowError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::overflow_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::overflow_error, what_arg);
 }
     
 static inline void ThrowStdOverflowError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::overflow_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::overflow_error, what_arg);
 }
 
 static inline void ThrowStdUnderflowError(const std::string& what_arg) {
-  PHMAP_THROW_IMPL(std::underflow_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::underflow_error, what_arg);
 }
     
 static inline void ThrowStdUnderflowError(const char* what_arg) {
-  PHMAP_THROW_IMPL(std::underflow_error(what_arg));
+  PHMAP_THROW_IMPL_MSG(std::underflow_error, what_arg);
 }
     
 static inline void ThrowStdBadFunctionCall() {
-  PHMAP_THROW_IMPL(std::bad_function_call());
+  PHMAP_THROW_IMPL(std::bad_function_call);
 }
     
 static inline void ThrowStdBadAlloc() {
-  PHMAP_THROW_IMPL(std::bad_alloc());
+  PHMAP_THROW_IMPL(std::bad_alloc);
 }
 
 }  // namespace base_internal

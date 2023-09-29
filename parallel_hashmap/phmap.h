@@ -1271,8 +1271,8 @@ public:
         if (empty())
             return;
         if (capacity_) {
-            if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
-                          std::is_same<typename Policy::is_flat, std::false_type>::value) {
+           PHMAP_IF_CONSTEXPR((!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
+                               std::is_same<typename Policy::is_flat, std::false_type>::value)) {
                 // node map or not trivially destructible... we  need to iterate and destroy values one by one
                 for (size_t i = 0; i != capacity_; ++i) {
                     if (IsFull(ctrl_[i])) {
@@ -2009,8 +2009,8 @@ private:
         if (!capacity_)
             return;
         
-        if constexpr (!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
-                      std::is_same<typename Policy::is_flat, std::false_type>::value) {
+        PHMAP_IF_CONSTEXPR((!std::is_trivially_destructible<typename PolicyTraits::value_type>::value ||
+                            std::is_same<typename Policy::is_flat, std::false_type>::value)) {
             // node map, or not trivially destructible... we  need to iterate and destroy values one by one
             // std::cout << "either this is a node map or " << type_name<typename PolicyTraits::value_type>()  << " is not trivially_destructible\n";
             for (size_t i = 0; i != capacity_; ++i) {
