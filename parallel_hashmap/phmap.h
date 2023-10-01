@@ -1806,7 +1806,7 @@ public:
 
     size_t bucket_count() const { return capacity_; }
     float load_factor() const {
-        return capacity_ ? static_cast<double>(size()) / capacity_ : 0.0;
+        return capacity_ ? static_cast<float>(size()) / capacity_ : 0.0f;
     }
     float max_load_factor() const { return 1.0f; }
     void max_load_factor(float) {
