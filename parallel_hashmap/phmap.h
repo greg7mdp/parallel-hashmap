@@ -3538,7 +3538,7 @@ public:
     void reserve(size_t n) 
     {
         size_t target = GrowthToLowerboundCapacity(n);
-        size_t normalized = 16 * NormalizeCapacity(n / num_tables);
+        size_t normalized = num_tables * NormalizeCapacity(n / num_tables);
         rehash(normalized > target ? normalized : target); 
     }
 
