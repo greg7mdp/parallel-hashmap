@@ -92,7 +92,9 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR})
+if (PHMAP_BUILD_TESTS OR PHMAP_BUILD_EXAMPLES)
+    include_directories(${PROJECT_SOURCE_DIR})
+endif()
 
 if (PHMAP_BUILD_TESTS)
 
