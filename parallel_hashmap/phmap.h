@@ -3301,12 +3301,15 @@ public:
 #if __cplusplus >= 201703L
         static_assert(std::is_invocable<F, value_type&>::value);
 #endif
-        L m;
-        auto it = this->template find<K, L>(key, this->hash(key), m);
-        if (it == this->end()) return false;
+        auto hashval = this->hash(key);
+        Inner& inner = sets_[subidx(hashval)];
+        auto& set = inner.set_;
+        L m(inner);
+        auto it = set.find(key, hashval);
+        if (it == set.end()) return false;
         if (std::forward<F>(f)(const_cast<value_type &>(*it)))
         {
-            this->erase(it);
+            set._erase(it);
             return true;
         }
         return false;

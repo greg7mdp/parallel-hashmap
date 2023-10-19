@@ -67,7 +67,7 @@ class CheckedAlloc {
       std::integral_constant<bool, (Spec & kPropagateOnSwap) != 0>;
 
   CheckedAlloc select_on_container_copy_construction() const {
-    if (Spec & kPropagateOnCopy) return *this;
+    PHMAP_IF_CONSTEXPR (Spec & kPropagateOnCopy) return *this;
     return {};
   }
 
