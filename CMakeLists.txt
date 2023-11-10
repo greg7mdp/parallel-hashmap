@@ -43,6 +43,9 @@ endif()
 
 project(phmap VERSION ${DETECTED_PHMAP_VERSION} LANGUAGES CXX)
 
+# put all executables in a single /bin directory.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 ## ----------------------------- options -----------------------------
 option(PHMAP_INSTALL "Enable installation" ${PHMAP_MASTER_PROJECT})
 
