@@ -1547,12 +1547,13 @@ public:
 
     template <class K = key_type, class F>
     iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
-        auto res = find_or_prepare_insert(key, hashval);
-        if (res.second) {
-            lazy_emplace_at(res.first, std::forward<F>(f));
-            this->set_ctrl(res.first, H2(hashval));
+        size_t offset = _find_key(key, hashval);
+        if (offset == (size_t)-1) {
+            offset = prepare_insert(hashval);
+            lazy_emplace_at(offset, std::forward<F>(f));
+            this->set_ctrl(offset, H2(hashval));
         }
-        return iterator_at(res.first);
+        return iterator_at(offset);
     }
 
     template <class K = key_type, class F>
@@ -1564,12 +1565,13 @@ public:
 
     template <class K = key_type, class F>
     void emplace_single_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
-        auto res = find_or_prepare_insert(key, hashval);
-        if (res.second) {
-            lazy_emplace_at(res.first, std::forward<F>(f));
-            this->set_ctrl(res.first, H2(hashval));
+        size_t offset = _find_key(key, hashval);
+        if (offset == (size_t)-1) {
+            offset = prepare_insert(hashval);
+            lazy_emplace_at(offset, std::forward<F>(f));
+            this->set_ctrl(offset, H2(hashval));
         } else
-            _erase(iterator_at(res.first));
+            _erase(iterator_at(offset));
     }
 
 
@@ -1897,12 +1899,14 @@ private:
     std::pair<iterator, bool> emplace_decomposable(const K& key, size_t hashval, 
                                                    Args&&... args)
     {
-        auto res = find_or_prepare_insert(key, hashval);
-        if (res.second) {
-            emplace_at(res.first, std::forward<Args>(args)...);
-            this->set_ctrl(res.first, H2(hashval));
+        size_t offset = _find_key(key, hashval);
+        if (offset == (size_t)-1) {
+            offset = prepare_insert(hashval);
+            emplace_at(offset, std::forward<Args>(args)...);
+            this->set_ctrl(offset, H2(hashval));
+            return {iterator_at(offset), true};
         }
-        return {iterator_at(res.first), res.second};
+        return {iterator_at(offset), false};
     }
 
     struct EmplaceDecomposable 
@@ -2194,7 +2198,7 @@ private:
 
 protected:
     template <class K>
-    std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hashval) {
+    size_t _find_key(const K& key, size_t hashval) {
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
@@ -2202,12 +2206,21 @@ protected:
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
                                           PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
-                    return {seq.offset((size_t)i), false};
+                    return seq.offset((size_t)i);
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
             seq.next();
         }
-        return {prepare_insert(hashval), true};
+        return (size_t)-1;
+    }
+
+
+    template <class K>
+    std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hashval) {
+        size_t offset = _find_key(key, hashval);
+        if (offset ==  (size_t)-1)
+            return {prepare_insert(hashval), true};
+        return {offset, false};
     }
 
     size_t prepare_insert(size_t hashval) PHMAP_ATTRIBUTE_NOINLINE {
@@ -2479,26 +2492,30 @@ private:
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
         size_t hashval = this->hash(k);
-        auto res = this->find_or_prepare_insert(k, hashval);
-        if (res.second) {
-            this->emplace_at(res.first, std::forward<K>(k), std::forward<V>(v));
-            this->set_ctrl(res.first, H2(hashval));
-        } else
-            Policy::value(&*this->iterator_at(res.first)) = std::forward<V>(v);
-        return {this->iterator_at(res.first), res.second};
+        size_t offset = this->_find_key(k, hashval);
+        if (offset == (size_t)-1) {
+            offset = this->prepare_insert(hashval);
+            this->emplace_at(offset, std::forward<K>(k), std::forward<V>(v));
+            this->set_ctrl(offset, H2(hashval));
+            return {this->iterator_at(offset), true};
+        } 
+        Policy::value(&*this->iterator_at(offset)) = std::forward<V>(v);
+        return {this->iterator_at(offset), false};
     }
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl(K&& k, Args&&... args) {
         size_t hashval = this->hash(k);
-        auto res = this->find_or_prepare_insert(k, hashval);
-        if (res.second) {
-            this->emplace_at(res.first, std::piecewise_construct,
+        size_t offset = this->_find_key(k, hashval);
+        if (offset == (size_t)-1) {
+            offset = this->prepare_insert(hashval);
+            this->emplace_at(offset, std::piecewise_construct,
                              std::forward_as_tuple(std::forward<K>(k)),
                              std::forward_as_tuple(std::forward<Args>(args)...));
-            this->set_ctrl(res.first, H2(hashval));
+            this->set_ctrl(offset, H2(hashval));
+            return {this->iterator_at(offset), true};
         }
-        return {this->iterator_at(res.first), res.second};
+        return {this->iterator_at(offset), false};
     }
 };
 
@@ -2565,6 +2582,7 @@ public:
 
 protected:
     using Lockable = phmap::LockableImpl<Mtx_>;
+    
 
     // --------------------------------------------------------------------
     struct Inner : public Lockable
@@ -3324,7 +3342,7 @@ public:
     template <class K = key_type, class FExists, class FEmplace>
     bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
         size_t hashval = this->hash(key);
-        typename Lockable::UniqueLock m;
+        typename Lockable::ReadWriteLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, key, m);
         Inner* inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -3781,17 +3799,22 @@ protected:
 
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert_with_hash(size_t hashval, const K& key, typename Lockable::UniqueLock &mutexlock) {
+    find_or_prepare_insert_with_hash(size_t hashval, const K& key, typename Lockable::ReadWriteLock &mutexlock) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
-        mutexlock    = std::move(typename Lockable::UniqueLock(inner));
-        auto  p   = set.find_or_prepare_insert(key, hashval); // std::pair<size_t, bool>
-        return std::make_tuple(&inner, p.first, p.second);
+        mutexlock    = std::move(typename Lockable::ReadWriteLock(inner));
+        size_t offset = set._find_key(key, hashval);
+        if (offset == (size_t)-1) {
+            mutexlock.switch_to_unique();
+            offset = set.prepare_insert(hashval);
+            return std::make_tuple(&inner, offset, true);
+        }
+        return std::make_tuple(&inner, offset, false);
     }
 
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert(const K& key, typename Lockable::UniqueLock &mutexlock) {
+    find_or_prepare_insert(const K& key, typename Lockable::ReadWriteLock &mutexlock) {
         return find_or_prepare_insert_with_hash<K>(this->hash(key), key, mutexlock);
     }
 
@@ -4060,7 +4083,7 @@ private:
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
         size_t hashval = this->hash(k);
-        typename Lockable::UniqueLock m;
+        typename Lockable::ReadWriteLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -4080,7 +4103,7 @@ private:
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl_with_hash(size_t hashval, K&& k, Args&&... args) {
-        typename Lockable::UniqueLock m;
+        typename Lockable::ReadWriteLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
