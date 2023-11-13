@@ -3805,9 +3805,18 @@ protected:
         mutexlock    = std::move(typename Lockable::ReadWriteLock(inner));
         size_t offset = set._find_key(key, hashval);
         if (offset == (size_t)-1) {
-            mutexlock.switch_to_unique();
-            offset = set.prepare_insert(hashval);
-            return std::make_tuple(&inner, offset, true);
+            if (mutexlock.switch_to_unique()) {
+                // we did an unlock/lock, and another thread could have inserted the same key, so we need to
+                // do a find() again.
+                offset = set._find_key(key, hashval);
+                if (offset == (size_t)-1) {
+                    offset = set.prepare_insert(hashval);
+                    return std::make_tuple(&inner, offset, true);
+                }
+            } else {
+                offset = set.prepare_insert(hashval);
+                return std::make_tuple(&inner, offset, true);
+            }
         }
         return std::make_tuple(&inner, offset, false);
     }

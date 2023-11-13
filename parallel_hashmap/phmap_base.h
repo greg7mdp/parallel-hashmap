@@ -4635,7 +4635,7 @@ public:
         void unlock() {}
         void lock_shared() {}
         void unlock_shared() {}
-        void switch_to_unique() {}
+        bool switch_to_unique() { return false; }
     };
 
     // ----------------------------------------------------
@@ -4711,7 +4711,7 @@ public:
 
         mutex_type *mutex() const noexcept { return m_; }
         
-        void switch_to_unique() {}
+        bool switch_to_unique() { return false; }
 
     private:
         mutex_type *m_;
@@ -4791,7 +4791,7 @@ public:
 
         mutex_type *mutex() const noexcept { return m_; }
 
-        void switch_to_unique() {}
+        bool switch_to_unique() { return false; }
 
     private:
         mutex_type *m_;
@@ -4873,10 +4873,11 @@ public:
 
         mutex_type *mutex() const noexcept { return m_; }
 
-        void switch_to_unique() {
+        bool switch_to_unique() {
             assert(locked_shared_);
             unlock_shared();
             lock();
+            return true;
         }
         
 
