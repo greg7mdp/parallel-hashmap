@@ -2214,11 +2214,10 @@ protected:
         return (size_t)-1;
     }
 
-
     template <class K>
     std::pair<size_t, bool> find_or_prepare_insert(const K& key, size_t hashval) {
         size_t offset = _find_key(key, hashval);
-        if (offset ==  (size_t)-1)
+        if (offset == (size_t)-1)
             return {prepare_insert(hashval), true};
         return {offset, false};
     }

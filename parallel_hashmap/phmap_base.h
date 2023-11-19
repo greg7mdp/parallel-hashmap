@@ -4879,7 +4879,6 @@ public:
             lock();
             return true;
         }
-        
 
     private:
         mutex_type *m_;
