@@ -8,18 +8,9 @@
 #include <vector>
 #include <ppl.h>
 
-class srwlock {
-    SRWLOCK _lock;
-
-public:
-    srwlock()     { InitializeSRWLock(&_lock); }
-    void lock()   { AcquireSRWLockExclusive(&_lock); }
-    void unlock() { ReleaseSRWLockExclusive(&_lock); }
-};
-
 using Map =  phmap::parallel_flat_hash_map<std::string, int, phmap::priv::hash_default_hash<std::string>,
                                            phmap::priv::hash_default_eq<std::string>,
-                                           std::allocator<std::pair<const std::string, int>>, 8, srwlock>;
+                                           std::allocator<std::pair<const std::string, int>>, 8, phmap::srwlock>;
 
 class Dict
 {

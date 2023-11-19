@@ -5000,6 +5000,7 @@ public:
 
 // --------------------------------------------------------------------------
 //         Abseil Mutex support (read and write lock support)
+//         use: `phmap::AbslMutex` instead of `std::mutex`
 // --------------------------------------------------------------------------
 #ifdef ABSL_SYNCHRONIZATION_MUTEX_H_
     
@@ -5025,6 +5026,42 @@ public:
         using UniqueLock      = typename Base::WriteLock;
         using SharedLocks     = typename Base::ReadLocks;
         using UniqueLocks     = typename Base::WriteLocks;
+        using UpgradeToUnique = typename Base::DoNothing; // we already have unique ownership
+    };
+
+#endif
+
+// --------------------------------------------------------------------------
+//         Microsoft SRWLOCK support (read and write lock support)
+//         use: `phmap::srwlock` instead of `std::mutex`
+// --------------------------------------------------------------------------
+#if defined(_MSVC_LANG) && defined(SRWLOCK_INIT)
+
+    class srwlock {
+        SRWLOCK _lock;
+    public:
+        srwlock()              { InitializeSRWLock(&_lock); }
+        void lock()            { AcquireSRWLockExclusive(&_lock); }
+        void unlock()          { ReleaseSRWLockExclusive(&_lock); }
+        bool try_lock()        { return !!TryAcquireSRWLockExclusive(&_lock); }
+        void lock_shared()     { AcquireSRWLockShared(&_lock); }
+        void unlock_shared()   { ReleaseSRWLockShared(&_lock); }
+        bool try_lock_shared() { return !!TryAcquireSRWLockShared(&_lock); }
+    };
+
+
+    template<>
+    class LockableImpl<srwlock> : public srwlock
+    {
+    public:
+        using mutex_type    = srwlock;
+        using Base          = LockableBaseImpl<srwlock>;
+        using SharedLock    = typename Base::ReadLock;
+        using ReadWriteLock = typename Base::ReadWriteLock;
+        using UpgradeLock   = typename Base::WriteLock;
+        using UniqueLock    = typename Base::WriteLock;
+        using SharedLocks   = typename Base::ReadLocks;
+        using UniqueLocks   = typename Base::WriteLocks;
         using UpgradeToUnique = typename Base::DoNothing; // we already have unique ownership
     };
 
