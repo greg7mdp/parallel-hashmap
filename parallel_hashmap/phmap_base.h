@@ -4629,7 +4629,7 @@ public:
         template<class T> explicit DoNothing(T&&) {}
         DoNothing& operator=(const DoNothing&) { return *this; }
         DoNothing& operator=(DoNothing&&) noexcept { return *this; }
-        void swap(DoNothing &) {}
+        void swap(DoNothing &)  noexcept {}
         bool owns_lock() const noexcept { return true; }
         void lock() {}
         void unlock() {}
