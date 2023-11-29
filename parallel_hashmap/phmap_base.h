@@ -4834,7 +4834,8 @@ public:
                 m_->unlock();
         }
 
-        void lock_shared() { 
+        void lock_shared() {
+            assert(!locked_);
             if (!locked_shared_) { 
                 m_->lock_shared(); 
                 locked_shared_ = true; 
@@ -4848,7 +4849,8 @@ public:
             }
         } 
 
-        void lock() { 
+        void lock() {
+            assert(!locked_shared_);
             if (!locked_) { 
                 m_->lock(); 
                 locked_ = true; 
