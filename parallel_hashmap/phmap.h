@@ -3470,7 +3470,9 @@ public:
         if (it == set.end()) 
             return 0;
         
-        m.switch_to_unique();
+        if (m.switch_to_unique()) {
+           it = set.find(key, hashval);
+        }
         set._erase(it);
         return 1;
     }
