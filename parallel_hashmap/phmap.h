@@ -3461,12 +3461,12 @@ public:
         auto hashval = this->hash(key);
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
-        typename Lockable::UpgradeLock m(inner);
+        typename Lockable::ReadWriteLock m(inner);
         auto it   = set.find(key, hashval);
         if (it == set.end()) 
             return 0;
-
-        typename Lockable::UpgradeToUnique unique(m);
+        
+        m.switch_to_unique();
         set._erase(it);
         return 1;
     }
