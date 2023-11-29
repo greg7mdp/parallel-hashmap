@@ -4834,7 +4834,8 @@ public:
                 m_->unlock();
         }
 
-        void lock_shared() { 
+        void lock_shared() {
+            assert(!locked_);
             if (!locked_shared_) { 
                 m_->lock_shared(); 
                 locked_shared_ = true; 
@@ -4848,7 +4849,8 @@ public:
             }
         } 
 
-        void lock() { 
+        void lock() {
+            assert(!locked_shared_);
             if (!locked_) { 
                 m_->lock(); 
                 locked_ = true; 
@@ -4955,12 +4957,11 @@ public:
 //    using Lockable = phmap::LockableImpl<mutex_type>;
 //    Lockable m;
 //  
-//    Lockable::UpgradeLock read_lock(m); // take a upgradable lock
-//
-//    {
-//        Lockable::UpgradeToUnique unique_lock(read_lock);
-//        // now locked for write
-//    }
+//    Lockable::ReadWriteLock read_lock(m); // take a lock (read if supported, otherwise write)
+//    ... do something
+// 
+//    m.switch_to_unique(); // returns true if we had a read lock and switched to write
+//    // now locked for write
 //
 // ---------------------------------------------------------------------------
 //         Generic mutex support (always write locks)
@@ -4972,12 +4973,10 @@ public:
     using mutex_type      = Mtx_;
     using Base            = LockableBaseImpl<Mtx_>;
     using SharedLock      = typename Base::WriteLock;
-    using UpgradeLock     = typename Base::WriteLock;
     using UniqueLock      = typename Base::WriteLock;
     using ReadWriteLock   = typename Base::WriteLock;
     using SharedLocks     = typename Base::WriteLocks;
     using UniqueLocks     = typename Base::WriteLocks;
-    using UpgradeToUnique = typename Base::DoNothing;        // we already have unique ownership
 };
 
 // ---------------------------------------------------------------------------
@@ -4990,10 +4989,8 @@ public:
     using mutex_type      = phmap::NullMutex;
     using Base            = LockableBaseImpl<phmap::NullMutex>;
     using SharedLock      = typename Base::DoNothing; 
-    using UpgradeLock     = typename Base::DoNothing; 
     using ReadWriteLock   = typename Base::DoNothing;
     using UniqueLock      = typename Base::DoNothing; 
-    using UpgradeToUnique = typename Base::DoNothing; 
     using SharedLocks     = typename Base::DoNothing;
     using UniqueLocks     = typename Base::DoNothing;
 };
@@ -5022,11 +5019,9 @@ public:
         using Base            = LockableBaseImpl<phmap::AbslMutex>;
         using SharedLock      = typename Base::ReadLock;
         using ReadWriteLock   = typename Base::ReadWriteLock;
-        using UpgradeLock     = typename Base::WriteLock;
         using UniqueLock      = typename Base::WriteLock;
         using SharedLocks     = typename Base::ReadLocks;
         using UniqueLocks     = typename Base::WriteLocks;
-        using UpgradeToUnique = typename Base::DoNothing; // we already have unique ownership
     };
 
 #endif
@@ -5035,7 +5030,7 @@ public:
 //         Microsoft SRWLOCK support (read and write lock support)
 //         use: `phmap::srwlock` instead of `std::mutex`
 // --------------------------------------------------------------------------
-#if defined(_MSVC_LANG) && defined(SRWLOCK_INIT)
+#if defined(_MSC_VER) && defined(SRWLOCK_INIT)
 
     class srwlock {
         SRWLOCK _lock;
@@ -5058,11 +5053,9 @@ public:
         using Base          = LockableBaseImpl<srwlock>;
         using SharedLock    = typename Base::ReadLock;
         using ReadWriteLock = typename Base::ReadWriteLock;
-        using UpgradeLock   = typename Base::WriteLock;
         using UniqueLock    = typename Base::WriteLock;
         using SharedLocks   = typename Base::ReadLocks;
         using UniqueLocks   = typename Base::WriteLocks;
-        using UpgradeToUnique = typename Base::DoNothing; // we already have unique ownership
     };
 
 #endif
@@ -5081,11 +5074,9 @@ public:
         using Base            = LockableBaseImpl<boost::shared_mutex>;
         using SharedLock      = boost::shared_lock<mutex_type>;
         using ReadWriteLock   = typename Base::ReadWriteLock;
-        using UpgradeLock     = boost::unique_lock<mutex_type>; // assume can't upgrade
         using UniqueLock      = boost::unique_lock<mutex_type>;
         using SharedLocks     = typename Base::ReadLocks;
         using UniqueLocks     = typename Base::WriteLocks;
-        using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
     };
 
 #endif // BOOST_THREAD_SHARED_MUTEX_HPP
@@ -5104,11 +5095,9 @@ public:
         using Base            = LockableBaseImpl<std::shared_mutex>;
         using SharedLock      = std::shared_lock<mutex_type>;
         using ReadWriteLock   = typename Base::ReadWriteLock;
-        using UpgradeLock     = std::unique_lock<mutex_type>; // assume can't upgrade
         using UniqueLock      = std::unique_lock<mutex_type>;
         using SharedLocks     = typename Base::ReadLocks;
         using UniqueLocks     = typename Base::WriteLocks;
-        using UpgradeToUnique = typename Base::DoNothing;  // we already have unique ownership
     };
 #endif // PHMAP_HAVE_SHARED_MUTEX
 
