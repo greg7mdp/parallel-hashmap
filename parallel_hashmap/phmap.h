@@ -1506,6 +1506,10 @@ public:
         friend class raw_hash_set;
 
     public:
+        slot_type* slot() const {
+            return *slot_;
+        }
+
         template <class... Args>
         void operator()(Args&&... args) const {
             assert(*slot_);
@@ -3247,7 +3251,7 @@ public:
             set.lazy_emplace_at(offset, std::forward<F>(f));
             set.set_ctrl(offset, H2(hashval));
         }
-        return iterator_at(offset);
+        return make_iterator(&inner, set.iterator_at(offset));
     }
 
     template <class K = key_type, class F>

@@ -4882,8 +4882,8 @@ public:
 
     private:
         mutex_type *m_;
-        bool        locked_shared_;
         bool        locked_;
+        bool        locked_shared_;
     };
 
     // ----------------------------------------------------
