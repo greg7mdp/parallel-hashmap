@@ -3322,11 +3322,11 @@ public:
     // ----------------------------------------------------------------------------------------------------
     template <class K = key_type, class F>
     bool erase_if(const key_arg<K>& key, F&& f) {
-        return erase_if_impl<K, F, ReadWriteLock>(key, std::forward<F>(f));
+        return !!erase_if_impl<K, F, ReadWriteLock>(key, std::forward<F>(f));
     }
 
     template <class K = key_type, class F, class L>
-    bool erase_if_impl(const key_arg<K>& key, F&& f) {
+    size_type erase_if_impl(const key_arg<K>& key, F&& f) {
 #if __cplusplus >= 201703L
         static_assert(std::is_invocable<F, value_type&>::value);
 #endif
@@ -3336,19 +3336,19 @@ public:
         L m(inner);
         auto it = set.find(key, hashval);
         if (it == set.end())
-            return false;
+            return 0;
         if (m.switch_to_unique()) {
             // we did an unlock/lock, need to call `find()` again
             it = set.find(key, hashval);
             if (it == set.end())
-                return false;
+                return 0;
         }
         if (std::forward<F>(f)(const_cast<value_type &>(*it)))
         {
             set._erase(it);
-            return true;
+            return 1;
         }
-        return false;
+        return 0;
     }
 
     // if map already  contains key, the first lambda is called with the mapped value (under 
@@ -3462,19 +3462,8 @@ public:
     // --------------------------------------------------------------------
     template <class K = key_type>
     size_type erase(const key_arg<K>& key) {
-        auto hashval = this->hash(key);
-        Inner& inner = sets_[subidx(hashval)];
-        auto&  set   = inner.set_;
-        typename Lockable::ReadWriteLock m(inner);
-        auto it   = set.find(key, hashval);
-        if (it == set.end()) 
-            return 0;
-        
-        if (m.switch_to_unique()) {
-           it = set.find(key, hashval);
-        }
-        set._erase(it);
-        return 1;
+        auto always_erase =  [](const value_type&){ return true; };
+        return erase_if_impl<K, decltype(always_erase), ReadWriteLock>(key, std::move(always_erase));
     }
 
     // --------------------------------------------------------------------
