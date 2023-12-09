@@ -357,7 +357,7 @@ inline size_t H1(size_t hashval, const ctrl_t* ) {
 #endif
 
 
-inline h2_t H2(size_t hashval)       { return (h2_t)(ctrl_t)(hashval & 0x7F); }
+inline h2_t H2(size_t hashval)       { return (ctrl_t)(hashval & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
 inline bool IsFull(ctrl_t c)           { return c >= static_cast<ctrl_t>(0); }
@@ -4582,7 +4582,7 @@ struct HashtableDebugAccess<Set, typename std::enable_if<has_member_type_raw_has
         auto seq = set.probe(hashval);
         while (true) {
             priv::Group g{set.ctrl_ + seq.offset()};
-            for (uint32_t i : g.Match(priv::H2(hashval))) {
+            for (uint32_t i : g.Match((h2_t)priv::H2(hashval))) {
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
