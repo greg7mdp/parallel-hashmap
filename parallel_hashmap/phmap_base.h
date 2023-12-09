@@ -4377,14 +4377,14 @@ namespace memory_internal {
 // ----------------------------------------------------------------------------
 template <class Pair, class = std::true_type>
 struct OffsetOf {
-    static constexpr size_t kFirst = (size_t)-1;
-  static constexpr size_t kSecond = (size_t)-1;
+   static constexpr size_t kFirst  = static_cast<size_t>(-1);
+   static constexpr size_t kSecond = static_cast<size_t>(-1);
 };
 
 template <class Pair>
 struct OffsetOf<Pair, typename std::is_standard_layout<Pair>::type> 
 {
-    static constexpr size_t kFirst = offsetof(Pair, first);
+    static constexpr size_t kFirst  = offsetof(Pair, first);
     static constexpr size_t kSecond = offsetof(Pair, second);
 };
 
