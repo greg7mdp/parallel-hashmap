@@ -424,14 +424,10 @@ struct GroupSse2Impl
 #endif
     }
 
-#ifdef __INTEL_COMPILER
-#pragma warning push
-#pragma warning disable 68
-#endif
     // Returns a bitmask representing the positions of empty or deleted slots.
     // -----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> MatchEmptyOrDeleted() const {
-        auto special = _mm_set1_epi8(static_cast<uint8_t>(kSentinel));
+        auto special = _mm_set1_epi8(static_cast<char>(kSentinel));
         return BitMask<uint32_t, kWidth>(
             static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl))));
     }
@@ -439,13 +435,10 @@ struct GroupSse2Impl
     // Returns the number of trailing empty or deleted elements in the group.
     // ----------------------------------------------------------------------
     uint32_t CountLeadingEmptyOrDeleted() const {
-        auto special = _mm_set1_epi8(static_cast<uint8_t>(kSentinel));
+        auto special = _mm_set1_epi8(static_cast<char>(kSentinel));
         return TrailingZeros(
             static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1));
     }
-#ifdef __INTEL_COMPILER
-#pragma warning pop
-#endif
 
     // ----------------------------------------------------------------------
     void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
