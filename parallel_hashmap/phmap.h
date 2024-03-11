@@ -210,6 +210,7 @@ uint32_t TrailingZeros(T x) {
         return base_internal::CountTrailingZerosNonZero64(static_cast<uint64_t>(x));
     else
         return base_internal::CountTrailingZerosNonZero32(static_cast<uint32_t>(x));
+    PHMAP_BUILTIN_UNREACHABLE();
 }
 
 // --------------------------------------------------------------------------
