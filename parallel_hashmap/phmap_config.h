@@ -651,6 +651,15 @@
 #endif
 
 // ----------------------------------------------------------------------
+// builtin unreachable
+// ----------------------------------------------------------------------
+#if PHMAP_HAVE_BUILTIN(__builtin_unreachable)
+    #define PHMAP_BUILTIN_UNREACHABLE() __builtin_unreachable()
+#else
+    #define PHMAP_BUILTIN_UNREACHABLE() (void)0
+#endif
+
+// ----------------------------------------------------------------------
 // base/macros.h
 // ----------------------------------------------------------------------
 
