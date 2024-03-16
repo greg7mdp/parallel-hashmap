@@ -206,20 +206,23 @@ constexpr bool IsNoThrowSwappable(std::false_type /* is_swappable */) {
 // --------------------------------------------------------------------------
 template <typename T>
 uint32_t TrailingZeros(T x) {
+    uint32_t res;
     PHMAP_IF_CONSTEXPR(sizeof(T) == 8)
-        return base_internal::CountTrailingZerosNonZero64(static_cast<uint64_t>(x));
+        res = base_internal::CountTrailingZerosNonZero64(static_cast<uint64_t>(x));
     else
-        return base_internal::CountTrailingZerosNonZero32(static_cast<uint32_t>(x));
-    PHMAP_BUILTIN_UNREACHABLE();
+        res = base_internal::CountTrailingZerosNonZero32(static_cast<uint32_t>(x));
+    return res;
 }
 
 // --------------------------------------------------------------------------
 template <typename T>
 uint32_t LeadingZeros(T x) {
+    uint32_t res;
     PHMAP_IF_CONSTEXPR(sizeof(T) == 8)
-        return base_internal::CountLeadingZeros64(static_cast<uint64_t>(x));
+        res = base_internal::CountLeadingZeros64(static_cast<uint64_t>(x));
     else
-        return base_internal::CountLeadingZeros32(static_cast<uint32_t>(x));
+        res = base_internal::CountLeadingZeros32(static_cast<uint32_t>(x));
+    return res;
 }
 
 // --------------------------------------------------------------------------
@@ -575,8 +578,7 @@ inline size_t CapacityToGrowth(size_t capacity)
     assert(IsValidCapacity(capacity));
     // `capacity*7/8`
     PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
-        if (capacity == 7)
-        {
+        if (capacity == 7) {
             // x-x/8 does not work when x==7.
             return 6;
         }
@@ -592,8 +594,7 @@ inline size_t GrowthToLowerboundCapacity(size_t growth)
 {
     // `growth*8/7`
     PHMAP_IF_CONSTEXPR (Group::kWidth == 8) {
-        if (growth == 7)
-        {
+        if (growth == 7) {
             // x+(x-1)/7 does not work when x==7.
             return 8;
         }
