@@ -608,7 +608,7 @@
 #endif
 
 // ----------------------------------------------------------------------
-// Figure out SSE support
+// Figure out SSE/AVX support
 // ----------------------------------------------------------------------
 #ifndef PHMAP_HAVE_SSE2
     #if defined(__SSE2__) ||  \
@@ -628,6 +628,14 @@
     #endif
 #endif
 
+#ifndef PHMAP_HAVE_AVX2
+    #if defined(__AVX2__)
+        #define PHMAP_HAVE_AVX2 1
+    #else
+        #define PHMAP_HAVE_AVX2 0
+    #endif
+#endif
+
 #if PHMAP_HAVE_SSSE3 && !PHMAP_HAVE_SSE2
     #error "Bad configuration!"
 #endif
@@ -640,6 +648,9 @@
     #include <tmmintrin.h>
 #endif
 
+#if PHMAP_HAVE_AVX2
+    #include <immintrin.h>
+#endif
 
 // ----------------------------------------------------------------------
 // constexpr if

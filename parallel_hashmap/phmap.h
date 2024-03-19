@@ -330,8 +330,10 @@ static_assert(kDeleted == -2,
 // This enables removing a branch in the hot path of find().
 // --------------------------------------------------------------------------
 inline ctrl_t* EmptyGroup() {
-  alignas(16) static constexpr ctrl_t empty_group[] = {
+  alignas(32) static constexpr ctrl_t empty_group[] = {
       kSentinel, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
+      kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
+      kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
       kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty};
   return const_cast<ctrl_t*>(empty_group);
 }
@@ -467,6 +469,101 @@ struct GroupSse2Impl
 
 #endif  // PHMAP_HAVE_SSE2
 
+#if PHMAP_HAVE_AVX2
+
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4365) // conversion from 'int' to 'T', signed/unsigned mismatch
+#endif
+
+// --------------------------------------------------------------------------
+// https://github.com/abseil/abseil-cpp/issues/209
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87853
+// _mm_cmpgt_epi8 is broken under GCC with -funsigned-char
+// Work around this by using the portable implementation of Group
+// when using -funsigned-char under GCC.
+// --------------------------------------------------------------------------
+inline __m256i _mm256_cmpgt_epi8_fixed(__m256i a, __m256i b) {
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Woverflow"
+
+  if (std::is_unsigned<char>::value) {
+    const __m256i mask = _mm256_set1_epi8(static_cast<char>(0x80));
+    const __m256i diff = _mm256_subs_epi8(b, a);
+    return _mm256_cmpeq_epi8(_mm256_and_si256(diff, mask), mask);
+  }
+
+  #pragma GCC diagnostic pop
+#endif
+  return _mm256_cmpgt_epi8(a, b);
+}
+
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+struct GroupAvx2Impl {
+    enum { kWidth = sizeof(__m256i) };  // the number of slots per group
+
+    explicit GroupAvx2Impl(const ctrl_t* pos) {
+        ctrl = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(pos));
+    }
+
+    // Returns a bitmask representing the positions of slots that match hash.
+    // ----------------------------------------------------------------------
+    BitMask<uint64_t, kWidth> Match(h2_t hash) const {
+        auto match = _mm256_set1_epi8(static_cast<char>(hash));
+        return BitMask<uint64_t, kWidth>(
+            static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(match, ctrl))));
+    }
+
+    // Returns a bitmask representing the positions of empty slots.
+    // ------------------------------------------------------------
+    BitMask<uint64_t, kWidth> MatchEmpty() const {
+        // This only works because kEmpty is -128.
+        return BitMask<uint64_t, kWidth>(
+            static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_sign_epi8(ctrl, ctrl))));
+    }
+
+#ifdef __INTEL_COMPILER
+#pragma warning push
+#pragma warning disable 68
+#endif
+    // Returns a bitmask representing the positions of empty or deleted slots.
+    // -----------------------------------------------------------------------
+    BitMask<uint64_t, kWidth> MatchEmptyOrDeleted() const {
+        auto special = _mm256_set1_epi8(static_cast<char>(kSentinel));
+        return BitMask<uint64_t, kWidth>(
+            static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpgt_epi8_fixed(special, ctrl))));
+    }
+
+    // Returns the number of trailing empty or deleted elements in the group.
+    // ----------------------------------------------------------------------
+    uint32_t CountLeadingEmptyOrDeleted() const {
+        auto special = _mm256_set1_epi8(static_cast<char>(kSentinel));
+        return TrailingZeros(
+            static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpgt_epi8_fixed(special, ctrl)) + 1));
+    }
+#ifdef __INTEL_COMPILER
+#pragma warning pop
+#endif
+
+    // ----------------------------------------------------------------------
+    void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
+        auto msbs = _mm256_set1_epi8(static_cast<char>(-128));
+        auto x126 = _mm256_set1_epi8(126);
+        auto res = _mm256_or_si256(_mm256_shuffle_epi8(x126, ctrl), msbs);
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(dst), res);
+    }
+
+    __m256i ctrl;
+};
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
+#endif  // PHMAP_HAVE_AVX2
+
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 struct GroupPortableImpl 
@@ -522,7 +619,9 @@ struct GroupPortableImpl
     uint64_t ctrl;
 };
 
-#if PHMAP_HAVE_SSE2  
+#if PHMAP_HAVE_AVX2
+    using Group = GroupAvx2Impl;
+#elif PHMAP_HAVE_SSE2
     using Group = GroupSse2Impl;
 #else
     using Group = GroupPortableImpl;

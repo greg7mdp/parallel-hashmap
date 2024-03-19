@@ -166,7 +166,21 @@ TEST(Group, EmptyGroup) {
 }
 
 TEST(Group, Match) {
-  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 32) {
+    //                0       1  2         3  4       5  6          7
+    ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
+                      7,      5, 3,        1, 1,      1, 1,         1,
+                      7,      5, 3,        1, 1,      1, 1,         1,
+                      7,      5, 3,        1, 1,      1, 1,         1};
+    EXPECT_THAT(Group{group}.Match(0), ElementsAre());
+    EXPECT_THAT(Group{group}.Match(1), ElementsAre(1,
+                                                   11, 12, 13, 14, 15,
+                                                   19, 20, 21, 22, 23,
+                                                   27, 28, 29, 30, 31));
+    EXPECT_THAT(Group{group}.Match(3), ElementsAre(3, 10, 18, 26));
+    EXPECT_THAT(Group{group}.Match(5), ElementsAre(5, 9, 17, 25));
+    EXPECT_THAT(Group{group}.Match(7), ElementsAre(7, 8, 16, 24));
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.Match(0), ElementsAre());
@@ -185,7 +199,13 @@ TEST(Group, Match) {
 }
 
 TEST(Group, MatchEmpty) {
-  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 32) {
+    ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
+                      7,      5, 3,        1, 1,      1, 1,         1,
+                      kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
+                      7,      5, 3,        1, 1,      1, 1,         1};
+    EXPECT_THAT(Group{group}.MatchEmpty(), ElementsAre(0, 4, 16, 20));
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.MatchEmpty(), ElementsAre(0, 4));
@@ -198,7 +218,13 @@ TEST(Group, MatchEmpty) {
 }
 
 TEST(Group, MatchEmptyOrDeleted) {
-  PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
+  PHMAP_IF_CONSTEXPR (Group::kWidth == 32) {
+    ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
+                      7,      5, 3,        1, 1,      1, 1,         1,
+                      kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
+                      7,      5, 3,        1, 1,      1, 1,         1};
+    EXPECT_THAT(Group{group}.MatchEmptyOrDeleted(), ElementsAre(0, 2, 4, 16, 18, 20));
+  } else PHMAP_IF_CONSTEXPR (Group::kWidth == 16) {
     ctrl_t group[] = {kEmpty, 1, kDeleted, 3, kEmpty, 5, kSentinel, 7,
                       7,      5, 3,        1, 1,      1, 1,         1};
     EXPECT_THAT(Group{group}.MatchEmptyOrDeleted(), ElementsAre(0, 2, 4));
