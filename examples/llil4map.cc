@@ -116,7 +116,7 @@ typedef uint32_t int_type;
 // See also https://backlinko.com/google-keyword-study
 //
 // To use (limited length) fixed length strings uncomment the next line.
-//#define MAX_STR_LEN_L (size_t) 12
+#define MAX_STR_LEN_L (size_t) 12
 
 #ifdef MAX_STR_LEN_L
 struct str_type : std::array<char, MAX_STR_LEN_L> {
