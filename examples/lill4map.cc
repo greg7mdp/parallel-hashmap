@@ -43,7 +43,7 @@
 // Note: Another option is downloading and unpacking Boost locally.
 // (no need to build it because the bits we use are header file only)
 #include <string_view>
-#define USE_BOOST_PARALLEL_SORT 0
+#define USE_BOOST_PARALLEL_SORT 1
 
 #include <chrono>
 #include <thread>
