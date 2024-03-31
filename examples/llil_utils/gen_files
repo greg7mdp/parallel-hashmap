@@ -1,0 +1,34 @@
+#!/bin/bash
+# Script for generating input files for llil4map.cc.
+
+mkdir -p tmp
+cp gen-llil.pl shuffle.pl tmp
+cd tmp
+
+# create 26 random files
+for n in $(perl -le "print for 'aa'..'az'"); do
+   perl gen-llil.pl big$n 200 3 1
+   perl shuffle.pl big$n >1; mv 1 big$n
+done &
+
+# create 26 random files
+for n in $(perl -le "print for 'ba'..'bz'"); do
+   perl gen-llil.pl big$n 200 3 1
+   perl shuffle.pl big$n >2; mv 2 big$n
+done &
+
+# create 26 random files
+for n in $(perl -le "print for 'ca'..'cz'"); do
+   perl gen-llil.pl big$n 200 3 1
+   perl shuffle.pl big$n >3; mv 3 big$n
+done &
+
+# create 14 random files (total 92 files)
+for n in $(perl -le "print for 'da'..'dn'"); do
+   perl gen-llil.pl big$n 200 3 1
+   perl shuffle.pl big$n >4; mv 4 big$n
+done &
+
+cd ..
+
+wait

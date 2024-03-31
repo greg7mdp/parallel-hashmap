@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd tmp
+../../ex_llil4map big* > out.txt

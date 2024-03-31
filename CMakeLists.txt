@@ -217,6 +217,7 @@ if (PHMAP_BUILD_EXAMPLES)
        target_compile_features(ex_llil4map PUBLIC cxx_std_20)
        target_link_libraries(ex_llil4map PRIVATE OpenMP::OpenMP_CXX)
        target_compile_options(ex_llil4map PRIVATE "${OpenMP_CXX_FLAGS}")
+       file(COPY examples/llil_utils DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     endif()
     
     target_link_libraries(ex_knucleotide Threads::Threads)
