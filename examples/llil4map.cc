@@ -416,6 +416,9 @@ int main(int argc, char* argv[])
                auto it = I[i];
                for (auto& x : set)
                   *it++ = std::make_pair(std::move(const_cast<str_type&>(x.first)), x.second);
+
+               // reset the set (no longer needed) to reclaim memory early
+               set = map_str_int_type::EmbeddedSet();
             });
          }
       }
