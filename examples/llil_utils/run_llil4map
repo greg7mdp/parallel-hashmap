@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd tmp
-../../ex_llil4map big* big* big* > out.txt
+../../ex_llil4map big* big* big* | cksum
