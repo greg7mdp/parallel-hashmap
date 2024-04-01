@@ -2,6 +2,7 @@ VagrantFile
 benchmark/build
 benchmark/output
 benchmark/charts.html
+examples/llil_utils/tmp
 build*
 .vagrant
 .cache
