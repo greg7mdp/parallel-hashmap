@@ -395,18 +395,13 @@ int main(int argc, char* argv[])
       }
       else {
          propvec.resize(map.size());
-         std::vector<vec_str_int_type::iterator> I; I.resize(map.subcnt());
-         I[0] = propvec.begin();
-         size_t prev_num_keys;
+         std::vector<vec_str_int_type::iterator> I(map.subcnt());
+         auto cur = propvec.begin();
 
          for (size_t i = 0; i < map.subcnt(); ++i) {
             map.with_submap(i, [&](const map_str_int_type::EmbeddedSet& set) {
-               if (i == 0) {
-                  prev_num_keys = set.size();
-               } else {
-                  I[i] = I[i-1] + prev_num_keys;
-                  prev_num_keys = set.size();
-               }
+               I[i] = cur;
+               cur += set.size();
             });
          }
 
@@ -423,11 +418,6 @@ int main(int argc, char* argv[])
          }
       }
 
-      // phmap's clear() retains capacity until out of scope
-      // swap map with an empty temporary, which is immediately destroyed
-      // map.clear();
-      map_str_int_type().swap(map);
-
       cend2 = high_resolution_clock::now();
       double ctaken2 = elaspe_time(cend2, cstart2);
       std::cerr << "map to vector       " << std::setw(8) << ctaken2 << " secs\n";
@@ -436,27 +426,15 @@ int main(int argc, char* argv[])
    cstart3 = high_resolution_clock::now();
 
    // Sort the vector by (count) in reverse order, (name) in lexical order
+   auto reverse_order = [](const str_int_type& left, const str_int_type& right) {
+      return left.second != right.second ? left.second > right.second : left.first  < right.first;
+   };
 #if USE_BOOST_PARALLEL_SORT == 0
-   std::sort(
-      // Standard sort
-      propvec.begin(), propvec.end(),
-      [](const str_int_type& left, const str_int_type& right) {
-         return left.second != right.second
-            ? left.second > right.second
-            : left.first  < right.first;
-      }
-   );
+   // Standard sort
+   std::sort(propvec.begin(), propvec.end(), reverse_order);
 #else
-   boost::sort::block_indirect_sort(
-      // Parallel sort
-      propvec.begin(), propvec.end(),
-      [](const str_int_type& left, const str_int_type& right) {
-         return left.second != right.second
-            ? left.second > right.second
-            : left.first  < right.first;
-      },
-      std::min(nthds, 32)
-   );
+   // Parallel sort
+   boost::sort::block_indirect_sort(propvec.begin(), propvec.end(), reverse_order, std::min(nthds, 32));
 #endif
 
    cend3s = high_resolution_clock::now();
