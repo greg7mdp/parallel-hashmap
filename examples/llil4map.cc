@@ -479,7 +479,7 @@ int main(int argc, char* argv[])
    std::sort(propvec.begin(), propvec.end(), reverse_order);
 #else
    // Parallel sort
-   boost::sort::block_indirect_sort(propvec.begin(), propvec.end(), reverse_order, std::min(nthds, 32));
+   boost::sort::block_indirect_sort(propvec.begin(), propvec.end(), reverse_order, nthds);
 #endif
 
    cend3s = high_resolution_clock::now();
