@@ -7,6 +7,8 @@
 //    Original challenge   https://perlmonks.com/?node_id=11147822
 //         and summary     https://perlmonks.com/?node_id=11150293
 //    Other demonstrations https://perlmonks.com/?node_id=11149907
+//
+// Further changes after original version in this repository by Gregory Popovitch
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // OpenMP Little Book - https://nanxiao.gitbooks.io/openmp-little-book
 //
@@ -37,52 +39,54 @@
 // NUM_THREADS=3 llil4map ...
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// Specify 0/1 to use boost's parallel sorting algorithm; faster than __gnu_parallel::sort.
-// https://www.boost.org/doc/libs/1_81_0/libs/sort/doc/html/sort/parallel.html
-// This requires the boost header files: e.g. devpkg-boost bundle on Clear Linux.
-// Note: Another option is downloading and unpacking Boost locally.
-// (no need to build it because the bits we use are header file only)
-#include <string_view>
-#define USE_BOOST_PARALLEL_SORT 1
-
-#include <chrono>
-#include <thread>
-
-#include <parallel_hashmap/phmap.h>
-
+#include <cassert>
 #include <cstdio>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <compare>
+#include <chrono>
 
 #include <string>
+#include <string_view>
+
 #include <array>
 #include <vector>
 
-#include <utility>
-#include <iterator>
+#include <thread>
 #include <execution>
-#include <algorithm>
-
-#if USE_BOOST_PARALLEL_SORT > 0
-#include <boost/sort/sort.hpp>
-#endif
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <atomic>
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <sstream>
+
+#include <parallel_hashmap/phmap.h>
 
 static_assert(sizeof(size_t) == sizeof(int64_t), "size_t too small, need a 64-bit compile");
 
-#include <atomic>
-#include <cstddef>
+// Specify 0/1 to use boost's parallel sorting algorithm; faster than __gnu_parallel::sort.
+// https://www.boost.org/doc/libs/1_81_0/libs/sort/doc/html/sort/parallel.html
+// This requires the boost header files: e.g. devpkg-boost bundle on Clear Linux.
+// Note: Another option is downloading and unpacking Boost locally.
+// (no need to build it because the bits we use are header file only)
+#define USE_BOOST_PARALLEL_SORT 1
+
+#if USE_BOOST_PARALLEL_SORT
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused-parameter"
+    #pragma clang diagnostic ignored "-Wshadow"
+
+    #include <boost/sort/sort.hpp>
+
+    #pragma clang diagnostic pop
+#endif
+
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+
 
 class spinlock_mutex {
    // https://rigtorp.se/spinlock/
@@ -107,70 +111,121 @@ private:
 
 typedef uint32_t int_type;
 
-// All words in big1.txt, big2.txt, big3.txt are <= 6 chars in length.
-// big.txt  max word length is 6
-// long.txt max word length is 208
+// ---------------------------------------------------------------------------------------------
+// Stores a string + a count
+// For strings up to 11 bytes, total space used is 16 bytes (no wasted space in set)
+// For larger strings, uses 16 bytes + strlen(string) + 1
 //
-// Based on rough benchmarking, the short fixed string hack below is only
-// worth trying for MAX_STR_LEN_L up to about 30.
-// See also https://backlinko.com/google-keyword-study
-//
-// To use (limited length) fixed length strings uncomment the next line.
-#define MAX_STR_LEN_L (size_t) 12
+// invariants
+//    if extra[3], str is a valid string pointer
+//    if !extra[3], the 12 bytes starting at (const char *)(&str) store a null_terminated string
+// ---------------------------------------------------------------------------------------------
+struct string_cnt {
+   char *    str;
+   char      extra[4];
+   uint32_t  cnt;
 
-#ifdef MAX_STR_LEN_L
-struct str_type : std::array<char, MAX_STR_LEN_L> {
-   bool operator==( const str_type& o ) const {
-      return ::memcmp(this->data(), o.data(), MAX_STR_LEN_L) == 0;
+   static constexpr size_t buffsz = sizeof(str) + sizeof(extra);
+
+   string_cnt() : str{nullptr}, extra{0,0,0,0}, cnt{0} {}
+
+   string_cnt(const char *s, uint32_t c = 0) : str(nullptr), cnt(c) { set(s); }
+
+   ~string_cnt() { free(); }
+
+   string_cnt(const string_cnt& o) {
+      set(o.get());
    }
-   bool operator<( const str_type& o ) const {
-      return ::memcmp(this->data(), o.data(), MAX_STR_LEN_L) < 0;
+
+   string_cnt(string_cnt&& o) noexcept {
+      if (o.extra[3]) {
+         str = o.str;
+         o.str = nullptr;
+         extra[3] = 1;
+      } else {
+         std::strcpy((char *)(&str), o.get());
+         extra[3] = 0;
+      }
+      cnt = o.cnt;
+   }
+
+   string_cnt& operator=(const string_cnt& o) {
+      free();
+      set(o.get());
+      cnt = o.cnt;
+      return *this;
+   }
+
+   string_cnt& operator=(string_cnt&& o) noexcept {
+      free();
+      new (this) string_cnt(std::move(o));
+      return *this;
+   }
+
+   std::strong_ordering operator<=>(const string_cnt& o) const { return std::strcmp(get(), o.get()) <=> 0; }
+   bool operator==(const string_cnt& o) const { return std::strcmp(get(), o.get()) == 0; }
+
+   std::size_t hash() const {
+      auto s = get();
+      std::string_view sv { s, strlen(s) };
+      return std::hash<std::string_view>()(sv);
+   }
+
+   const char *get() const { return extra[3] ? str : (const char *)(&str); }
+
+private:
+   void free() { if (extra[3]) { delete [] str; str = nullptr; } }
+
+   void set(const char *s) {
+      static_assert(buffsz == 12);
+      static_assert(offsetof(string_cnt, cnt) == (intptr_t)buffsz);
+      static_assert(sizeof(string_cnt) == 16);
+
+      assert(!extra[3] || !str);
+      if (!s)
+         std::memset(&str, 0, buffsz);
+      else {
+         auto len = std::strlen(s);
+         if (len >= buffsz) {
+            str = new char[len+1];
+            std::strcpy(str, s);
+            extra[3] = 1;
+         } else {
+            std::strcpy((char *)(&str), s);
+            extra[3] = 0;
+         }
+      }
    }
 };
-// inject specialization of std::hash for str_type into namespace std
+
 namespace std {
-   template<> struct hash<str_type> {
-      std::size_t operator()( str_type const& v ) const noexcept {
-         std::basic_string_view<char> bv {
-            reinterpret_cast<const char*>(v.data()), v.size() * sizeof(char) };
-         return std::hash<std::basic_string_view<char>>()(bv);
-      }
+   template<> struct hash<string_cnt> {
+      std::size_t operator()(const string_cnt& v) const noexcept { return v.hash(); };
    };
 }
-#else
-using str_type = std::basic_string<char>;
-#endif
 
-using str_int_type     = std::pair<str_type, int_type>;
-using vec_str_int_type = std::vector<str_int_type>;
+using string_cnt_vector_t = std::vector<string_cnt>;
 
-// create the parallel_flat_hash_map with mutexes
-using map_str_int_type = phmap::parallel_flat_hash_map<
-   str_type, int_type,
-   phmap::priv::hash_default_hash<str_type>,
-   phmap::priv::hash_default_eq<str_type>,
-   phmap::priv::Allocator<phmap::priv::Pair<const str_type, int_type>>,
+// declare the type of the parallel_flat_hash_set with spinlock mutexes
+using string_cnt_set_t = phmap::parallel_flat_hash_set<
+   string_cnt,
+   phmap::priv::hash_default_hash<string_cnt>,
+   phmap::priv::hash_default_eq<string_cnt>,
+   phmap::priv::Allocator<string_cnt>,
    12,
    spinlock_mutex
 >;
 
 // Mimic the Perl get_properties subroutine ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// fast_atoll64
-// https://stackoverflow.com/questions/16826422/
-// c-most-efficient-way-to-convert-string-to-int-faster-than-atoi
-
-inline int64_t fast_atoll64( const char* str )
+// convert positive number from string to uint32_t
+inline uint32_t fast_atoll64(const char* str)
 {
-   int64_t val  = 0;
-   int     sign = 0;
-   if (*str == '-') {
-      sign = 1, ++str;
-   }
+   uint32_t val  = 0;
    uint8_t digit;
    while ((digit = uint8_t(*str++ - '0')) <= 9)
       val = val * 10 + digit;
-   return sign ? -val : val;
+   return val;
 }
 
 // Helper function to find a character.
@@ -189,8 +244,7 @@ inline constexpr size_t MAX_LINE_LEN = 255;
 
 static int64_t get_properties(
    const char*        fname,     // in    : the input file name
-   const int          nthds,     // in    : the number of threads
-   map_str_int_type&  map_ret)   // inout : the map to be updated
+   string_cnt_set_t&  set_ret)   // inout : the set to be updated
 {
    int64_t num_lines = 0;
    std::ifstream fin(fname, std::ifstream::binary);
@@ -201,13 +255,11 @@ static int64_t get_properties(
 
    #pragma omp parallel reduction(+:num_lines)
    {
-      std::string buf; buf.resize(CHUNK_SIZE + MAX_LINE_LEN + 1, '\0');
-      char *first, *last, *found;
-      size_t len, klen;
-      int_type count;
+      std::string buf;
+      buf.resize(CHUNK_SIZE + MAX_LINE_LEN + 1, '\0');
 
       while (fin.good()) {
-         len = 0;
+         size_t len = 0;
 
          // Read the next chunk serially.
          #pragma omp critical
@@ -223,44 +275,45 @@ static int64_t get_properties(
             }
          }
 
-         if (!len) break;
-         buf[len] = '\0';
-         first    = &buf[0];
-         last     = &buf[len];
+         if (!len)
+            break;
+
+         buf[len]    = '\0';
+         char *first = &buf[0];
+         char *last  = &buf[len];
 
          // Process max Nthreads chunks concurrently.
          while (first < last) {
-            char* beg_ptr{first};   first = find_char(first, last, '\n');
-            char* end_ptr{first};   ++first, ++num_lines;
+            char* beg_ptr{first};
+            char* end_ptr{find_char(first, last, '\n')};
+            char *found = find_char(beg_ptr, end_ptr, '\t');
+            if (found == end_ptr)
+               continue;
 
-            if ((found = find_char(beg_ptr, end_ptr, '\t')) == end_ptr) continue;
-            count = fast_atoll64(found + 1);
+            assert(*found == '\t');
+            *found = 0; // replace the tab with '\0'
 
-#ifdef MAX_STR_LEN_L
-            str_type s {};  // {} initializes all elements of s to '\0'
-            klen = std::min(MAX_STR_LEN_L, (size_t)(found - beg_ptr));
-            ::memcpy(s.data(), beg_ptr, klen);
-#else
-            klen = found - beg_ptr;
-            str_type s(beg_ptr, klen);
-#endif
-            // Use lazy_emplace to modify the map while the mutex is locked.
-            map_ret.lazy_emplace_l(
-               s,
-               [&](map_str_int_type::value_type& p) {
-                  // called only when key was already present
-                  p.second += count;
+            int_type count = fast_atoll64(found + 1);
+
+            // Use lazy_emplace to modify the set while the mutex is locked.
+            set_ret.lazy_emplace_l(
+               beg_ptr,
+               [&](string_cnt_set_t::value_type& p) {
+                  p.cnt += count;       // called only when key was already present
                },
-               [&](const map_str_int_type::constructor& ctor) {
-                  // construct value_type in place when key not present
-                  ctor(std::move(s), count);
+               [&](const string_cnt_set_t::constructor& ctor) {
+                  ctor(beg_ptr, count); // construct value_type in place when key not present
                }
             );
+
+            first = end_ptr + 1;
+            ++num_lines;
          }
       }
    }
 
    fin.close();
+   // std::cerr << "getprops done\n";
    return num_lines;
 }
 
@@ -276,11 +329,12 @@ size_t divide_up(size_t dividend, size_t divisor)
 
 static void out_properties(
    const int          nthds,     // in   : the number of threads
-   vec_str_int_type&  vec)       // in   : the vector to output
+   string_cnt_vector_t&  vec)       // in   : the vector to output
 {
    size_t num_chunks = divide_up(vec.size(), CHUNK_SIZE);
+   int nthds_out = 1;
 #ifdef _OPENMP
-   int nthds_out = std::min(nthds, 6);
+   nthds_out = std::min(nthds, 6);
 #endif
 
    #pragma omp parallel for ordered schedule(static, 1) num_threads(nthds_out)
@@ -290,13 +344,9 @@ static void out_properties(
       auto it2 = vec.begin() + std::min(vec.size(), chunk_id * CHUNK_SIZE);
 
       for (; it != it2; ++it) {
-#ifdef MAX_STR_LEN_L
-         str.append(it->first.data());
-#else
-         str.append(it->first.data(), it->first.size());
-#endif
+         str.append(it->get());
          str.append("\t", 1);
-         str.append(std::to_string(it->second));
+         str.append(std::to_string(it->cnt));
          str.append("\n", 1);
       }
 
@@ -309,10 +359,7 @@ typedef std::chrono::high_resolution_clock high_resolution_clock;
 typedef std::chrono::high_resolution_clock::time_point time_point;
 typedef std::chrono::milliseconds milliseconds;
 
-double elaspe_time(
-   time_point cend,
-   time_point cstart)
-{
+double elaspe_time(time_point cend, time_point cstart) {
    return double (
       std::chrono::duration_cast<milliseconds>(cend - cstart).count()
    ) * 1e-3;
@@ -329,11 +376,7 @@ int main(int argc, char* argv[])
    }
 
    std::cerr << std::setprecision(3) << std::setiosflags(std::ios::fixed);
-#ifdef MAX_STR_LEN_L
-   std::cerr << "llil4map (fixed string length=" << MAX_STR_LEN_L << ") start\n";
-#else
    std::cerr << "llil4map start\n";
-#endif
 #ifdef _OPENMP
    std::cerr << "use OpenMP\n";
 #else
@@ -359,6 +402,7 @@ int main(int argc, char* argv[])
    int nthds_move = std::min(nthds, 6);
 #else
    int nthds = 1;
+   int nthds_move = 1;
 #endif
 
    // Get the list of input files from the command line
@@ -366,22 +410,22 @@ int main(int argc, char* argv[])
    char** fname  = &argv[1];
 
    // Store the properties into a vector
-   vec_str_int_type propvec;
+   string_cnt_vector_t propvec;
    int64_t num_lines = 0;
 
    {
-      // Enclose the map inside a block, so GC releases the object
+      // Enclose the set inside a block, so GC releases the object
       // immediately after exiting the scope.
-      map_str_int_type map;
+      string_cnt_set_t set;
 
       for (int i = 0; i < nfiles; ++i)
-         num_lines += get_properties(fname[i], nthds, map);
+         num_lines += get_properties(fname[i], set);
 
       cend1 = high_resolution_clock::now();
       double ctaken1 = elaspe_time(cend1, cstart1);
       std::cerr << "get properties      " << std::setw(8) << ctaken1 << " secs\n";
 
-      if (map.size() == 0) {
+      if (set.size() == 0) {
          std::cerr << "No work, exiting...\n";
          return 1;
       }
@@ -389,31 +433,32 @@ int main(int argc, char* argv[])
       cstart2 = high_resolution_clock::now();
 
       if (nthds == 1) {
-         propvec.reserve(map.size());
-         for (auto const& x : map)
-            propvec.emplace_back(std::move(x.first), x.second);
+         propvec.reserve(set.size());
+         for (auto& x : set)
+            propvec.push_back(std::move(const_cast<string_cnt&>(x)));
+         set.clear();
       }
       else {
-         propvec.resize(map.size());
-         std::vector<vec_str_int_type::iterator> I(map.subcnt());
+         propvec.resize(set.size());
+         std::vector<string_cnt_vector_t::iterator> I(set.subcnt());
          auto cur = propvec.begin();
 
-         for (size_t i = 0; i < map.subcnt(); ++i) {
-            map.with_submap(i, [&](const map_str_int_type::EmbeddedSet& set) {
+         for (size_t i = 0; i < set.subcnt(); ++i) {
+            set.with_submap(i, [&](const string_cnt_set_t::EmbeddedSet& set) {
                I[i] = cur;
                cur += set.size();
             });
          }
 
          #pragma omp parallel for schedule(static, 1) num_threads(nthds_move)
-         for (size_t i = 0; i < map.subcnt(); ++i) {
-            map.with_submap_m(i, [&](map_str_int_type::EmbeddedSet& set) {
+         for (size_t i = 0; i < set.subcnt(); ++i) {
+            set.with_submap_m(i, [&](string_cnt_set_t::EmbeddedSet& set) {
                auto it = I[i];
                for (auto& x : set)
-                  *it++ = std::make_pair(std::move(const_cast<str_type&>(x.first)), x.second);
+                  *it++ = std::move(const_cast<string_cnt&>(x)); // force move
 
                // reset the set (no longer needed) to reclaim memory early
-               set = map_str_int_type::EmbeddedSet();
+               set = string_cnt_set_t::EmbeddedSet();
             });
          }
       }
@@ -426,8 +471,8 @@ int main(int argc, char* argv[])
    cstart3 = high_resolution_clock::now();
 
    // Sort the vector by (count) in reverse order, (name) in lexical order
-   auto reverse_order = [](const str_int_type& left, const str_int_type& right) {
-      return left.second != right.second ? left.second > right.second : left.first  < right.first;
+   auto reverse_order = [](const string_cnt& left, const string_cnt& right) {
+      return left.cnt != right.cnt ? left.cnt > right.cnt : left < right;
    };
 #if USE_BOOST_PARALLEL_SORT == 0
    // Standard sort
