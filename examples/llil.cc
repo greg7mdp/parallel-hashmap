@@ -258,6 +258,10 @@ public:
    size_t                              num_unique;
    std::array<consumer, num_consumers> consumers;
 
+   ~llil_t() {
+      show_stats();
+   }
+
    void get_properties(const char* fname) {
       auto mapping = bip::file_mapping(fname, bip::read_only);
       auto rgn = bip::mapped_region(mapping, bip::read_only);
@@ -267,7 +271,7 @@ public:
       size_t _num_lines = 0;
 
       std::array<string_cnt_vector_t, num_consumers> vecs;
-      constexpr size_t batch_size = 1024;
+      constexpr size_t batch_size = 2048;
       for (auto& v : vecs)
          v.reserve(batch_size);
 
@@ -360,6 +364,7 @@ public:
    }
 
    void show_stats() {
+      std::cerr << "\n\n";
       std::cerr << "    count lines     " << num_lines << "\n";
       std::cerr << "    num uniques     " << num_unique << "\n";
    }
@@ -382,13 +387,6 @@ private:
          }
       });
       delete v;
-   }
-
-   void add_to_set(std::string_view word, uint_t count) {
-      set.lazy_emplace_l(
-         word,
-         [&](string_cnt_set_t::value_type& p)           { p.cnt += count; },    // when key was already present
-         [&](const string_cnt_set_t::constructor& ctor) { ctor(word, count);}); // construct value_type in place when key not present
    }
 
    uint_t fast_atoui(const char* first, char* last) {
@@ -418,9 +416,6 @@ int main(int argc, char* argv[])
    llil_t<32> llil;
 
    show_time("get properties      ", [&]() { llil.get_properties<6>(&argv[1], argc - 1); });
-
-
-   llil.show_stats();
 
    return 0;
 }
