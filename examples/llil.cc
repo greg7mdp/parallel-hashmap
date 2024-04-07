@@ -228,31 +228,35 @@ namespace bip = boost::interprocess;
 namespace lf = boost::lockfree;
 
 // ------------------------------------------------------------------------------------------
-template<size_t num_wthreads>
+template<size_t num_consumers>
 class llil_t {
 public:
    using uint_t  = string_cnt::uint_t;
-   static_assert(std::bit_ceil(num_wthreads) == num_wthreads);
+   static_assert(std::bit_ceil(num_consumers) == num_consumers);
 
    using string_cnt_set_t = phmap::parallel_flat_hash_set<
       string_cnt,
       phmap::priv::hash_default_hash<string_cnt>,
       phmap::priv::hash_default_eq<string_cnt>,
       phmap::priv::Allocator<string_cnt>,
-      std::countr_zero(std::bit_ceil(num_wthreads)) + 1
+      std::countr_zero(std::bit_ceil(num_consumers))
       >;
 
    using string_cnt_vector_t = std::vector<string_cnt>;
    using string_cnt_vector_t2 = std::array<string_cnt, 2>;
 
-   struct write_thread {
+   struct consumer {
+      consumer() : queue(10000) {}
+
       lf::queue<string_cnt_vector_t*> queue;
       std::thread                     thread;
+      std::atomic<bool>               done {false};
    };
 
-   string_cnt_set_t            set;
-   std::atomic<size_t>         num_lines = 0;
-   lf::queue<const char*>      file_queue;
+   string_cnt_set_t                    set;
+   std::atomic<size_t>                 num_lines = 0;
+   size_t                              num_unique;
+   std::array<consumer, num_consumers> consumers;
 
    void get_properties(const char* fname) {
       auto mapping = bip::file_mapping(fname, bip::read_only);
@@ -262,7 +266,7 @@ public:
 
       size_t _num_lines = 0;
 
-      std::array<string_cnt_vector_t, num_wthreads> vecs;
+      std::array<string_cnt_vector_t, num_consumers> vecs;
       constexpr size_t batch_size = 1024;
       for (auto& v : vecs)
          v.reserve(batch_size);
@@ -279,29 +283,40 @@ public:
          uint_t count = fast_atoui(found + 1, end_ptr);
 
          size_t hashval = std::hash<std::string_view>()(word);
-         auto& v = vecs[set.subidx(hashval)];
+         auto subidx = set.subidx(hashval);
+         auto& v = vecs[subidx];
          v.emplace_back(word, count);
-         if (v.size() == batch_size)
-            v.resize(0); // actually should enqueue to other thread
+
+         if (v.size() == batch_size) {
+            // enqueue vector to consumer thread
+            enqueue_vec(std::move(v), subidx);
+            v.clear();
+            v.reserve(batch_size);
+         }
 
          first = end_ptr + 1;
          ++_num_lines;
       }
+
+      for (size_t i=0; i<vecs.size(); ++i)
+         if (!vecs[i].empty())
+            enqueue_vec(std::move(vecs[i]), i);
 
       num_lines += _num_lines;
    }
 
    template <size_t num_producers>
    void get_properties(char** fname, int nfiles) {
-      std::vector<std::thread> thr;
-      std::atomic<bool>        done {false};
+      std::vector<std::thread> producers;                 // produce blocks of word/count to add
+      lf::queue<const char*>   file_queue(4096);          // queue of files to process
+      std::atomic<bool>        done_adding_files {false}; // true when all files to process are enqueued
 
-      thr.reserve(num_producers);
+      producers.reserve(num_producers);
 
       for (size_t i=0; i<num_producers; ++i) {
-         thr.emplace_back([&]() {
+         producers.emplace_back([&]() {
             const char* value;
-            while (!done) {
+            while (!done_adding_files) {
                while (file_queue.pop(value))
                   get_properties(value);
             }
@@ -314,16 +329,61 @@ public:
          while (!file_queue.push(fname[i]))
             ;
       }
-      done = true;
+      done_adding_files = true;
+
+      // producers are now enqueueing blocks to process on the consumer queues
+      // start the consumers
+      for (size_t i=0; i<num_consumers; ++i) {
+         consumer& c = consumers[i];
+
+         c.thread = std::thread([&, i=i]() {
+            string_cnt_vector_t* v;
+            while (!c.done) {
+               while (c.queue.pop(v))
+                  process_vec(i, v);
+            }
+            while (c.queue.pop(v))
+               process_vec(i, v);
+         });
+      }
+
       for (size_t i=0; i<num_producers; ++i)
-         thr[i].join();
+         producers[i].join();
+
+      for (auto& c : consumers)
+         c.done = true;
+
+      for (auto& c : consumers)
+         c.thread.join();
+
+      num_unique = set.size();
    }
 
    void show_stats() {
       std::cerr << "    count lines     " << num_lines << "\n";
+      std::cerr << "    num uniques     " << num_unique << "\n";
    }
 
 private:
+   void enqueue_vec(string_cnt_vector_t&& v, size_t subidx) {
+      auto v_ptr = new string_cnt_vector_t(std::move(v));
+      while (!consumers[subidx].queue.push(v_ptr))
+         ;
+   }
+
+   void process_vec(size_t subidx, string_cnt_vector_t* v) {
+      set.with_submap_m(subidx, [&](auto& s) {
+         for (auto& sc : *v) {
+            auto it = s.find(sc);
+            if (it == s.end())
+               s.insert(std::move(sc));
+            else
+               const_cast<string_cnt&>(*it).cnt +=  sc.cnt;
+         }
+      });
+      delete v;
+   }
+
    void add_to_set(std::string_view word, uint_t count) {
       set.lazy_emplace_l(
          word,
@@ -355,7 +415,7 @@ int main(int argc, char* argv[])
 {
    if (argc < 2) { std::cerr << "usage: llil4map file1 file2 ... >out.txt\n";  return 1; }
 
-   llil_t<1> llil;
+   llil_t<32> llil;
 
    show_time("get properties      ", [&]() { llil.get_properties<6>(&argv[1], argc - 1); });
 
