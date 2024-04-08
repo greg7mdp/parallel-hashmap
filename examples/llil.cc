@@ -124,59 +124,63 @@ struct stats_t {
 
 // ---------------------------------------------------------------------------------------------
 // Stores a string + a count
-// For strings up to 11 bytes, total space used is 16 bytes (no wasted space in set)
+// For strings up to N-1 bytes, total space used is N + 4 bytes
 // For larger strings, uses 16 bytes + strlen(string) + 1
 //
 // invariants
-//    if extra[3], str is a valid string pointer
-//    if !extra[3], the 12 bytes starting at (const char *)(&str) store a null_terminated string
+//    if  extra[mark_idx], str is a valid string pointer
+//    if !extra[mark_idx], the N bytes starting at (const char *)(&str) store a null_terminated string
 // ---------------------------------------------------------------------------------------------
-struct string_cnt {
+template<size_t N>
+struct string_cnt_t {
    using uint_t = uint32_t;
 
+   static constexpr size_t extra_sz = N - sizeof(char*);
+   static constexpr size_t mark_idx = extra_sz - 1;
+
    char *   str;
-   char     extra[4];
+   char     extra[extra_sz];
    uint_t   cnt;
 
    static constexpr size_t buffsz = sizeof(str) + sizeof(extra);
 
-   string_cnt() : str{nullptr}, extra{0,0,0,0}, cnt{0} {}
+   string_cnt_t() : str{nullptr}, extra{0,0,0,0}, cnt{0} {}
 
-   string_cnt(std::string_view s, uint_t c = 0) : str(nullptr), cnt(c) { set(s); }
+   string_cnt_t(std::string_view s, uint_t c = 0) : str(nullptr), cnt(c) { set(s); }
 
-   ~string_cnt() { free(); }
+   ~string_cnt_t() { free(); }
 
-   string_cnt(const string_cnt& o) {
+   string_cnt_t(const string_cnt_t& o) {
       set(o.get());
    }
 
-   string_cnt(string_cnt&& o) noexcept {
-      if (o.extra[3]) {
+   string_cnt_t(string_cnt_t&& o) noexcept {
+      if (o.extra[mark_idx]) {
          str = o.str;
          o.str = nullptr;
-         extra[3] = 1;
+         extra[mark_idx] = 1;
       } else {
          std::strcpy((char *)(&str), o.get());
-         extra[3] = 0;
+         extra[mark_idx] = 0;
       }
       cnt = o.cnt;
    }
 
-   string_cnt& operator=(const string_cnt& o) {
+   string_cnt_t& operator=(const string_cnt_t& o) {
       free();
       set(o.get());
       cnt = o.cnt;
       return *this;
    }
 
-   string_cnt& operator=(string_cnt&& o) noexcept {
+   string_cnt_t& operator=(string_cnt_t&& o) noexcept {
       free();
-      new (this) string_cnt(std::move(o));
+      new (this) string_cnt_t(std::move(o));
       return *this;
    }
 
-   std::strong_ordering operator<=>(const string_cnt& o) const { return std::strcmp(get(), o.get()) <=> 0; }
-   bool operator==(const string_cnt& o) const { return std::strcmp(get(), o.get()) == 0; }
+   std::strong_ordering operator<=>(const string_cnt_t& o) const { return std::strcmp(get(), o.get()) <=> 0; }
+   bool operator==(const string_cnt_t& o) const { return std::strcmp(get(), o.get()) == 0; }
 
    std::size_t hash() const {
       auto s = get();
@@ -184,17 +188,17 @@ struct string_cnt {
       return std::hash<std::string_view>()(sv);
    }
 
-   const char *get() const { return extra[3] ? str : (const char *)(&str); }
+   const char *get() const { return extra[mark_idx] ? str : (const char *)(&str); }
 
 private:
-   void free() { if (extra[3]) { delete [] str; str = nullptr; } }
+   void free() { if (extra[mark_idx]) { delete [] str; str = nullptr; } }
 
    void set(std::string_view s) {
       static_assert(buffsz == 12);
-      static_assert(offsetof(string_cnt, cnt) == (intptr_t)buffsz);
-      static_assert(sizeof(string_cnt) == 16);
+      static_assert(offsetof(string_cnt_t, cnt) == (intptr_t)buffsz);
+      static_assert(sizeof(string_cnt_t) == 16);
 
-      assert(!extra[3] || !str);
+      assert(!extra[mark_idx] || !str);
       if (s.empty())
          std::memset(&str, 0, buffsz);
       else {
@@ -203,11 +207,11 @@ private:
             str = new char[len+1];
             std::memcpy(str, s.data(), len);
             str[len] = 0;
-            extra[3] = 1;
+            extra[mark_idx] = 1;
          } else {
             std::memcpy((char *)(&str), s.data(), len);
             ((char *)&str)[len] = 0;
-            extra[3] = 0;
+            extra[mark_idx] = 0;
          }
       }
    }
@@ -216,6 +220,8 @@ private:
       set(std::string_view{s});
    }
 };
+
+using string_cnt = string_cnt_t<12>;
 
 namespace std {
    template<> struct hash<string_cnt> {
@@ -376,6 +382,7 @@ private:
    }
 
    void process_vec(size_t subidx, string_cnt_vector_t* v) {
+#if 1
       set.with_submap_m(subidx, [&](auto& s) {
          for (auto& sc : *v) {
             auto it = s.find(sc);
@@ -385,6 +392,7 @@ private:
                const_cast<string_cnt&>(*it).cnt +=  sc.cnt;
          }
       });
+#endif
       delete v;
    }
 
