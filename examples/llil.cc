@@ -223,9 +223,8 @@ namespace std {
    };
 }
 
-namespace fs  = std::filesystem;
 namespace bip = boost::interprocess;
-namespace lf = boost::lockfree;
+namespace lf  = boost::lockfree;
 
 // ------------------------------------------------------------------------------------------
 template<size_t num_consumers>
