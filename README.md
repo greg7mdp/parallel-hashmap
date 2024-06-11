@@ -48,7 +48,9 @@ Copy the parallel_hashmap directory to your project. Update your include path. T
 
 If you are using Visual Studio, you probably want to add `phmap.natvis` to your projects. This will allow for a clear display of the hash table contents in the debugger.
 
-> A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON .. && cmake --build . && make test`
+> A cmake configuration file (CMakeLists.txt) is provided for building the tests and examples.
+> * The command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON .. && cmake --build . && make test`
+> * Use this command to build tests with AVX2 support enabled: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -DCMAKE_CXX_FLAGS=-mavx2 .. && cmake --build . && make test`
 
 ## Example
 
