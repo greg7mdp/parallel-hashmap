@@ -86,7 +86,7 @@ option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    ${PHMAP_MASTE
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" ${PHMAP_MASTER_PROJECT})
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj>")
 endif()
 
 if (PHMAP_BUILD_TESTS OR PHMAP_BUILD_EXAMPLES)
@@ -166,12 +166,12 @@ endif()
 
 if (PHMAP_BUILD_EXAMPLES)
     if(NOT MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-null-sentinel  -Wswitch-default -Wno-unused")
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-pedantic;-Wall;-Wextra;-Wcast-align;-Wcast-qual;-Wdisabled-optimization;-Winit-self;-Wlogical-op;-Wmissing-include-dirs;-Woverloaded-virtual;-Wredundant-decls;-Wshadow;-Wstrict-null-sentinel;-Wswitch-default;-Wno-unused>")
         if (NOT CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option -Wno-gnu-zero-variadic-macro-arguments")
+            add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-warning-option;-Wno-gnu-zero-variadic-macro-arguments>")
         endif()
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /Zc:__cplusplus")
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/W4;/Zc:__cplusplus>")
     endif()
 
     set(THREADS_PREFER_PTHREAD_FLAG ON)
