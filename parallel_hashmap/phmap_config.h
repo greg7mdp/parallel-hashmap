@@ -441,7 +441,9 @@
     #define PHMAP_ATTRIBUTE_NONNULL(...)
 #endif
 
-#if PHMAP_HAVE_ATTRIBUTE(noreturn) || (defined(__GNUC__) && !defined(__clang__))
+#if PHMAP_HAVE_ATTRIBUTE(noreturn)
+    #define PHMAP_ATTRIBUTE_NORETURN [[noreturn]]
+#elif defined(__GNUC__) && !defined(__clang__)
     #define PHMAP_ATTRIBUTE_NORETURN __attribute__((noreturn))
 #elif defined(_MSC_VER)
     #define PHMAP_ATTRIBUTE_NORETURN __declspec(noreturn)
