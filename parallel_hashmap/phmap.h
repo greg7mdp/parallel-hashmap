@@ -3444,6 +3444,10 @@ public:
         return  sets_[idx];
     }
 
+    const Inner& get_inner_m(size_t idx) const {
+        return  sets_[idx];
+    }
+
     // Extension API: support for heterogeneous keys.
     //
     //   std::unordered_set<std::string> s;
