@@ -125,7 +125,7 @@ struct stats_t {
 // ---------------------------------------------------------------------------------------------
 // Stores a string + a count
 // For strings up to N-1 bytes, total space used is N + 4 bytes
-// For larger strings, uses 16 bytes + strlen(string) + 1
+// For larger strings, uses N + 4  bytes + strlen(string) + 1
 //
 // invariants
 //    if  extra[mark_idx], str is a valid string pointer
@@ -135,6 +135,8 @@ template<size_t N>
 struct string_cnt_t {
    using uint_t = uint32_t;
 
+   static_assert(N >= 12);
+   static constexpr size_t buffsz   = N;
    static constexpr size_t extra_sz = N - sizeof(char*);
    static constexpr size_t mark_idx = extra_sz - 1;
 
@@ -142,9 +144,7 @@ struct string_cnt_t {
    char     extra[extra_sz];
    uint_t   cnt;
 
-   static constexpr size_t buffsz = sizeof(str) + sizeof(extra);
-
-   string_cnt_t() : str{nullptr}, extra{0,0,0,0}, cnt{0} {}
+   string_cnt_t() : str{nullptr}, extra{0}, cnt{0} {}
 
    string_cnt_t(std::string_view s, uint_t c = 0) : str(nullptr), cnt(c) { set(s); }
 
@@ -194,9 +194,8 @@ private:
    void free() { if (extra[mark_idx]) { delete [] str; str = nullptr; } }
 
    void set(std::string_view s) {
-      static_assert(buffsz == 12);
       static_assert(offsetof(string_cnt_t, cnt) == (intptr_t)buffsz);
-      static_assert(sizeof(string_cnt_t) == 16);
+      static_assert(sizeof(string_cnt_t) == N + sizeof(cnt));
 
       assert(!extra[mark_idx] || !str);
       if (s.empty())
@@ -232,6 +231,33 @@ namespace std {
 namespace bip = boost::interprocess;
 namespace lf  = boost::lockfree;
 
+// ------------------------------------------------------------------------------------------
+// ideas
+// -----
+// do a first pass that
+//
+//   - gather string length counts (each thread has an array `size_t lengths[256]` which are
+//     merged at the end)
+//     => enables to decide N for string_count (12, 20, 28, 36, 44) - chosen size should
+//        be enough for 95% of strings
+//        or
+//        use `arena` allocator which doesn't free anything?
+//
+//   - gather statistics of first two starting letters (each thread has an array
+//     `size_t count[65536]` which aremerged at the end)
+//     => enables to divide equally between threads, and each thread holds the correctly
+//        sorted bunch
+//
+//   - after extracting the vector on each thread, we can do `std::sort` and then output
+//     the results directly from the sorted vectors of each thread (no need to combine into
+//     large vector.
+//
+//   - blocks sent to consumer strings should not contain string_cnt, but blocks of:
+//     <str><null><cnt>
+//           1b    2b
+//
+//     and the `string_cnt` used to do the find() in the map should be pointing to the string
+//     in the block (no copy), so no string alloc for duplicate strings
 // ------------------------------------------------------------------------------------------
 template<size_t num_consumers>
 class llil_t {
