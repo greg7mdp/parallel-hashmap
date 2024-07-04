@@ -14,12 +14,24 @@ jobs:
         compiler: [g++, clang++]
         flags: [-std=c++11, -std=c++17]
         optimize: [-O2]
+
+    env:
+      CXX: ${{ matrix.compiler }}
+      CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
+      CTEST_OUTPUT_ON_FAILURE: 1
+      CTEST_NO_TESTS_ACTION: error
+      CTEST_PARALLEL_LEVEL: 0
+      CMAKE_BUILD_PARALLEL_LEVEL: 4
+
     steps:
     - name: Checkout
-      uses: actions/checkout@v2.0.0
-    - name: Build and test
-      env:
-        CXX: ${{ matrix.compiler }}
-        CXXFLAGS: ${{ matrix.flags }} ${{ matrix.optimize }}
-      run: |
-        mkdir build && cd build && cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && cmake --build . && make test
+      uses: actions/checkout@v4
+
+    - name: CMake configure
+      run: cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_BUILD_TYPE=Release -B build
+
+    - name: CMake build
+      run: cmake --build build
+
+    - name: CMake test
+      run: ctest --test-dir build

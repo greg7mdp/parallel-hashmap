@@ -1,13 +1,13 @@
 
-<img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/phash.png?raw=true" width="120" align="middle"> 
+<img src="https://github.com/greg7mdp/parallel-hashmap/blob/master/html/img/phash.png?raw=true" width="120" align="middle">
 
-# The Parallel Hashmap  
+# The Parallel Hashmap
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](https://opensource.org/licenses/Apache-2.0) [![Linux](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml)  [![MacOS](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml) [![Windows](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml) 
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](https://opensource.org/licenses/Apache-2.0) [![Linux](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/linux.yml)  [![MacOS](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/macos.yml) [![Windows](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml/badge.svg)](https://github.com/greg7mdp/parallel-hashmap/actions/workflows/windows.yml)
 
 ## Overview
 
-This repository aims to provide a set of excellent **hash map** implementations, as well as a **btree** alternative to std::map and std::set, with the following characteristics: 
+This repository aims to provide a set of excellent **hash map** implementations, as well as a **btree** alternative to std::map and std::set, with the following characteristics:
 
 - **Header only**: nothing to build, just copy the `parallel_hashmap` directory to your project and you are good to go.
 
@@ -48,7 +48,15 @@ Copy the parallel_hashmap directory to your project. Update your include path. T
 
 If you are using Visual Studio, you probably want to add `phmap.natvis` to your projects. This will allow for a clear display of the hash table contents in the debugger.
 
-> A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is: `mkdir build && cd build && cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON .. && cmake --build . && make test`
+> A cmake configuration files (CMakeLists.txt) is provided for building the tests and examples. Command for building and running the tests is:
+
+```sh
+cmake -DPHMAP_BUILD_TESTS=ON -DPHMAP_BUILD_EXAMPLES=ON -B build
+
+cmake --build build
+
+ctest --test-dir build
+```
 
 ## Example
 
@@ -58,27 +66,27 @@ If you are using Visual Studio, you probably want to add `phmap.natvis` to your 
 #include <parallel_hashmap/phmap.h>
 
 using phmap::flat_hash_map;
- 
+
 int main()
 {
     // Create an unordered_map of three strings (that map to strings)
-    flat_hash_map<std::string, std::string> email = 
+    flat_hash_map<std::string, std::string> email =
     {
         { "tom",  "tom@gmail.com"},
         { "jeff", "jk@gmail.com"},
         { "jim",  "jimg@microsoft.com"}
     };
- 
-    // Iterate and print keys and values 
-    for (const auto& n : email) 
+
+    // Iterate and print keys and values
+    for (const auto& n : email)
         std::cout << n.first << "'s email is: " << n.second << "\n";
- 
+
     // Add a new entry
     email["bill"] = "bg@whatever.com";
- 
+
     // and print it
     std::cout << "bill's email is: " << email["bill"] << "\n";
- 
+
     return 0;
 }
 ```
@@ -115,8 +123,8 @@ The full types with template parameters can be found in the [parallel_hashmap/ph
 
 - The `parallel` hash maps are preferred when you have a few hash maps that will store a very large number of values. The `non-parallel` hash maps are preferred if you have a large number of hash maps, each storing a relatively small number of values.
 
-- The benefits of the `parallel` hash maps are:  
-   a. reduced peak memory usage (when resizing), and  
+- The benefits of the `parallel` hash maps are:
+   a. reduced peak memory usage (when resizing), and
    b. multithreading support (and inherent internal parallelism)
 
 **Key decision points for btree containers:**
@@ -139,7 +147,7 @@ When an ordering is not needed, a hash container is typically a better choice th
 
 - The Abseil hash tables internally randomize a hash seed, so that the table iteration order is non-deterministic. This can be useful to prevent *Denial Of Service*  attacks when a hash table is used for a customer facing web service, but it can make debugging more difficult. The *phmap* hashmaps by default do **not** implement this randomization, but it can be enabled by adding `#define PHMAP_NON_DETERMINISTIC 1` before including the header `phmap.h` (as is done in raw_hash_set_test.cc).
 
-- Unlike the Abseil hash maps, we do an internal mixing of the hash value provided. This prevents serious degradation of the hash table performance when the hash function provided by the user has poor entropy distribution. The cost in performance is very minimal, and this helps provide reliable performance even with *imperfect* hash functions. 
+- Unlike the Abseil hash maps, we do an internal mixing of the hash value provided. This prevents serious degradation of the hash table performance when the hash function provided by the user has poor entropy distribution. The cost in performance is very minimal, and this helps provide reliable performance even with *imperfect* hash functions.
 
 
 ## Memory usage
@@ -189,10 +197,10 @@ In order to use a flat_hash_set or flat_hash_map, a hash function should be prov
 
 - Provide a hash functor via the HashFcn template parameter
 
-- As with boost, you may add a `hash_value()` friend function in your class. 
+- As with boost, you may add a `hash_value()` friend function in your class.
 
 For example:
- 
+
 ```c++
 #include <parallel_hashmap/phmap_utils.h> // minimal header providing phmap::HashState()
 #include <string>
@@ -201,8 +209,8 @@ using std::string;
 struct Person
 {
     bool operator==(const Person &o) const
-    { 
-        return _first == o._first && _last == o._last && _age == o._age; 
+    {
+        return _first == o._first && _last == o._last && _age == o._age;
     }
 
     friend size_t hash_value(const Person &p)
@@ -230,8 +238,8 @@ using std::string;
 struct Person
 {
     bool operator==(const Person &o) const
-    { 
-        return _first == o._first && _last == o._last && _age == o._age; 
+    {
+        return _first == o._first && _last == o._last && _age == o._age;
     }
 
     string _first;
@@ -253,7 +261,7 @@ namespace std
 }
 ```
 
-The `std::hash` specialization for `Person` combines the hash values for both first and last name and age, using the convenient phmap::HashState() function, and returns the combined hash value. 
+The `std::hash` specialization for `Person` combines the hash values for both first and last name and age, using the convenient phmap::HashState() function, and returns the combined hash value.
 
 ### file "main.cpp"
 
@@ -268,7 +276,7 @@ int main()
     // As we have defined a specialization of std::hash() for Person,
     // we can now create sparse_hash_set or sparse_hash_map of Persons
     // ----------------------------------------------------------------
-    phmap::flat_hash_set<Person> persons = 
+    phmap::flat_hash_set<Person> persons =
         { { "John", "Mitchell", 35 },
           { "Jane", "Smith",    32 },
           { "Jane", "Smith",    30 },
@@ -287,7 +295,7 @@ Parallel Hashmap containers follow the thread safety rules of the Standard C++ l
 
 - A single phmap hash table is thread safe for reading from multiple threads. For example, given a hash table A, it is safe to read A from thread 1 and from thread 2 simultaneously.
 
-- If a single hash table is being written to by one thread, then all reads and writes to that hash table on the same or other threads must be protected. For example, given a hash table A, if thread 1 is writing to A, then thread 2 must be prevented from reading from or writing to A. 
+- If a single hash table is being written to by one thread, then all reads and writes to that hash table on the same or other threads must be protected. For example, given a hash table A, if thread 1 is writing to A, then thread 2 must be prevented from reading from or writing to A.
 
 - It is safe to read and write to one instance of a type even if another thread is reading or writing to a different instance of the same type. For example, given hash tables A and B of the same type, it is safe if A is being written in thread 1 and B is being read in thread 2.
 
@@ -304,4 +312,4 @@ While C++ is the native language of the Parallel Hashmap, we welcome bindings ma
 
 ## Acknowledgements
 
-Many thanks to the Abseil developers for implementing the swiss table and btree data structures (see [abseil-cpp](https://github.com/abseil/abseil-cpp)) upon which this work is based, and to Google for releasing it as open-source. 
+Many thanks to the Abseil developers for implementing the swiss table and btree data structures (see [abseil-cpp](https://github.com/abseil/abseil-cpp)) upon which this work is based, and to Google for releasing it as open-source.
