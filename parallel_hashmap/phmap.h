@@ -3444,7 +3444,7 @@ public:
         return  sets_[idx];
     }
 
-    const Inner& get_inner_m(size_t idx) const {
+    const Inner& get_inner(size_t idx) const {
         return  sets_[idx];
     }
 
