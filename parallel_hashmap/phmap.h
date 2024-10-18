@@ -325,15 +325,36 @@ static_assert(kDeleted == -2,
               "kDeleted must be -2 to make the implementation of "
               "ConvertSpecialToEmptyAndFullToDeleted efficient");
 
+#ifdef PHMAP_NO_STATIC_EMPTY_GROUP
+template <size_t Alignment, class Alloc, size_t GroupSize>
+inline ctrl_t* InitializeEmptyGroup(const ctrl_t (&empty_group)[GroupSize], Alloc& alloc)
+{
+    ctrl_t* temp_ptr_empty_group = static_cast<ctrl_t*>(Allocate<Alignment>(const_cast<std::remove_cv_t<Alloc>*>(&alloc), sizeof(empty_group)));
+    if (temp_ptr_empty_group == nullptr) {
+        return const_cast<ctrl_t*>(empty_group);
+    } else {
+        std::memcpy(temp_ptr_empty_group, empty_group, sizeof(empty_group));
+        return temp_ptr_empty_group;
+    }
+}
+#endif // PHMAP_NO_STATIC_EMPTY_GROUP
+
 // --------------------------------------------------------------------------
 // A single block of empty control bytes for tables without any slots allocated.
 // This enables removing a branch in the hot path of find().
 // --------------------------------------------------------------------------
-inline ctrl_t* EmptyGroup() {
-  alignas(16) static constexpr ctrl_t empty_group[] = {
+template <class Alloc>
+inline ctrl_t* EmptyGroup( [[maybe_unused]] Alloc& alloc) {
+  constexpr size_t alignment = 16; // Extra alignment for the empty group so it is fast to access.
+   alignas(alignment) static constexpr ctrl_t empty_group[] = {
       kSentinel, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
       kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty};
+#ifndef PHMAP_NO_STATIC_EMPTY_GROUP
   return const_cast<ctrl_t*>(empty_group);
+#else // PHMAP_NO_STATIC_EMPTY_GROUP
+  static ctrl_t* ptr_empty_group = InitializeEmptyGroup<alignment>(empty_group, alloc);
+  return ptr_empty_group;
+#endif // PHMAP_NO_STATIC_EMPTY_GROUP
 }
 
 // --------------------------------------------------------------------------
@@ -1057,7 +1078,7 @@ public:
     explicit raw_hash_set(size_t bucket_cnt, const hasher& hashfn = hasher(),
                           const key_equal& eq = key_equal(),
                           const allocator_type& alloc = allocator_type())
-        : ctrl_(EmptyGroup()), settings_(0, hashfn, eq, alloc) {
+        : ctrl_(EmptyGroup(alloc)), settings_(0, hashfn, eq, alloc) {
         if (bucket_cnt) {
             size_t new_capacity = NormalizeCapacity(bucket_cnt);
             reset_growth_left(new_capacity);
@@ -1180,7 +1201,7 @@ public:
         std::is_nothrow_copy_constructible<hasher>::value&&
         std::is_nothrow_copy_constructible<key_equal>::value&&
         std::is_nothrow_copy_constructible<allocator_type>::value)
-        : ctrl_(phmap::exchange(that.ctrl_, EmptyGroup())),
+        : ctrl_(phmap::exchange(that.ctrl_, EmptyGroup(that.alloc_ref()))),
         slots_(phmap::exchange(that.slots_, nullptr)),
         size_(phmap::exchange(that.size_, 0)),
         capacity_(phmap::exchange(that.capacity_, 0)),
@@ -1194,7 +1215,7 @@ public:
     }
 
     raw_hash_set(raw_hash_set&& that, const allocator_type& a)
-        : ctrl_(EmptyGroup()),
+        : ctrl_(EmptyGroup(a)),
           slots_(nullptr),
           size_(0),
           capacity_(0),
@@ -2025,7 +2046,7 @@ private:
         // Unpoison before returning the memory to the allocator.
         SanitizerUnpoisonMemoryRegion(slots_, sizeof(slot_type) * capacity_);
         Deallocate<Layout::Alignment()>(&alloc_ref(), ctrl_, layout.AllocSize());
-        ctrl_ = EmptyGroup();
+        ctrl_ = EmptyGroup(alloc_ref());
         slots_ = nullptr;
         size_ = 0;
         capacity_ = 0;
@@ -2335,7 +2356,7 @@ private:
     // TODO(alkis): Investigate removing some of these fields:
     // - ctrl/slots can be derived from each other
     // - size can be moved into the slot array
-    ctrl_t* ctrl_ = EmptyGroup();    // [(capacity + 1) * ctrl_t]
+    ctrl_t* ctrl_ = EmptyGroup(alloc_ref()); // [(capacity + 1) * ctrl_t]
     slot_type* slots_ = nullptr;     // [capacity * slot_type]
     size_t size_ = 0;                // number of full slots
     size_t capacity_ = 0;            // total number of slots
