@@ -1627,6 +1627,7 @@ public:
     // This overload is necessary because otherwise erase<K>(const K&) would be
     // a better match if non-const iterator is passed as an argument.
     iterator erase(iterator it) {
+        assert(it != end());
         auto res = it;
         ++res;
         _erase(it);
