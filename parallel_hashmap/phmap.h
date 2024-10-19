@@ -329,11 +329,16 @@ static_assert(kDeleted == -2,
 // A single block of empty control bytes for tables without any slots allocated.
 // This enables removing a branch in the hot path of find().
 // --------------------------------------------------------------------------
+template <class std_alloc_t>
 inline ctrl_t* EmptyGroup() {
-  alignas(16) static constexpr ctrl_t empty_group[] = {
-      kSentinel, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
-      kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty};
-  return const_cast<ctrl_t*>(empty_group);
+  PHMAP_IF_CONSTEXPR (std_alloc_t::value) {
+      alignas(16) static constexpr ctrl_t empty_group[] = {
+          kSentinel, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty,
+          kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty};
+
+      return const_cast<ctrl_t*>(empty_group);
+  }
+  return nullptr;
 }
 
 // --------------------------------------------------------------------------
@@ -869,6 +874,8 @@ public:
     template <class K>
     using key_arg = typename KeyArgImpl::template type<K, key_type>;
 
+    using std_alloc_t = std::is_same<typename std::decay<Alloc>::type, phmap::priv::Allocator<value_type>>;
+
 private:
     // Give an early error when key_type is not hashable/eq.
     auto KeyTypeCanBeHashed(const Hash& h, const key_type& k) -> decltype(h(k));
@@ -989,6 +996,11 @@ public:
         iterator(ctrl_t* ctrl, slot_type* slot) : ctrl_(ctrl), slot_(slot) {}
 
         void skip_empty_or_deleted() {
+            PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
+                // ctrl_ could be nullptr
+                if (!ctrl_)
+                    return;
+            }
             while (IsEmptyOrDeleted(*ctrl_)) {
                 // ctrl is not necessarily aligned to Group::kWidth. It is also likely
                 // to read past the space for ctrl bytes and into slots. This is ok
@@ -1057,7 +1069,7 @@ public:
     explicit raw_hash_set(size_t bucket_cnt, const hasher& hashfn = hasher(),
                           const key_equal& eq = key_equal(),
                           const allocator_type& alloc = allocator_type())
-        : ctrl_(EmptyGroup()), settings_(0, hashfn, eq, alloc) {
+        : ctrl_(EmptyGroup<std_alloc_t>()), settings_(0, hashfn, eq, alloc) {
         if (bucket_cnt) {
             size_t new_capacity = NormalizeCapacity(bucket_cnt);
             reset_growth_left(new_capacity);
@@ -1180,7 +1192,7 @@ public:
         std::is_nothrow_copy_constructible<hasher>::value&&
         std::is_nothrow_copy_constructible<key_equal>::value&&
         std::is_nothrow_copy_constructible<allocator_type>::value)
-        : ctrl_(phmap::exchange(that.ctrl_, EmptyGroup())),
+        : ctrl_(phmap::exchange(that.ctrl_, EmptyGroup<std_alloc_t>())),
         slots_(phmap::exchange(that.slots_, nullptr)),
         size_(phmap::exchange(that.size_, 0)),
         capacity_(phmap::exchange(that.capacity_, 0)),
@@ -1194,7 +1206,7 @@ public:
     }
 
     raw_hash_set(raw_hash_set&& that, const allocator_type& a)
-        : ctrl_(EmptyGroup()),
+        : ctrl_(EmptyGroup<std_alloc_t>()),
           slots_(nullptr),
           size_(0),
           capacity_(0),
@@ -1615,6 +1627,7 @@ public:
     // This overload is necessary because otherwise erase<K>(const K&) would be
     // a better match if non-const iterator is passed as an argument.
     iterator erase(iterator it) {
+        assert(it != end());
         auto res = it;
         ++res;
         _erase(it);
@@ -1738,7 +1751,8 @@ public:
 
     template <class K = key_type>
     void prefetch(const key_arg<K>& key) const {
-        prefetch_hash(this->hash(key));
+        PHMAP_IF_CONSTEXPR (std_alloc_t::value)
+            prefetch_hash(this->hash(key));
     }
 
     // The API of find() has two extensions.
@@ -1848,6 +1862,11 @@ private:
 
     template <class K = key_type>
     bool find_impl(const key_arg<K>& key, size_t hashval, size_t& offset) {
+        PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
+            // ctrl_ could be nullptr
+            if (!ctrl_)
+                return false;
+        }
         auto seq = probe(hashval);
         while (true) {
             Group g{ ctrl_ + seq.offset() };
@@ -2025,7 +2044,7 @@ private:
         // Unpoison before returning the memory to the allocator.
         SanitizerUnpoisonMemoryRegion(slots_, sizeof(slot_type) * capacity_);
         Deallocate<Layout::Alignment()>(&alloc_ref(), ctrl_, layout.AllocSize());
-        ctrl_ = EmptyGroup();
+        ctrl_ = EmptyGroup<std_alloc_t>();
         slots_ = nullptr;
         size_ = 0;
         capacity_ = 0;
@@ -2135,6 +2154,11 @@ private:
     }
 
     bool has_element(const value_type& elem, size_t hashval) const {
+        PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
+            // ctrl_ could be nullptr
+            if (!ctrl_)
+                return false;
+        }
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
@@ -2197,6 +2221,11 @@ private:
 protected:
     template <class K>
     size_t _find_key(const K& key, size_t hashval) {
+        PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
+            // ctrl_ could be nullptr
+            if (!ctrl_)
+                return (size_t)-1;
+        }
         auto seq = probe(hashval);
         while (true) {
             Group g{ctrl_ + seq.offset()};
@@ -2221,7 +2250,12 @@ protected:
     }
 
     size_t prepare_insert(size_t hashval) PHMAP_ATTRIBUTE_NOINLINE {
-        auto target = find_first_non_full(hashval);
+        PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
+            // ctrl_ could be nullptr
+            if (!ctrl_)
+                rehash_and_grow_if_necessary();
+        }
+        FindInfo target = find_first_non_full(hashval);
         if (PHMAP_PREDICT_FALSE(growth_left() == 0 &&
                                !IsDeleted(ctrl_[target.offset]))) {
             rehash_and_grow_if_necessary();
@@ -2335,10 +2369,10 @@ private:
     // TODO(alkis): Investigate removing some of these fields:
     // - ctrl/slots can be derived from each other
     // - size can be moved into the slot array
-    ctrl_t* ctrl_ = EmptyGroup();    // [(capacity + 1) * ctrl_t]
-    slot_type* slots_ = nullptr;     // [capacity * slot_type]
-    size_t size_ = 0;                // number of full slots
-    size_t capacity_ = 0;            // total number of slots
+    ctrl_t* ctrl_ = EmptyGroup<std_alloc_t>();    // [(capacity + 1) * ctrl_t]
+    slot_type* slots_ = nullptr;                  // [capacity * slot_type]
+    size_t size_ = 0;                             // number of full slots
+    size_t capacity_ = 0;                         // total number of slots
     HashtablezInfoHandle infoz_;
     std::tuple<size_t /* growth_left */, hasher, key_equal, allocator_type>
         settings_{0, hasher{}, key_equal{}, allocator_type{}};
@@ -4576,6 +4610,8 @@ struct HashtableDebugAccess<Set, typename std::enable_if<has_member_type_raw_has
 
     static size_t GetNumProbes(const Set& set,
                                const typename Set::key_type& key) {
+        if (!set.ctrl_)
+            return 0;
         size_t num_probes = 0;
         size_t hashval = set.hash(key); 
         auto seq = set.probe(hashval);

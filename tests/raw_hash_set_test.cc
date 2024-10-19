@@ -162,7 +162,7 @@ TEST(BitMask, LeadingTrailing) {
 }
 
 TEST(Group, EmptyGroup) {
-  for (h2_t h = 0; h != 128; ++h) EXPECT_FALSE(Group{EmptyGroup()}.Match(h));
+   for (h2_t h = 0; h != 128; ++h) EXPECT_FALSE(Group{EmptyGroup<std::true_type>()}.Match(h));
 }
 
 TEST(Group, Match) {
