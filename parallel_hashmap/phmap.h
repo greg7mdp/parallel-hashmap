@@ -2616,7 +2616,6 @@ protected:
     using UniqueLock    = typename Lockable::UniqueLock;
     using SharedLock    = typename Lockable::SharedLock;
     using ReadWriteLock = typename Lockable::ReadWriteLock;
-    
 
     // --------------------------------------------------------------------
     struct Inner : public Lockable
@@ -3178,14 +3177,9 @@ public:
     {
         Inner& inner   = sets_[subidx(hashval)];
         auto&  set     = inner.set_;
-        ReadWriteLock m(inner);
+        UniqueLock m(inner);
         
         size_t offset = set._find_key(key, hashval);
-        if (offset == (size_t)-1 && m.switch_to_unique()) {
-            // we did an unlock/lock, and another thread could have inserted the same key, so we need to
-            // do a find() again.
-            offset = set._find_key(key, hashval);
-        }
         if (offset == (size_t)-1) {
             offset = set.prepare_insert(hashval);
             set.emplace_at(offset, std::forward<Args>(args)...);
@@ -3268,13 +3262,8 @@ public:
     iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
-        ReadWriteLock m(inner);
+        UniqueLock m(inner);
         size_t offset = set._find_key(key, hashval);
-        if (offset == (size_t)-1 && m.switch_to_unique()) {
-            // we did an unlock/lock, and another thread could have inserted the same key, so we need to
-            // do a find() again.
-            offset = set._find_key(key, hashval);
-        }
         if (offset == (size_t)-1) {
             offset = set.prepare_insert(hashval);
             set.lazy_emplace_at(offset, std::forward<F>(f));
@@ -3389,7 +3378,7 @@ public:
     template <class K = key_type, class FExists, class FEmplace>
     bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
         size_t hashval = this->hash(key);
-        ReadWriteLock m;
+        UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, key, m);
         Inner* inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -3843,16 +3832,11 @@ protected:
 
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert_with_hash(size_t hashval, const K& key, ReadWriteLock &mutexlock) {
+    find_or_prepare_insert_with_hash(size_t hashval, const K& key, UniqueLock &mutexlock) {
         Inner& inner = sets_[subidx(hashval)];
         auto&  set   = inner.set_;
-        mutexlock    = std::move(ReadWriteLock(inner));
+        mutexlock    = std::move(UniqueLock(inner));
         size_t offset = set._find_key(key, hashval);
-        if (offset == (size_t)-1 && mutexlock.switch_to_unique()) {
-            // we did an unlock/lock, and another thread could have inserted the same key, so we need to
-            // do a find() again.
-            offset = set._find_key(key, hashval);
-        }
         if (offset == (size_t)-1) {
             offset = set.prepare_insert(hashval);
             return std::make_tuple(&inner, offset, true);
@@ -3862,7 +3846,7 @@ protected:
 
     template <class K>
     std::tuple<Inner*, size_t, bool> 
-    find_or_prepare_insert(const K& key, ReadWriteLock &mutexlock) {
+    find_or_prepare_insert(const K& key, UniqueLock &mutexlock) {
         return find_or_prepare_insert_with_hash<K>(this->hash(key), key, mutexlock);
     }
 
@@ -4084,7 +4068,7 @@ public:
     template <class K = key_type, class F, class... Args>
     bool try_emplace_l(K&& k, F&& f, Args&&... args) {
         size_t hashval = this->hash(k);
-        ReadWriteLock m;
+        UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -4105,7 +4089,7 @@ public:
     template <class K = key_type, class... Args>
     std::pair<typename parallel_hash_map::parallel_hash_set::pointer, bool> try_emplace_p(K&& k, Args&&... args) {
         size_t hashval = this->hash(k);
-        ReadWriteLock m;
+        UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -4135,7 +4119,7 @@ private:
     template <class K, class V>
     std::pair<iterator, bool> insert_or_assign_impl(K&& k, V&& v) {
         size_t hashval = this->hash(k);
-        ReadWriteLock m;
+        UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
@@ -4155,7 +4139,7 @@ private:
 
     template <class K = key_type, class... Args>
     std::pair<iterator, bool> try_emplace_impl_with_hash(size_t hashval, K&& k, Args&&... args) {
-        ReadWriteLock m;
+        UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, k, m);
         typename Base::Inner *inner = std::get<0>(res);
         if (std::get<2>(res)) {
