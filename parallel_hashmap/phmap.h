@@ -337,8 +337,9 @@ inline ctrl_t* EmptyGroup() {
           kEmpty,    kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty, kEmpty};
 
       return const_cast<ctrl_t*>(empty_group);
+  } else {
+       return nullptr;
   }
-  return nullptr;
 }
 
 // --------------------------------------------------------------------------
