@@ -208,7 +208,7 @@ if (PHMAP_BUILD_EXAMPLES)
     # -------------------------------------------------------------
     find_package(OpenMP)
     find_package(Boost 1.70.0)
-    if (OPENMP_FOUND AND Boost_FOUND AND "cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+    if (OpenMP_FOUND AND Boost_FOUND AND "cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
        add_executable(ex_llil4map examples/llil4map.cc phmap.natvis)
        target_include_directories(ex_llil4map PRIVATE ${Boost_INCLUDE_DIRS})
        target_compile_features(ex_llil4map PUBLIC cxx_std_20)
