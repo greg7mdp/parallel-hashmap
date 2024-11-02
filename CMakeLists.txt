@@ -219,11 +219,17 @@ if (PHMAP_BUILD_EXAMPLES)
        target_link_libraries(ex_llil4map PRIVATE OpenMP::OpenMP_CXX)
        target_compile_options(ex_llil4map PRIVATE "${OpenMP_CXX_FLAGS}")
 
+       file(COPY examples/llil_utils DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+
+    if (Boost_FOUND)
+       add_executable(ex_custom_pointer examples/custom_pointer.cc phmap.natvis)
+       target_include_directories(ex_custom_pointer PRIVATE ${Boost_INCLUDE_DIRS})
+
        add_executable(ex_llil examples/llil.cc phmap.natvis)
        target_include_directories(ex_llil PRIVATE ${Boost_INCLUDE_DIRS})
        target_compile_features(ex_llil PUBLIC cxx_std_20)
-       
-       file(COPY examples/llil_utils DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+       target_link_libraries(ex_llil Threads::Threads)
     endif()
 
     target_link_libraries(ex_knucleotide Threads::Threads)
