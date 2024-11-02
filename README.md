@@ -34,6 +34,12 @@ This repository aims to provide a set of excellent **hash map** implementations,
 @byronhe kindly provided this [Chinese translation](https://byronhe.com/post/2020/11/10/parallel-hashmap-btree-fast-multi-thread-intro/) of the README.md.
 
 
+## Parallel-hashmap or GTL?
+
+The observant among us may have noticed that I have two github repos, [parallel-hashmap](https://github.com/greg7mdp/parallel-hashmap) and [gtl](https://github.com/greg7mdp/gtl), which both provide very similar functionality. Indeed the hash tables in both are equivalent and the code mostly the same. The main difference is that  [parallel-hashmap](https://github.com/greg7mdp/parallel-hashmap) only requires a C++11 compiler, while  [gtl](https://github.com/greg7mdp/gtl) requires a C++20 compiler.
+
+My recommendation would be to use [gtl](https://github.com/greg7mdp/gtl) if you are compiling with C++20 or higher, and  [parallel-hashmap](https://github.com/greg7mdp/parallel-hashmap) otherwise. While the included hash maps are equivalent, [gtl](https://github.com/greg7mdp/gtl) is where new development occurs, and it will include useful new classes.
+
 ## Fast *and*  memory friendly
 
 Click here [For a full writeup explaining the design and benefits of the Parallel Hashmap](https://greg7mdp.github.io/parallel-hashmap/).
