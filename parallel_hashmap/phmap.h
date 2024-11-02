@@ -1892,7 +1892,11 @@ private:
     {
         template <class K, class... Args>
         size_t operator()(const K& key, Args&&...) const {
+#if PHMAP_DISABLE_MIX
+            return h(key);
+#else
             return phmap_mix<sizeof(size_t)>()(h(key));
+#endif
         }
         const hasher& h;
     };
@@ -3749,7 +3753,11 @@ private:
     {
         template <class K, class... Args>
         size_t operator()(const K& key, Args&&...) const {
+#if PHMAP_DISABLE_MIX
+            return h(key);
+#else
             return phmap_mix<sizeof(size_t)>()(h(key));
+#endif
         }
         const hasher& h;
     };
