@@ -2774,7 +2774,9 @@ public:
     node_handle_base& operator=(node_handle_base&& other) noexcept {
         destroy();
         if (!other.empty()) {
-            alloc_ = other.alloc_;
+            if (other.alloc_) {
+               alloc_.emplace(other.alloc_.value());
+            }
             PolicyTraits::transfer(alloc(), slot(), other.slot());
             other.reset();
         }
