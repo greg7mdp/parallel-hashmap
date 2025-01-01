@@ -8,5 +8,6 @@ build*
 .cache
 .gdb_history
 compile_commands.json
+.emacs.desktop*
 **/.vscode
 TAGS
