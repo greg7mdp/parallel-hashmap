@@ -11,3 +11,4 @@ compile_commands.json
 .emacs.desktop*
 **/.vscode
 TAGS
+bazel-*
