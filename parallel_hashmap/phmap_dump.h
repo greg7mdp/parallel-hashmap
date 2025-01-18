@@ -168,22 +168,32 @@ bool parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc>::phmap_load(Inp
 class BinaryOutputArchive {
 public:
     BinaryOutputArchive(const char *file_path) {
-        ofs_.open(file_path, std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
+        os_ = new std::ofstream(file_path, std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
+        need_close_ = true;
     }
 
-    ~BinaryOutputArchive() = default;
+    BinaryOutputArchive(std::ostream& os) : os_(&os), need_close_(false) {}
+
+    ~BinaryOutputArchive() {
+        if (need_close_) {
+            os_->flush();
+            delete os_;
+        }
+        need_close_ = false;
+    }
+    
     BinaryOutputArchive(const BinaryOutputArchive&) = delete;
     BinaryOutputArchive& operator=(const BinaryOutputArchive&) = delete;
 
     bool saveBinary(const void *p, size_t sz) {
-        ofs_.write(reinterpret_cast<const char*>(p), (std::streamsize)sz);
+        os_->write(reinterpret_cast<const char*>(p), (std::streamsize)sz);
         return true;
     }
 
     template<typename V>
     typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
     saveBinary(const V& v) {
-        ofs_.write(reinterpret_cast<const char *>(&v), sizeof(V));
+        os_->write(reinterpret_cast<const char *>(&v), sizeof(V));
         return true;
     }
 
@@ -194,29 +204,38 @@ public:
     }
 
 private:
-    std::ofstream ofs_;
+    std::ostream* os_;
+    bool need_close_;
 };
 
 
 class BinaryInputArchive {
 public:
     BinaryInputArchive(const char * file_path) {
-        ifs_.open(file_path, std::ofstream::in | std::ofstream::binary);
+        is_ = new std::ifstream(file_path, std::ifstream::in | std::ifstream::binary);
     }
+
+    BinaryInputArchive(std::istream& is) : need_close_(false), is_(&is) {}
     
-    ~BinaryInputArchive() = default;
+    ~BinaryInputArchive() {
+        if (need_close_) {
+            delete is_;
+        }
+        need_close_ = false;
+    }
+
     BinaryInputArchive(const BinaryInputArchive&) = delete;
     BinaryInputArchive& operator=(const BinaryInputArchive&) = delete;
 
     bool loadBinary(void* p, size_t sz) {
-        ifs_.read(reinterpret_cast<char*>(p),  (std::streamsize)sz);
+        is_->read(reinterpret_cast<char*>(p),  (std::streamsize)sz);
         return true;
     }
 
     template<typename V>
     typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
     loadBinary(V* v) {
-        ifs_.read(reinterpret_cast<char *>(v), sizeof(V));
+        is_->read(reinterpret_cast<char *>(v), sizeof(V));
         return true;
     }
 
@@ -227,7 +246,8 @@ public:
     }
     
 private:
-    std::ifstream ifs_;
+    bool need_close_;
+    std::istream* is_;
 };
 
 } // namespace phmap
