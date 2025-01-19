@@ -1,4 +1,3 @@
-#include <functional>
 #if !defined(phmap_dump_h_guard_)
 #define phmap_dump_h_guard_
 
@@ -22,7 +21,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <sstream>
+#include <functional>
 #include "phmap.h"
 namespace phmap
 {
@@ -169,8 +168,10 @@ bool parallel_hash_set<N, RefSet, Mtx_, Policy, Hash, Eq, Alloc>::phmap_load(Inp
 class BinaryOutputArchive {
 public:
     BinaryOutputArchive(const char *file_path) {
-        os_ = new std::ofstream(file_path, std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
-        destruct_ = [this]() { delete os_; };
+      os_ = new std::ofstream(file_path, std::ofstream::out |
+                                             std::ofstream::trunc |
+                                             std::ofstream::binary);
+      destruct_ = [this]() { delete os_; };
     }
 
     BinaryOutputArchive(std::ostream &os) : os_(&os) {}
@@ -203,7 +204,7 @@ public:
     }
 
 private:
-    std::ostream* os_{nullptr};
+    std::ostream* os_;
     std::function<void()> destruct_;
 };
 
@@ -246,7 +247,7 @@ public:
     }
     
 private:
-    std::istream* is_{nullptr};
+    std::istream* is_;
     std::function<void()> destruct_;
 };
 
