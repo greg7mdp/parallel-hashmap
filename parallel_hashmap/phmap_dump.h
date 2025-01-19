@@ -1,3 +1,4 @@
+#include <functional>
 #if !defined(phmap_dump_h_guard_)
 #define phmap_dump_h_guard_
 
@@ -169,17 +170,15 @@ class BinaryOutputArchive {
 public:
     BinaryOutputArchive(const char *file_path) {
         os_ = new std::ofstream(file_path, std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);
-        need_close_ = true;
+        destruct_ = [this]() { delete os_; };
     }
 
-    BinaryOutputArchive(std::ostream& os) : os_(&os), need_close_(false) {}
+    BinaryOutputArchive(std::ostream &os) : os_(&os) {}
 
     ~BinaryOutputArchive() {
-        if (need_close_) {
-            os_->flush();
-            delete os_;
+        if (destruct_) {
+            destruct_();
         }
-        need_close_ = false;
     }
     
     BinaryOutputArchive(const BinaryOutputArchive&) = delete;
@@ -204,24 +203,25 @@ public:
     }
 
 private:
-    std::ostream* os_;
-    bool need_close_;
+    std::ostream* os_{nullptr};
+    std::function<void()> destruct_;
 };
 
 
 class BinaryInputArchive {
 public:
     BinaryInputArchive(const char * file_path) {
-        is_ = new std::ifstream(file_path, std::ifstream::in | std::ifstream::binary);
+      is_ = new std::ifstream(file_path,
+                              std::ifstream::in | std::ifstream::binary);
+      destruct_ = [this]() { delete is_; };
     }
 
-    BinaryInputArchive(std::istream& is) : need_close_(false), is_(&is) {}
+    BinaryInputArchive(std::istream& is) : is_(&is) {}
     
     ~BinaryInputArchive() {
-        if (need_close_) {
-            delete is_;
+        if (destruct_) {
+            destruct_();
         }
-        need_close_ = false;
     }
 
     BinaryInputArchive(const BinaryInputArchive&) = delete;
@@ -246,8 +246,8 @@ public:
     }
     
 private:
-    bool need_close_;
-    std::istream* is_;
+    std::istream* is_{nullptr};
+    std::function<void()> destruct_;
 };
 
 } // namespace phmap
