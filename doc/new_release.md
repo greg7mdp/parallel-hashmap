@@ -1,9 +1,9 @@
 - update version in `phmap_config.h`
-- update version in `CITATION.cff` and `README.md`
+- update version in `CITATION.cff`
 - update version in comment on top of `CMakeLists.txt`
 - git commit
 - git push
-- create the new release on github (tag `v1.4.0` - use semantic versioning)
+- create the new release on github (tag `v2.0.0` - use semantic versioning)
 - download the tar.gz from github, and use `sha256sum parallel-hashmap-1.4.0.tar.gz` on linux to get the sha256
 
 ## conan
