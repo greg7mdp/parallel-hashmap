@@ -1858,21 +1858,19 @@ private:
 
     template <class K = key_type>
     bool find_impl(const key_arg<K>& PHMAP_RESTRICT key, size_t hashval, size_t& PHMAP_RESTRICT offset) {
-        auto ctrl_ptr = ctrl_;
         PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
             // ctrl_ could be nullptr
-            if (!ctrl_ptr)
+            if (!ctrl_)
                 return false;
         }
         auto seq = probe(hashval);
-        auto slots_ptr = slots_;
         while (true) {
-            Group g{ ctrl_ptr + seq.offset() };
+            Group g{ ctrl_ + seq.offset() };
             for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 offset = seq.offset((size_t)i);
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                     EqualElement<K>{key, eq_ref()},
-                    PolicyTraits::element(slots_ptr + offset))))
+                    PolicyTraits::element(slots_ + offset))))
                     return true;
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
@@ -2036,11 +2034,9 @@ private:
                             std::is_same<typename Policy::is_flat, std::false_type>::value)) {
             // node map, or not trivially destructible... we  need to iterate and destroy values one by one
             // std::cout << "either this is a node map or " << type_name<typename PolicyTraits::value_type>()  << " is not trivially_destructible\n";
-            auto slots_ptr = slots_;
-            auto ctrl_ptr  = ctrl_;
             for (size_t i = 0, cnt = capacity_; i != cnt; ++i) {
-                if (IsFull(ctrl_ptr[i])) {
-                    PolicyTraits::destroy(&alloc_ref(), slots_ptr + i);
+                if (IsFull(ctrl_[i])) {
+                    PolicyTraits::destroy(&alloc_ref(), slots_ + i);
                 }
             }
         } 
@@ -2225,20 +2221,18 @@ private:
 protected:
     template <class K>
     size_t _find_key(const K& PHMAP_RESTRICT key, size_t hashval) {
-        auto ctrl_ptr = ctrl_;
         PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
             // ctrl_ could be nullptr
-            if (!ctrl_ptr)
+            if (!ctrl_)
                 return (size_t)-1;
         }
         auto seq = probe(hashval);
-        auto slots_ptr = slots_;
         while (true) {
-            Group g{ctrl_ptr + seq.offset()};
+            Group g{ctrl_ + seq.offset()};
             for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ptr + seq.offset((size_t)i)))))
+                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
                     return seq.offset((size_t)i);
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
