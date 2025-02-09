@@ -555,7 +555,7 @@ inline bool IsValidCapacity(size_t n) { return ((n + 1) & n) == 0 && n > 0; }
 //   FULL -> DELETED
 // --------------------------------------------------------------------------
 inline void ConvertDeletedToEmptyAndFullToDeleted(
-    ctrl_t* ctrl, size_t capacity) 
+    ctrl_t* PHMAP_RESTRICT ctrl, size_t capacity) 
 {
     assert(ctrl[capacity] == kSentinel);
     assert(IsValidCapacity(capacity));
@@ -1857,20 +1857,22 @@ private:
     friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
 
     template <class K = key_type>
-    bool find_impl(const key_arg<K>& key, size_t hashval, size_t& offset) {
+    bool find_impl(const key_arg<K>& PHMAP_RESTRICT key, size_t hashval, size_t& PHMAP_RESTRICT offset) {
+        auto ctrl_ptr = ctrl_;
         PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
             // ctrl_ could be nullptr
-            if (!ctrl_)
+            if (!ctrl_ptr)
                 return false;
         }
         auto seq = probe(hashval);
+        auto slots_ptr = slots_;
         while (true) {
-            Group g{ ctrl_ + seq.offset() };
+            Group g{ ctrl_ptr + seq.offset() };
             for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 offset = seq.offset((size_t)i);
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                     EqualElement<K>{key, eq_ref()},
-                    PolicyTraits::element(slots_ + offset))))
+                    PolicyTraits::element(slots_ptr + offset))))
                     return true;
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
@@ -2034,9 +2036,11 @@ private:
                             std::is_same<typename Policy::is_flat, std::false_type>::value)) {
             // node map, or not trivially destructible... we  need to iterate and destroy values one by one
             // std::cout << "either this is a node map or " << type_name<typename PolicyTraits::value_type>()  << " is not trivially_destructible\n";
-            for (size_t i = 0; i != capacity_; ++i) {
-                if (IsFull(ctrl_[i])) {
-                    PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+            auto slots_ptr = slots_;
+            auto ctrl_ptr  = ctrl_;
+            for (size_t i = 0, cnt = capacity_; i != cnt; ++i) {
+                if (IsFull(ctrl_ptr[i])) {
+                    PolicyTraits::destroy(&alloc_ref(), slots_ptr + i);
                 }
             }
         } 
@@ -2153,7 +2157,7 @@ private:
         }
     }
 
-    bool has_element(const value_type& elem, size_t hashval) const {
+    bool has_element(const value_type& PHMAP_RESTRICT elem, size_t hashval) const {
         PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
             // ctrl_ could be nullptr
             if (!ctrl_)
@@ -2220,19 +2224,21 @@ private:
 
 protected:
     template <class K>
-    size_t _find_key(const K& key, size_t hashval) {
+    size_t _find_key(const K& PHMAP_RESTRICT key, size_t hashval) {
+        auto ctrl_ptr = ctrl_;
         PHMAP_IF_CONSTEXPR (!std_alloc_t::value) {
             // ctrl_ could be nullptr
-            if (!ctrl_)
+            if (!ctrl_ptr)
                 return (size_t)-1;
         }
         auto seq = probe(hashval);
+        auto slots_ptr = slots_;
         while (true) {
-            Group g{ctrl_ + seq.offset()};
+            Group g{ctrl_ptr + seq.offset()};
             for (uint32_t i : g.Match((h2_t)H2(hashval))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+                                          PolicyTraits::element(slots_ptr + seq.offset((size_t)i)))))
                     return seq.offset((size_t)i);
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
