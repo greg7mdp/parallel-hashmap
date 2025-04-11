@@ -62,7 +62,7 @@ public:
     uint64_t operator()(uint64_t boundExcluded) noexcept {
 #ifdef PHMAP_HAS_UMUL128
         uint64_t h;
-        (void)umul128(operator()(), boundExcluded, &h);
+        (void)phmap::umul128(operator()(), boundExcluded, &h);
         return h;
 #else
         return 0;

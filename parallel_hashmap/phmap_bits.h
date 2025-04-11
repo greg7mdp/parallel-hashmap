@@ -177,35 +177,6 @@ inline void UnalignedStore64(void *p, uint64_t v) { memcpy(p, &v, sizeof v); }
 #endif
 
 #if defined(__GNUC__)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-
-#ifdef PHMAP_HAVE_INTRINSIC_INT128
-    __extension__ typedef unsigned __int128 phmap_uint128;
-    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
-    {
-        auto result = static_cast<phmap_uint128>(a) * static_cast<phmap_uint128>(b);
-        *high = static_cast<uint64_t>(result >> 64);
-        return static_cast<uint64_t>(result);
-    }
-    #define PHMAP_HAS_UMUL128 1
-#elif (defined(_MSC_VER))
-    #if defined(_M_X64)
-        #pragma intrinsic(_umul128)
-        inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) 
-        {
-            return _umul128(a, b, high);
-        }
-        #define PHMAP_HAS_UMUL128 1
-    #endif
-#endif
-
-#if defined(__GNUC__)
-    #pragma GCC diagnostic pop
-#endif
-
-#if defined(__GNUC__)
     // Cache line alignment
     #if defined(__i386__) || defined(__x86_64__)
         #define PHMAP_CACHELINE_SIZE 64
@@ -268,6 +239,36 @@ inline void UnalignedStore64(void *p, uint64_t v) { memcpy(p, &v, sizeof v); }
 
 
 namespace phmap {
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
+#ifdef PHMAP_HAVE_INTRINSIC_INT128
+    __extension__ typedef unsigned __int128 phmap_uint128;
+    inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
+    {
+        auto result = static_cast<phmap_uint128>(a) * static_cast<phmap_uint128>(b);
+        *high = static_cast<uint64_t>(result >> 64);
+        return static_cast<uint64_t>(result);
+    }
+    #define PHMAP_HAS_UMUL128 1
+#elif (defined(_MSC_VER))
+    #if defined(_M_X64)
+        #pragma intrinsic(_umul128)
+        inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
+        {
+            return _umul128(a, b, high);
+        }
+        #define PHMAP_HAS_UMUL128 1
+    #endif
+#endif
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
+
 namespace base_internal {
 
 PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros64Slow(uint64_t n) {
