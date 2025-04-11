@@ -5007,10 +5007,10 @@ public:
     {
         void lock()            ABSL_EXCLUSIVE_LOCK_FUNCTION()        { this->Lock(); }
         void unlock()          ABSL_UNLOCK_FUNCTION()                { this->Unlock(); }
-        void try_lock()        ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) { this->TryLock(); }
+        bool try_lock()        ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) { return this->TryLock(); }
         void lock_shared()     ABSL_SHARED_LOCK_FUNCTION()           { this->ReaderLock(); }
         void unlock_shared()   ABSL_UNLOCK_FUNCTION()                { this->ReaderUnlock(); }
-        void try_lock_shared() ABSL_SHARED_TRYLOCK_FUNCTION(true)    { this->ReaderTryLock(); }
+        bool try_lock_shared() ABSL_SHARED_TRYLOCK_FUNCTION(true)    { return this->ReaderTryLock(); }
     };
     
     template <>
