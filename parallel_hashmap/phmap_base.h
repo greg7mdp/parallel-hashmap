@@ -47,6 +47,7 @@
 #include <utility>
 #include <memory>
 #include <mutex> // for std::lock
+#include <cstdlib>
 
 #include "phmap_config.h"
 
