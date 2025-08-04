@@ -3559,7 +3559,8 @@ public:
         class K = key_type,
         typename std::enable_if<!std::is_same<K, iterator>::value, int>::type = 0>
     node_type extract(const key_arg<K>& key) {
-        auto it = find(key);
+        SharedLock m;
+        auto it = this->template find<K, SharedLock>(key, this->hash(key), m);
         return it == end() ? node_type() : extract(const_iterator{it});
     }
 
