@@ -321,7 +321,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32Slow(uint64_t n) {
     if (n >> 16) zeroes -= 16, n >>= 16;
     if (n >> 8) zeroes -= 8, n >>= 8;
     if (n >> 4) zeroes -= 4, n >>= 4;
-    return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
+    return static_cast<uint32_t>("\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n]) + zeroes;
 }
 
 PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32(uint32_t n) {
@@ -343,7 +343,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32(uint32_t n) {
     if (n == 0) {
         return 32;
     }
-    return __builtin_clz(n);
+    return static_cast<uint32_t>(__builtin_clz(n));
 #else
     return CountLeadingZeros32Slow(n);
 #endif
@@ -377,7 +377,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero64(uint64_t n)
 #elif defined(__GNUC__) || defined(__clang__)
     static_assert(sizeof(unsigned long long) == sizeof(n),  // NOLINT(runtime/int)
                   "__builtin_ctzll does not take 64-bit arg");
-    return __builtin_ctzll(n);
+    return static_cast<uint32_t>(__builtin_ctzll(n));
 #else
     return CountTrailingZerosNonZero64Slow(n);
 #endif
@@ -402,7 +402,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero32(uint32_t n)
 #elif defined(__GNUC__) || defined(__clang__)
     static_assert(sizeof(int) == sizeof(n),
                   "__builtin_ctz does not take 32-bit arg");
-    return __builtin_ctz(n);
+    return static_cast<uint32_t>(__builtin_ctz(n));
 #else
     return CountTrailingZerosNonZero32Slow(n);
 #endif
