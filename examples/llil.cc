@@ -233,7 +233,7 @@ namespace lf  = boost::lockfree;
 // ------------------------------------------------------------------------------------------
 // ideas
 // -----
-// do a first pass that
+// * do a first pass that
 //
 //   - gather string length counts (each thread has an array `size_t lengths[256]` which are
 //     merged at the end)
@@ -257,6 +257,8 @@ namespace lf  = boost::lockfree;
 //
 //     and the `string_cnt` used to do the find() in the map should be pointing to the string
 //     in the block (no copy), so no string alloc for duplicate strings
+//
+// * use arena allocator (no need to free until the end)
 // ------------------------------------------------------------------------------------------
 template<size_t num_consumers>
 class llil_t {
