@@ -1234,22 +1234,22 @@ using ExtractOrT = typename ExtractOr<Extract, Obj, Default, void>::type;
 
 // Extractors for the features of allocators.
 template <typename T>
-using GetPointer = typename T::pointer;
+using GetPointer = typename std::allocator_traits<T>::pointer;
 
 template <typename T>
-using GetConstPointer = typename T::const_pointer;
+using GetConstPointer = typename std::allocator_traits<T>::const_pointer;
 
 template <typename T>
-using GetVoidPointer = typename T::void_pointer;
+using GetVoidPointer = typename std::allocator_traits<T>::void_pointer;
 
 template <typename T>
-using GetConstVoidPointer = typename T::const_void_pointer;
+using GetConstVoidPointer = typename std::allocator_traits<T>::const_void_pointer;
 
 template <typename T>
-using GetDifferenceType = typename T::difference_type;
+using GetDifferenceType = typename std::allocator_traits<T>::difference_type;
 
 template <typename T>
-using GetSizeType = typename T::size_type;
+using GetSizeType = typename std::allocator_traits<T>::size_type;
 
 template <typename T>
 using GetPropagateOnContainerCopyAssignment =
