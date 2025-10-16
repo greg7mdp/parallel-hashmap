@@ -84,6 +84,7 @@ endif()
 ## ------------------------- building tests and examples -------------
 option(PHMAP_BUILD_TESTS    "Whether or not to build the tests"    ${PHMAP_MASTER_PROJECT})
 option(PHMAP_BUILD_EXAMPLES "Whether or not to build the examples" ${PHMAP_MASTER_PROJECT})
+option(PHMAP_DOWNLOAD_GTEST "Whether to download gtest or use installed version" ON)
 
 if(MSVC)
     add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj>")
@@ -94,12 +95,16 @@ if (PHMAP_BUILD_TESTS OR PHMAP_BUILD_EXAMPLES)
 endif()
 
 if (PHMAP_BUILD_TESTS)
-
     if (NOT PHMAP_GTEST_LIBS)
-        find_package(GTest CONFIG)
-        if (GTest_FOUND)
-            set(PHMAP_GTEST_LIBS GTest::gmock_main)
-        else()
+        if (NOT PHMAP_DOWNLOAD_GTEST)
+            find_package(GTest CONFIG)
+            if (GTest_FOUND)
+                set(PHMAP_GTEST_LIBS GTest::gmock_main)
+            else()
+                set(PHMAP_DOWNLOAD_GTEST ON)
+            endif()
+        endif()
+        if (PHMAP_DOWNLOAD_GTEST)
             include(cmake/DownloadGTest.cmake)
 
             check_target(gtest)
@@ -211,8 +216,11 @@ if (PHMAP_BUILD_EXAMPLES)
 
     # llil4map.cc - see https://www.perlmonks.com/?node_id=11149643
     # -------------------------------------------------------------
-    find_package(OpenMP)
-    find_package(Boost 1.70.0)
+    if(POLICY CMP0167)
+       cmake_policy(SET CMP0167 NEW)
+    endif()
+    find_package(OpenMP QUIET)
+    find_package(Boost 1.70.0 QUIET)
     if (OpenMP_FOUND AND Boost_FOUND AND "cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
        add_executable(ex_llil4map examples/llil4map.cc phmap.natvis)
        target_include_directories(ex_llil4map PRIVATE ${Boost_INCLUDE_DIRS})
