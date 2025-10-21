@@ -76,7 +76,7 @@ std::mt19937_64* GetSharedRng() {
 }
 
 
-enum Enum {
+enum Enum : uint64_t {
     kEnumEmpty,
     kEnumDeleted,
 };
@@ -96,34 +96,24 @@ struct Generator;
 template <class T>
 struct Generator<T, typename std::enable_if<std::is_integral<T>::value>::type> {
     T operator()() const {
-        std::uniform_int_distribution<T> dist;
-        return dist(*GetSharedRng());
+       std::uniform_int_distribution<T> dist;
+       return dist(*GetSharedRng());
     }
 };
 
 template <>
 struct Generator<Enum> {
     Enum operator()() const {
-        std::uniform_int_distribution<typename std::underlying_type<Enum>::type> dist;
-
-        while (true) {
-            auto variate = dist(*GetSharedRng());
-            if (variate != kEnumEmpty && variate != kEnumDeleted)
-                return static_cast<Enum>(variate);
-        }
+       std::uniform_int_distribution<typename std::underlying_type<Enum>::type> dist;
+       return static_cast<Enum>(dist(*GetSharedRng()));
     }
 };
 
 template <>
 struct Generator<EnumClass> {
     EnumClass operator()() const {
-        std::uniform_int_distribution<
-            typename std::underlying_type<EnumClass>::type> dist;
-        while (true) {
-            EnumClass variate = static_cast<EnumClass>(dist(*GetSharedRng()));
-            if (variate != EnumClass::kEmpty && variate != EnumClass::kDeleted)
-                return static_cast<EnumClass>(variate);
-        }
+       std::uniform_int_distribution<typename std::underlying_type<EnumClass>::type> dist;
+       return static_cast<EnumClass>(dist(*GetSharedRng()));
     }
 };
 
