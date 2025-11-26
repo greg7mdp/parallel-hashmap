@@ -105,6 +105,14 @@ TEST(THIS_TEST_NAME, MergeExtractInsert) {
   EXPECT_THAT(set2, UnorderedElementsAre(Pointee(7), Pointee(23)));
 }
 
+TEST(THIS_TEST_NAME, Emplace) {
+   using Thing = std::tuple<size_t, double>;
+   phmap::THIS_HASH_SET<Thing> hs;
+   hs.emplace(Thing(0, 1.25));
+   hs.emplace(0, 1.3);
+   assert(hs.find(Thing(0, 1.3)) != hs.end());
+}
+
 }  // namespace
 }  // namespace priv
 }  // namespace phmap
