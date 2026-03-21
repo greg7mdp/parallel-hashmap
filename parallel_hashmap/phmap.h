@@ -1853,8 +1853,10 @@ public:
     }
 
 private:
+#if !defined(__clang__)
     template <class Container, typename Enabler>
     friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
+#endif
 
     template <class K = key_type>
     bool find_impl(const key_arg<K>& PHMAP_RESTRICT key, size_t hashval, size_t& PHMAP_RESTRICT offset) {
@@ -3738,8 +3740,10 @@ public:
 #endif
 
 private:
+#if !defined(__clang__)
     template <class Container, typename Enabler>
     friend struct phmap::priv::hashtable_debug_internal::HashtableDebugAccess;
+#endif
 
     struct FindElement 
     {
