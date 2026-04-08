@@ -338,6 +338,21 @@ Timer _lookup(vector<T> &v, HT &hash, size_t &num_present)
 }
 
 // --------------------------------------------------------------------------
+template <class HT>
+Timer _traverse_empty(int64_t capacity, HT& hash)
+{
+    hash.clear();
+    hash.reserve(capacity);
+    Timer timer(true);
+
+    for (auto& pair : hash)
+        if (pair.second)
+            fprintf(stderr, "should not be here");
+
+    return timer;
+}
+
+// --------------------------------------------------------------------------
 template <class T, class HT>
 Timer _delete(vector<T> &v, HT &hash)
 {
@@ -440,6 +455,10 @@ int main(int argc, char ** argv)
 
             timer = _lookup(v, hash, num_present);
             //fprintf(stderr, "found %zu\n", num_present);
+        }
+        else if (!strcmp(bench_name, "traverse_empty"))
+        {
+            timer = _traverse_empty(num_keys, hash);
         }
         else if(!strcmp(bench_name, "delete"))
         {

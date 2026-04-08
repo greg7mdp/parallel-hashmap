@@ -1245,6 +1245,7 @@ public:
     ~raw_hash_set() { destroy_slots(); }
 
     iterator begin() {
+        if (empty()) return end();
         auto it = iterator_at(0);
         it.skip_empty_or_deleted();
         return it;
