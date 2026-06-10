@@ -1262,17 +1262,17 @@ using GetSizeType = typename std::allocator_traits<T>::size_type;
 
 template <typename T>
 using GetPropagateOnContainerCopyAssignment =
-    typename T::propagate_on_container_copy_assignment;
+    typename std::allocator_traits<T>::propagate_on_container_copy_assignment;
 
 template <typename T>
 using GetPropagateOnContainerMoveAssignment =
-    typename T::propagate_on_container_move_assignment;
+    typename std::allocator_traits<T>::propagate_on_container_move_assignment;
 
 template <typename T>
-using GetPropagateOnContainerSwap = typename T::propagate_on_container_swap;
+using GetPropagateOnContainerSwap = typename std::allocator_traits<T>::propagate_on_container_swap;
 
 template <typename T>
-using GetIsAlwaysEqual = typename T::is_always_equal;
+using GetIsAlwaysEqual = typename std::allocator_traits<T>::is_always_equal;
 
 template <typename T>
 struct GetFirstArg;
