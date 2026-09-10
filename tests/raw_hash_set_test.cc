@@ -1360,6 +1360,42 @@ TEST(Table, RehashZeroForcesRehash) {
   EXPECT_NE(p, &*t.find(0));
 }
 
+// `rehash(0)` must never leave the table above its max load factor. It used to
+// resize to `NormalizeCapacity(std::max(n, size()))`, which for a `size()` of
+// exactly 2^k-1 yields a capacity equal to `size()` -- a 100% full table. That
+// leaves no kEmpty control byte, so the probe loop in `find()` cannot
+// terminate, and `reset_growth_left()` computes a negative
+// `CapacityToGrowth(capacity_) - size_` which underflows, so `prepare_insert()`
+// never triggers a resize again either.
+//
+// This checks capacities rather than calling `find()` on purpose: on a
+// regressed build a lookup would spin forever instead of failing.
+TEST(Table, RehashZeroPreservesMaxLoadFactor) {
+  for (size_t n = 1; n <= 256; ++n) {
+    IntTable t;
+    for (size_t i = 0; i < n; ++i) t.emplace(static_cast<int64_t>(i));
+    ASSERT_EQ(n, t.size()) << "n = " << n;
+    t.rehash(0);
+    ASSERT_EQ(n, t.size()) << "n = " << n;
+    ASSERT_TRUE(IsValidCapacity(t.bucket_count())) << "n = " << n;
+    ASSERT_LE(t.size(), CapacityToGrowth(t.bucket_count())) << "n = " << n;
+  }
+}
+
+// `reserve(0)` reaches the same code path: `reserve(n)` is
+// `rehash(GrowthToLowerboundCapacity(n))` and `GrowthToLowerboundCapacity(0)`
+// is 0, so it degenerates to `rehash(0)` and must hold the same invariant.
+TEST(Table, ReserveZeroPreservesMaxLoadFactor) {
+  for (size_t n = 1; n <= 256; ++n) {
+    IntTable t;
+    for (size_t i = 0; i < n; ++i) t.emplace(static_cast<int64_t>(i));
+    t.reserve(0);
+    ASSERT_EQ(n, t.size()) << "n = " << n;
+    ASSERT_TRUE(IsValidCapacity(t.bucket_count())) << "n = " << n;
+    ASSERT_LE(t.size(), CapacityToGrowth(t.bucket_count())) << "n = " << n;
+  }
+}
+
 #if PHMAP_HAVE_STD_STRING_VIEW
 TEST(Table, ConstructFromInitList) {
   using P = std::pair<std::string, std::string>;
