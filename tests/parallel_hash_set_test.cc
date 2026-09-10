@@ -131,6 +131,21 @@ TEST(THIS_TEST_NAME, EmplaceSingle) {
     EXPECT_EQ(m.count(11), 0);
 }
 
+// Any call to reserve <= than the current size should leave the capacity unchanged.
+TEST(Table, ReserveBelowSizeShouldNotGrow) {
+    using Set = phmap::THIS_HASH_SET<int>;
+    for (size_t n = 1; n <= 256; ++n) {
+        Set t;
+        for (size_t i = 0; i < n; ++i)
+            t.emplace(static_cast<int64_t>(i));
+        auto cap = t.capacity();
+        for (size_t i = 0; i < n; ++i) {
+            t.reserve(n);
+            ASSERT_EQ(cap, t.capacity()) << "cap = " << cap << ", new cap = " << t.capacity();
+        }
+    }
+}
+
 }  // namespace
 }  // namespace priv
 }  // namespace phmap

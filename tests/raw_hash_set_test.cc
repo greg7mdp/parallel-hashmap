@@ -1396,6 +1396,19 @@ TEST(Table, ReserveZeroPreservesMaxLoadFactor) {
   }
 }
 
+// Any call to reserve <= than the current size should leave the capacity unchanged.
+TEST(Table, ReserveBelowSizeShouldNotGrow) {
+  for (size_t n = 1; n <= 256; ++n) {
+    IntTable t;
+    for (size_t i = 0; i < n; ++i) t.emplace(static_cast<int64_t>(i));
+    auto cap = t.capacity();
+    for (size_t i = 0; i < n; ++i) {
+       t.reserve(n);
+       ASSERT_EQ(cap, t.capacity()) << "cap = " << cap << ", new cap = " << t.capacity();
+    }
+  }
+}
+
 #if PHMAP_HAVE_STD_STRING_VIEW
 TEST(Table, ConstructFromInitList) {
   using P = std::pair<std::string, std::string>;

@@ -3593,6 +3593,8 @@ public:
 
     void reserve(size_t n) 
     {
+        if (n <= capacity())
+            return;
         size_t target = GrowthToLowerboundCapacity(n);
         size_t normalized = num_tables * NormalizeCapacity(n / num_tables);
         rehash(normalized > target ? normalized : target); 
