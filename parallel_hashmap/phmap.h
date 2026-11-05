@@ -3297,9 +3297,17 @@ public:
     // and if_contains returns true. This is a const API and lambda should not modify the value
     // -----------------------------------------------------------------------------------------
     template <class K = key_type, class F>
-    bool if_contains(const key_arg<K>& key, F&& f) const {
+    bool if_contains_with_hash(const key_arg<K>& key, size_t hashval, F&& f) const {
         return const_cast<parallel_hash_set*>(this)->template 
-            modify_if_impl<K, F, SharedLock>(key, std::forward<F>(f));
+            modify_if_impl_with_hash<K, F, SharedLock>(key, hashval, std::forward<F>(f));
+    }
+
+    // if set contains key, lambda is called with the value_type (under read lock protection),
+    // and if_contains returns true. This is a const API and lambda should not modify the value
+    // -----------------------------------------------------------------------------------------
+    template <class K = key_type, class F>
+    bool if_contains(const key_arg<K>& key, F&& f) const {
+        return if_contains_with_hash<K, F>(key, this->hash(key), std::forward<F>(f));
     }
 
     // if set contains key, lambda is called with the value_type  without read lock protection,
@@ -3322,16 +3330,22 @@ public:
 
     // -----------------------------------------------------------------------------------------
     template <class K = key_type, class F, class L>
-    bool modify_if_impl(const key_arg<K>& key, F&& f) {
+    bool modify_if_impl_with_hash(const key_arg<K>& key, size_t hashval, F&& f) {
 #if __cplusplus >= 201703L
         static_assert(std::is_invocable<F, value_type&>::value);
 #endif
         L m;
-        auto ptr = this->template find_ptr<K, L>(key, this->hash(key), m);
+        auto ptr = this->template find_ptr<K, L>(key, hashval, m);
         if (ptr == nullptr)
             return false;
         std::forward<F>(f)(*ptr);
         return true;
+    }
+
+    // -----------------------------------------------------------------------------------------
+    template <class K = key_type, class F, class L>
+    bool modify_if_impl(const key_arg<K>& key, F&& f) {
+        return modify_if_impl_with_hash<K, F, L>(key, this->hash(key), std::forward<F>(f));
     }
 
     // if map contains key, lambda is called with the mapped value  (under write lock protection).
@@ -3377,8 +3391,7 @@ public:
     // returns true if key was not already present, false otherwise.
     // ---------------------------------------------------------------------------------------
     template <class K = key_type, class FExists, class FEmplace>
-    bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
-        size_t hashval = this->hash(key);
+    bool lazy_emplace_l_with_hash(const key_arg<K>& key, size_t hashval, FExists&& fExists, FEmplace&& fEmplace) {
         UniqueLock m;
         auto res = this->find_or_prepare_insert_with_hash(hashval, key, m);
         Inner* inner = std::get<0>(res);
@@ -3392,6 +3405,19 @@ public:
             std::forward<FExists>(fExists)(const_cast<value_type &>(*it)); 
         }
         return std::get<2>(res);
+    }
+
+    // if map already  contains key, the first lambda is called with the mapped value (under
+    // write lock protection) and can update the mapped value.
+    // if map does not contains key, the second lambda is called and it should invoke the
+    // passed constructor to construct the value
+    // returns true if key was not already present, false otherwise.
+    // ---------------------------------------------------------------------------------------
+    template <class K = key_type, class FExists, class FEmplace>
+    bool lazy_emplace_l(const key_arg<K>& key, FExists&& fExists, FEmplace&& fEmplace) {
+        return lazy_emplace_l_with_hash<K, FExists, FEmplace>(key, this->hash(key),
+                                                              std::forward<FExists>(fExists),
+                                                              std::forward<FEmplace>(fEmplace));
     }
 
     // Extension API: support iterating over all values
