@@ -40,8 +40,10 @@ TEST(THIS_TEST_NAME, IfContains) {
     auto get_value = [&val](const Map::value_type& v) { val = v.second; };
     EXPECT_TRUE(const_m.if_contains(2, get_value));
     EXPECT_EQ(val, 9);
+    EXPECT_TRUE(const_m.if_contains_with_hash(2, m.hash(2), get_value));
 
     EXPECT_FALSE(m.if_contains(3, get_value));
+    EXPECT_FALSE(m.if_contains_with_hash(3, m.hash(3), get_value));
 }
 
 TEST(THIS_TEST_NAME, ModifyIf) {
@@ -102,6 +104,12 @@ TEST(THIS_TEST_NAME, LazyEmplaceL) {
                      [](Map::value_type& v) { v.second = 6; },           // called only when key was already present
                      [](const Map::constructor& ctor) { ctor(5, 13); }); // construct value_type in place when key not present
     EXPECT_EQ(m[5], 6);
+
+    // change a value that is present. Currently m[5] == 13
+    m.lazy_emplace_l_with_hash(5, m.hash(5),
+                     [](Map::value_type& v) { v.second = 7; },           // called only when key was already present
+                     [](const Map::constructor& ctor) { ctor(5, 13); }); // construct value_type in place when key not present
+    EXPECT_EQ(m[5], 7);
 }
 
 TEST(THIS_TEST_NAME, EraseIf) {
