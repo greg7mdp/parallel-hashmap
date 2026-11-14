@@ -2012,6 +2012,11 @@ private:
 
     void initialize_slots(size_t new_capacity) {
         assert(new_capacity);
+        // Past this bound `layout.AllocSize()` can wrap around size_t and
+        // return a size far smaller than `new_capacity` slots.
+        if (PHMAP_PREDICT_FALSE(new_capacity > (std::numeric_limits<size_t>::max)() / 2 /
+                                                   (sizeof(slot_type) + 1)))
+            phmap::base_internal::ThrowStdLengthError("phmap: hash table size overflow");
         if (std::is_same<SlotAlloc, std::allocator<slot_type>>::value && 
             slots_ == nullptr) {
             infoz_ = Sample();
