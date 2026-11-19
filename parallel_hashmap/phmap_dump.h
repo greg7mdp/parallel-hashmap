@@ -83,6 +83,15 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
     }
     ar.loadBinary(&capacity_, sizeof(size_t));
 
+    // size_ and capacity_ come from the archive: reject values that no table
+    // could have before using them to size the ctrl_/slots_ reads below.
+    if ((capacity_ && !IsValidCapacity(capacity_)) ||
+        size_ > (capacity_ ? CapacityToGrowth(capacity_) : 0)) {
+        size_ = 0;
+        capacity_ = 0;
+        return false;
+    }
+
     if (capacity_) {
         // allocate memory for ctrl_ and slots_
         initialize_slots(capacity_);
@@ -94,9 +103,33 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
     if (version >= s_version_base) {
         // growth_left should be restored after calling initialize_slots() which resets it.
         ar.loadBinary(&growth_left(), sizeof(size_t));
-    } else {
-       drop_deletes_without_resize();
     }
+
+    // iteration and probing stop at the sentinel, and insertion relies on
+    // growth_left to keep empty slots around, so check both before use.
+    size_t full = 0, deleted = 0;
+    bool valid = ctrl_[capacity_] == kSentinel;
+    for (size_t i = 0; valid && i != capacity_; ++i) {
+        if (ctrl_[i] == kSentinel)
+            valid = false;
+        else if (IsFull(ctrl_[i]))
+            ++full;
+        else if (ctrl_[i] == kDeleted)
+            ++deleted;
+    }
+    valid = valid && full == size_;
+    if (valid && version >= s_version_base) {
+        size_t max_growth = CapacityToGrowth(capacity_) - size_;
+        valid = deleted <= max_growth && growth_left() == max_growth - deleted &&
+                (deleted == 0 || !is_small());
+    }
+    if (!valid) {
+        reset_ctrl(capacity_);  // no slot is full, so destroy_slots() only frees
+        destroy_slots();
+        return false;
+    }
+    if (version < s_version_base)
+        drop_deletes_without_resize();
     return true;
 }
 
