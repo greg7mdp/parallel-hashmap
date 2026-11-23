@@ -1409,6 +1409,29 @@ TEST(Table, ReserveBelowSizeShouldNotGrow) {
   }
 }
 
+// A request whose ctrl_ + slots_ allocation size does not fit in size_t must
+// be rejected. `NormalizeCapacity()` rounds any such request up to SIZE_MAX,
+// for which `MakeLayout(capacity).AllocSize()` wraps around to a few bytes, so
+// the table used to end up with capacity_ == SIZE_MAX on top of a tiny heap
+// block that `reset_ctrl()` immediately overflowed.
+TEST(Table, CapacityOverflowIsRejected) {
+  const size_t kMax = (std::numeric_limits<size_t>::max)();
+  IntTable t;
+#ifdef PHMAP_HAVE_EXCEPTIONS
+  EXPECT_THROW(t.reserve(kMax / 2), std::length_error);
+  EXPECT_THROW(t.rehash(kMax), std::length_error);
+  EXPECT_THROW(IntTable u(kMax), std::length_error);
+#else
+  EXPECT_DEATH(t.reserve(kMax / 2), "");
+  EXPECT_DEATH(t.rehash(kMax), "");
+  EXPECT_DEATH(IntTable u(kMax), "");
+#endif
+  EXPECT_EQ(0, t.bucket_count());
+  t.emplace(1);
+  EXPECT_EQ(1, t.size());
+  EXPECT_THAT(*t.find(1), 1);
+}
+
 #if PHMAP_HAVE_STD_STRING_VIEW
 TEST(Table, ConstructFromInitList) {
   using P = std::pair<std::string, std::string>;
