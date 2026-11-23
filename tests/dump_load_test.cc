@@ -101,6 +101,36 @@ TEST(DumpLoad, ParallelFlatHashMap_uint64_uint32) {
     }
 }
 
+TEST(DumpLoad, MalformedArchiveIsRejected) {
+    auto load = [](size_t size, size_t capacity) {
+        std::string buf;
+        auto put = [&](size_t v) { buf.append(reinterpret_cast<const char*>(&v), sizeof(v)); };
+        put(s_version);
+        put(size);
+        put(capacity);
+        std::string ctrl(capacity + Group::kWidth + 1, static_cast<char>(kEmpty));
+        ctrl[0] = 0x01; // one full slot
+        ctrl[capacity] = static_cast<char>(kSentinel);
+        buf += ctrl;
+        buf.append(sizeof(uint32_t) * capacity, '\0');
+        // growth_left is only read once the header has been accepted
+        bool header_ok = IsValidCapacity(capacity) && size <= CapacityToGrowth(capacity);
+        put(header_ok ? CapacityToGrowth(capacity) - size : 0);
+
+        std::stringstream ss(buf);
+        phmap::BinaryInputArchive ar_in(ss);
+        phmap::flat_hash_set<uint32_t> st;
+        bool ok = st.phmap_load(ar_in);
+        EXPECT_EQ(st.size(), ok ? size : 0u);
+        return ok;
+    };
+
+    EXPECT_TRUE(load(1, 7));
+    EXPECT_FALSE(load(1, 0));   // size without storage
+    EXPECT_FALSE(load(1, 6));   // capacity not 2^n - 1
+    EXPECT_FALSE(load(8, 7));   // size above max load
+}
+
 }
 }
 }

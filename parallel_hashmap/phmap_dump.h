@@ -83,6 +83,15 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
     }
     ar.loadBinary(&capacity_, sizeof(size_t));
 
+    // reject a header that no table could have produced (e.g. a size without
+    // storage), as the ctrl_/slots_ reads below are sized from these fields.
+    if ((capacity_ && !IsValidCapacity(capacity_)) ||
+        size_ > (capacity_ ? CapacityToGrowth(capacity_) : 0)) {
+        size_ = 0;
+        capacity_ = 0;
+        return false;
+    }
+
     if (capacity_) {
         // allocate memory for ctrl_ and slots_
         initialize_slots(capacity_);
